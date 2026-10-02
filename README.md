@@ -13,6 +13,9 @@
 > 2025학년도 홍익대학교 컴퓨터공학과 졸업프로젝트 <br/>
 > 프로젝트 기간: 2025.03 ~ 2025.11
 
+이 저장소는 보관된 원본 [HongikBookStore/HongBookStore](https://github.com/HongikBookStore/HongBookStore)를 이어받아 개인적으로 고도화합니다.
+원본의 커밋 히스토리와 작성자 정보는 그대로 유지합니다. 팀원별 기여는 원본 저장소의 기여자 목록에서 확인할 수 있습니다.
+
 ### Tech Stacks
 > Frontend: <br/>
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=JavaScript&logoColor=white)
