@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.10'
+    id 'org.springframework.boot' version '3.5.16'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -29,8 +29,8 @@ dependencies {
     // 비동기 HTTP 통신을 위한 WebClient
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     testImplementation 'io.projectreactor:reactor-test'
-    implementation 'io.netty:netty-resolver-dns-native-macos:4.2.9.Final'
-    runtimeOnly 'io.netty:netty-resolver-dns-native-macos:4.2.9.Final:osx-aarch_64' // MacOS Silicon 라이브러리 누락 문제
+    implementation 'io.netty:netty-resolver-dns-native-macos:4.2.18.Final'
+    runtimeOnly 'io.netty:netty-resolver-dns-native-macos:4.2.18.Final:osx-aarch_64' // MacOS Silicon 라이브러리 누락 문제
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
@@ -77,7 +77,7 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
 
     // GCP Cloud Storage
-    implementation platform("com.google.cloud:spring-cloud-gcp-dependencies:7.4.3")
+    implementation platform("com.google.cloud:spring-cloud-gcp-dependencies:7.4.10")
     implementation 'com.google.cloud:spring-cloud-gcp-starter'
     implementation 'com.google.cloud:spring-cloud-gcp-starter-storage'
 
