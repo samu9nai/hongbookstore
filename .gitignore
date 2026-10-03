@@ -76,6 +76,7 @@ yarn-error.log*
 *.yml
 !application.yml
 !src/test/resources/application-test.yml
+!.github/**/*.yml
 
 # .env 환경 변수 파일 제외
 .env
