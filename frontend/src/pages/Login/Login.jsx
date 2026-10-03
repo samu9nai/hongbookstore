@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import '../../i18n.js';
-import styled from 'styled-components';
-import { useSearchParams } from 'react-router-dom';
-import Header from '../../components/Header/Header.jsx';
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import '../../i18n.js'
+import styled from 'styled-components'
+import { useSearchParams } from 'react-router-dom'
+import Header from '../../components/Header/Header.jsx'
 
 const LoginContainer = styled.div`
   padding: 8rem 2rem 4rem;
@@ -16,7 +16,7 @@ const LoginContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-`;
+`
 
 const Title = styled.h2`
   font-size: 2.5rem;
@@ -26,7 +26,7 @@ const Title = styled.h2`
   font-family: 'Pretendard', 'Noto Sans', 'Apple SD Gothic Neo', sans-serif;
   border-radius: 1rem;
   letter-spacing: -1px;
-`;
+`
 
 const Subtitle = styled.p`
   font-size: 1.1rem;
@@ -34,14 +34,14 @@ const Subtitle = styled.p`
   margin-bottom: 3rem;
   font-family: 'Pretendard', 'Noto Sans', 'Apple SD Gothic Neo', sans-serif;
   line-height: 1.6;
-`;
+`
 
 const SocialButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   gap: 1.5rem;
   margin-top: 1rem;
-`;
+`
 
 const SocialButton = styled.button`
   width: 60px;
@@ -57,7 +57,7 @@ const SocialButton = styled.button`
   align-items: center;
   justify-content: center;
   padding: 0;
-  
+
   img {
     width: 32px;
     height: 32px;
@@ -67,32 +67,32 @@ const SocialButton = styled.button`
     opacity: 1 !important;
     visibility: visible !important;
   }
-  
+
   &:hover {
     background: var(--primary-dark);
     transform: translateY(-2px) scale(1.03);
   }
-`;
+`
 
 const SocialSection = styled.div`
   margin-top: 2.5rem;
   text-align: center;
   width: 100%;
-`;
+`
 
 const SocialTitle = styled.p`
   font-size: 1rem;
   color: var(--text-secondary);
   margin-bottom: 1.5rem;
   font-weight: 500;
-`;
+`
 
 const SocialButtonsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
   margin-top: 1rem;
-`;
+`
 
 const SocialBtn = styled.button`
   width: 100%;
@@ -109,47 +109,47 @@ const SocialBtn = styled.button`
   font-size: 1rem;
   position: relative;
   overflow: hidden;
-  
+
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
-  
+
   &:active {
     transform: translateY(0);
   }
-  
+
   img {
     width: 24px;
     height: 24px;
     transition: transform 0.2s ease;
     object-fit: contain;
   }
-  
+
   &:hover img {
     transform: scale(1.1);
   }
-  
+
   /* 네이버 버튼 스타일 */
-  &[type="naver"] {
-    background: #03C75A;
+  &[type='naver'] {
+    background: #03c75a;
     color: white;
     &:hover {
-      background: #02A94A;
+      background: #02a94a;
     }
   }
-  
+
   /* 카카오 버튼 스타일 */
-  &[type="kakao"] {
-    background: #FEE500;
-    color: #3C1E1E;
+  &[type='kakao'] {
+    background: #fee500;
+    color: #3c1e1e;
     &:hover {
-      background: #FDD835;
+      background: #fdd835;
     }
   }
-  
+
   /* 구글 버튼 스타일 */
-  &[type="google"] {
+  &[type='google'] {
     background: white;
     color: #757575;
     border: 1px solid #dadce0;
@@ -158,12 +158,12 @@ const SocialBtn = styled.button`
       border-color: #c6c6c6;
     }
   }
-`;
+`
 
 const SocialBtnText = styled.span`
   font-family: 'Pretendard', 'Noto Sans', 'Apple SD Gothic Neo', sans-serif;
   font-weight: 600;
-`;
+`
 
 const ErrorMessage = styled.div`
   color: #ef4444;
@@ -173,99 +173,115 @@ const ErrorMessage = styled.div`
   background-color: rgba(239, 68, 68, 0.1);
   border-radius: 0.5rem;
   border: 1px solid rgba(239, 68, 68, 0.2);
-`;
+`
 
 function Login() {
-  const { t, i18n } = useTranslation();
-  const [errorMsg, setErrorMsg] = useState('');
-  const [searchParams] = useSearchParams(); // URL 파라미터 읽기
+  const { t, i18n } = useTranslation()
+  const [errorMsg, setErrorMsg] = useState('')
+  const [searchParams] = useSearchParams() // URL 파라미터 읽기
 
-  const [lang, setLang] = useState(i18n.language || 'ko');
+  const [lang, setLang] = useState(i18n.language || 'ko')
 
   // 소셜 로그인 실패 시, URL에 담겨온 에러 메시지를 화면에 표시
   useEffect(() => {
-    const error = searchParams.get('error');
+    const error = searchParams.get('error')
     if (error) {
-      setErrorMsg(t('loginNs.socialLoginFailed'));
+      setErrorMsg(t('loginNs.socialLoginFailed'))
     }
-  }, [searchParams]);
+  }, [searchParams])
 
   // 소셜 로그인 버튼 클릭 시, 백엔드의 인증 URL로 이동시키는 함수
-  const handleSocialLogin = (provider) => {
-    if (typeof window === 'undefined') return;
+  const handleSocialLogin = provider => {
+    if (typeof window === 'undefined') return
 
-    const env = import.meta.env || {};
-    const isLocalDev = window.location.port === '5173';
-    const currentOrigin = `${window.location.protocol}//${window.location.host}`;
+    const env = import.meta.env || {}
+    const isLocalDev = window.location.port === '5173'
+    const currentOrigin = `${window.location.protocol}//${window.location.host}`
     const backendOrigin = env?.VITE_BACKEND_ORIGIN
       ? env.VITE_BACKEND_ORIGIN.replace(/\/$/, '')
-      : '';
+      : ''
 
     const devFallbackOrigin = (() => {
-      if (backendOrigin) return backendOrigin;
+      if (backendOrigin) return backendOrigin
       if (env?.VITE_API_BASE) {
         try {
-          return new URL(env.VITE_API_BASE, window.location.origin).origin;
+          return new URL(env.VITE_API_BASE, window.location.origin).origin
         } catch (_) {
-          return '';
+          return ''
         }
       }
-      return '';
-    })();
+      return ''
+    })()
 
     if (isLocalDev) {
-      const origin = devFallbackOrigin || 'http://localhost:8080';
-      window.location.href = `${origin}/oauth2/authorization/${provider}`;
-      return;
+      const origin = devFallbackOrigin || 'http://localhost:8080'
+      window.location.href = `${origin}/oauth2/authorization/${provider}`
+      return
     }
 
     if (backendOrigin && backendOrigin !== currentOrigin) {
       // Production(frontend)과 백엔드 오리진이 다르면 백엔드 도메인으로 바로 이동해야 쿠키가 올바르게 저장됨
-      window.location.href = `${backendOrigin}/oauth2/authorization/${provider}`;
-      return;
+      window.location.href = `${backendOrigin}/oauth2/authorization/${provider}`
+      return
     }
 
     if (backendOrigin) {
-      window.location.href = `/oauth2/authorization/${provider}`;
-      return;
+      window.location.href = `/oauth2/authorization/${provider}`
+      return
     }
 
-    window.location.href = `/api/oauth2/authorization/${provider}`;
-  };
+    window.location.href = `/api/oauth2/authorization/${provider}`
+  }
 
   // 언어 변경 핸들러
   const handleLangChange = e => {
-    setLang(e.target.value);
-    i18n.changeLanguage(e.target.value);
-  };
+    setLang(e.target.value)
+    i18n.changeLanguage(e.target.value)
+  }
 
   return (
     <>
-      <Header lang={lang} onLangChange={handleLangChange} />
+      <Header
+        lang={lang}
+        onLangChange={handleLangChange}
+      />
       <LoginContainer>
         <Title>{t('socialLoginTitle')}</Title>
-        <Subtitle>
-          {t('socialLoginDesc')}
-        </Subtitle>
+        <Subtitle>{t('socialLoginDesc')}</Subtitle>
 
         {errorMsg && <ErrorMessage>{errorMsg}</ErrorMessage>}
-        
+
         <SocialButtonContainer>
-        <SocialButton aria-label={t('loginNs.loginWithNaver')} onClick={() => handleSocialLogin('naver')}>
-          <img src="/images/naver.png" alt="Naver" />
-        </SocialButton>
-          
-        <SocialButton aria-label={t('loginNs.loginWithKakao')} onClick={() => handleSocialLogin('kakao')}>
-          <img src="/images/kakao.png" alt="Kakao" />
-        </SocialButton>
-          
-        <SocialButton aria-label={t('loginNs.loginWithGoogle')} onClick={() => handleSocialLogin('google')}>
-          <img src="/images/google.png" alt="Google" />
-        </SocialButton>
+          <SocialButton
+            aria-label={t('loginNs.loginWithNaver')}
+            onClick={() => handleSocialLogin('naver')}>
+            <img
+              src="/images/naver.png"
+              alt="Naver"
+            />
+          </SocialButton>
+
+          <SocialButton
+            aria-label={t('loginNs.loginWithKakao')}
+            onClick={() => handleSocialLogin('kakao')}>
+            <img
+              src="/images/kakao.png"
+              alt="Kakao"
+            />
+          </SocialButton>
+
+          <SocialButton
+            aria-label={t('loginNs.loginWithGoogle')}
+            onClick={() => handleSocialLogin('google')}>
+            <img
+              src="/images/google.png"
+              alt="Google"
+            />
+          </SocialButton>
         </SocialButtonContainer>
       </LoginContainer>
     </>
-  );
+  )
 }
 
-export default Login; 
+export default Login

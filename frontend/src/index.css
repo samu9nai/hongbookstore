@@ -19,12 +19,14 @@ a:hover {
   color: #0056b3;
 }
 
-body, html, #root {
+body,
+html,
+#root {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   background: #fafbff !important;
-  
+
   /* 기본 스타일 */
   -webkit-user-select: none;
   -moz-user-select: none;

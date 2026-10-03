@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import styled, { keyframes } from 'styled-components';
+import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+import styled, { keyframes } from 'styled-components'
 
 const fadeIn = keyframes`
   from {
@@ -12,8 +12,7 @@ const fadeIn = keyframes`
     opacity: 1;
     transform: translateY(0);
   }
-`;
-
+`
 
 const HeroSection = styled.section`
   min-height: calc(100vh - 80px);
@@ -23,7 +22,7 @@ const HeroSection = styled.section`
   overflow: hidden;
   background: transparent;
   margin-top: 80px;
-`;
+`
 
 const OnboardingSection = styled.div`
   flex: 1;
@@ -34,8 +33,7 @@ const OnboardingSection = styled.div`
   position: relative;
   min-height: calc(70vh - 80px);
   background: #ffffff;
-`;
-
+`
 
 const OnboardingContainer = styled.div`
   width: 100%;
@@ -53,7 +51,7 @@ const OnboardingContainer = styled.div`
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-`;
+`
 
 const CarouselContainer = styled.div`
   position: relative;
@@ -62,13 +60,13 @@ const CarouselContainer = styled.div`
   border-radius: 16px;
   overflow: hidden;
   background: #f3f4f6;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-`;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+`
 
 const slideIn = keyframes`
   from { opacity: 0; transform: scale(1.02); }
   to { opacity: 1; transform: scale(1); }
-`;
+`
 
 const Slide = styled.div`
   position: absolute;
@@ -77,14 +75,14 @@ const Slide = styled.div`
   align-items: center;
   justify-content: center;
   animation: ${slideIn} 600ms ease-out;
-`;
+`
 
 const SlideImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: bottom center;
-`;
+`
 
 const Bullets = styled.div`
   position: absolute;
@@ -93,7 +91,7 @@ const Bullets = styled.div`
   transform: translateX(-50%);
   display: flex;
   gap: 8px;
-`;
+`
 
 const Bullet = styled.button`
   width: 8px;
@@ -101,10 +99,10 @@ const Bullet = styled.button`
   border-radius: 999px;
   border: none;
   background: ${props => (props.$active ? '#2563eb' : 'rgba(255,255,255,0.7)')};
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.05) inset;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
   cursor: pointer;
   transition: background 200ms ease;
-`;
+`
 
 const SidePanel = styled.aside`
   display: flex;
@@ -114,14 +112,14 @@ const SidePanel = styled.aside`
   padding: 1rem;
   border-radius: 16px;
   background: #f8fafc;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
 
   @media (max-width: 960px) {
     background: transparent;
     box-shadow: none;
     padding: 0;
   }
-`;
+`
 
 const Title = styled.h1`
   font-size: clamp(2.5rem, 5vw, 3.5rem);
@@ -139,7 +137,7 @@ const Title = styled.h1`
     font-size: clamp(2rem, 4vw, 2.5rem);
     margin-bottom: 0.8rem;
   }
-`;
+`
 
 const Description = styled.p`
   font-size: clamp(1.1rem, 2.2vw, 1.3rem);
@@ -157,7 +155,7 @@ const Description = styled.p`
     font-size: clamp(1rem, 2.5vw, 1.2rem);
     margin-bottom: 1.5rem;
   }
-`;
+`
 
 const MenuButton = styled.button`
   display: flex;
@@ -190,7 +188,12 @@ const MenuButton = styled.button`
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
     transition: left 0.6s;
   }
 
@@ -214,13 +217,12 @@ const MenuButton = styled.button`
     font-size: 1rem;
     max-width: 280px;
   }
-`;
-
+`
 
 const Hero = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [current, setCurrent] = useState(0);
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const [current, setCurrent] = useState(0)
 
   const menuItems = [
     {
@@ -235,26 +237,27 @@ const Hero = () => {
       title: t('hero.map'),
       path: '/hongikmap'
     }
-  ];
+  ]
 
-  const slides = useMemo(() => (
-    [
+  const slides = useMemo(
+    () => [
       { src: '/images/onboarding-marketplace.png', alt: t('hero.bookstore') },
       { src: '/images/onboarding-mybookstore.png', alt: t('hero.myBookstore') },
       { src: '/images/onboarding-map.png', alt: t('hero.map') }
-    ]
-  ), [t]);
+    ],
+    [t]
+  )
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrent(prev => (prev + 1) % slides.length);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [slides.length]);
+      setCurrent(prev => (prev + 1) % slides.length)
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [slides.length])
 
-  const handleMenuClick = (path) => {
-    navigate(path);
-  };
+  const handleMenuClick = path => {
+    navigate(path)
+  }
 
   return (
     <HeroSection>
@@ -264,16 +267,24 @@ const Hero = () => {
             <Title>{t('title')}</Title>
             <Description>{t('heroDescription')}</Description>
             <CarouselContainer>
-              {slides.map((slide, idx) => (
+              {slides.map((slide, idx) =>
                 idx === current ? (
                   <Slide key={slide.src}>
-                    <SlideImage src={slide.src} alt={slide.alt} />
+                    <SlideImage
+                      src={slide.src}
+                      alt={slide.alt}
+                    />
                   </Slide>
                 ) : null
-              ))}
+              )}
               <Bullets>
                 {slides.map((_, idx) => (
-                  <Bullet key={idx} $active={idx === current} onClick={() => setCurrent(idx)} aria-label={`slide-${idx + 1}`} />
+                  <Bullet
+                    key={idx}
+                    $active={idx === current}
+                    onClick={() => setCurrent(idx)}
+                    aria-label={`slide-${idx + 1}`}
+                  />
                 ))}
               </Bullets>
             </CarouselContainer>
@@ -284,8 +295,7 @@ const Hero = () => {
               <MenuButton
                 key={index}
                 onClick={() => handleMenuClick(item.path)}
-                style={{ animationDelay: `${0.7 + index * 0.1}s` }}
-              >
+                style={{ animationDelay: `${0.7 + index * 0.1}s` }}>
                 {item.title}
                 <span>→</span>
               </MenuButton>
@@ -294,7 +304,7 @@ const Hero = () => {
         </OnboardingContainer>
       </OnboardingSection>
     </HeroSection>
-  );
-};
+  )
+}
 
-export default Hero; 
+export default Hero

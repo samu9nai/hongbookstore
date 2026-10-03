@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled from 'styled-components'
 
 // 폼
 export const Form = styled.form`
@@ -7,12 +7,12 @@ export const Form = styled.form`
   flex-direction: column;
   gap: 1.2rem;
   align-items: stretch;
-`;
+`
 
 // 폼 그룹
 export const FormGroup = styled.div`
   margin-bottom: 20px;
-`;
+`
 
 // 라벨
 export const Label = styled.label`
@@ -20,13 +20,13 @@ export const Label = styled.label`
   font-weight: 600;
   color: #555;
   margin-bottom: 8px;
-`;
+`
 
 // 필수 표시
 export const Required = styled.span`
   color: #dc3545;
   margin-left: 5px;
-`;
+`
 
 // 입력 그룹
 export const InputGroup = styled.div`
@@ -34,7 +34,7 @@ export const InputGroup = styled.div`
   align-items: center;
   gap: 0.5rem;
   width: 100%;
-`;
+`
 
 // 기본 입력 필드
 export const Input = styled.input`
@@ -47,12 +47,12 @@ export const Input = styled.input`
   font-size: 1rem;
   transition: var(--transition);
   outline: none;
-  
+
   &:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
   }
-`;
+`
 
 // 텍스트 영역
 export const TextArea = styled.textarea`
@@ -71,7 +71,7 @@ export const TextArea = styled.textarea`
   &:focus {
     border-color: #007bff;
   }
-`;
+`
 
 // 셀렉트
 export const Select = styled.select`
@@ -88,7 +88,7 @@ export const Select = styled.select`
   &:focus {
     border-color: #007bff;
   }
-`;
+`
 
 // 제출 버튼
 export const SubmitButton = styled.button`
@@ -103,12 +103,12 @@ export const SubmitButton = styled.button`
   cursor: pointer;
   transition: var(--transition);
   margin-top: 0.5rem;
-  
+
   &:hover {
     background: var(--primary-dark);
     transform: translateY(-2px);
   }
-`;
+`
 
 // 메시지
 export const Message = styled.div`
@@ -116,7 +116,7 @@ export const Message = styled.div`
   font-size: 1rem;
   margin: 0.5rem 0 0 2px;
   text-align: center;
-`;
+`
 
 // 필터 섹션
 export const FilterSection = styled.div`
@@ -124,7 +124,7 @@ export const FilterSection = styled.div`
   gap: 15px;
   margin-bottom: 20px;
   flex-wrap: wrap;
-`;
+`
 
 // 필터 버튼
 export const FilterButton = styled.button`
@@ -132,7 +132,7 @@ export const FilterButton = styled.button`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  border: 1.5px solid #E5E7EB;
+  border: 1.5px solid #e5e7eb;
   background: white;
   color: #374151;
   border-radius: 0.75rem;
@@ -143,8 +143,8 @@ export const FilterButton = styled.button`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
   &:hover {
-    background: #F9FAFB;
-    border-color: #D1D5DB;
+    background: #f9fafb;
+    border-color: #d1d5db;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
@@ -158,13 +158,13 @@ export const FilterButton = styled.button`
     background: var(--primary);
     color: white;
     border-color: var(--primary);
-    
+
     &:hover {
       background: var(--primary-dark);
       border-color: var(--primary-dark);
     }
   }
-`;
+`
 
 // 검색 버튼
 export const SearchButton = styled.button`
@@ -192,4 +192,4 @@ export const SearchButton = styled.button`
     transform: translateY(0);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
-`; 
+`

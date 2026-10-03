@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components';
+import styled, { css } from 'styled-components'
 
 const buttonVariants = {
   primary: css`
@@ -71,7 +71,7 @@ const buttonVariants = {
       box-shadow: var(--shadow-md);
     }
   `
-};
+}
 
 const buttonSizes = {
   sm: css`
@@ -94,7 +94,7 @@ const buttonSizes = {
     font-size: 1.25rem;
     border-radius: var(--radius-2xl);
   `
-};
+}
 
 const StyledButton = styled.button`
   display: inline-flex;
@@ -126,32 +126,38 @@ const StyledButton = styled.button`
   }
 
   /* Loading state */
-  ${props => props.$loading && css`
-    pointer-events: none;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      border: 2px solid transparent;
-      border-top: 2px solid currentColor;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-  `}
+  ${props =>
+    props.$loading &&
+    css`
+      pointer-events: none;
+
+      &::after {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    `}
 
   /* Full width */
-  ${props => props.$fullWidth && css`
-    width: 100%;
-  `}
+  ${props =>
+    props.$fullWidth &&
+    css`
+      width: 100%;
+    `}
 
   /* Icon only */
-  ${props => props.$iconOnly && css`
-    padding: var(--space-2);
-    min-width: 40px;
-    min-height: 40px;
-  `}
+  ${props =>
+    props.$iconOnly &&
+    css`
+      padding: var(--space-2);
+      min-width: 40px;
+      min-height: 40px;
+    `}
 
   /* Focus styles */
   &:focus-visible {
@@ -174,16 +180,16 @@ const StyledButton = styled.button`
   &:hover::before {
     left: 100%;
   }
-`;
+`
 
-const Button = ({ 
-  children, 
-  variant = 'primary', 
-  size = 'md', 
-  loading = false, 
-  fullWidth = false, 
+const Button = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  loading = false,
+  fullWidth = false,
   iconOnly = false,
-  ...props 
+  ...props
 }) => {
   return (
     <StyledButton
@@ -193,11 +199,10 @@ const Button = ({
       $fullWidth={fullWidth}
       $iconOnly={iconOnly}
       disabled={loading}
-      {...props}
-    >
+      {...props}>
       {children}
     </StyledButton>
-  );
-};
+  )
+}
 
-export default Button; 
+export default Button
