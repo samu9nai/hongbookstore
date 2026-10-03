@@ -25,7 +25,9 @@
 | `backend/src/main/java/com/hongik/books` | Spring Boot 백엔드 (Java 21, Boot 3.5) |
 | `backend/src/main/resources/application.yml` | 백엔드 설정. 비밀값은 `backend/.env`(커밋 금지)에서 읽는다 |
 | `backend/src/test` | 백엔드 테스트. `test` 프로필은 H2를 쓴다 |
-| `frontend` | React 19 + Vite 7 프론트엔드 (JavaScript/JSX) |
+| `frontend` | React 19 + Vite 7 프론트엔드. JavaScript/JSX에서 TypeScript로 옮기는 중이다 |
+| `package.json`, `pnpm-workspace.yaml` | pnpm 워크스페이스 루트. husky·lint-staged 커밋 훅을 둔다 |
+| `renovate.json` | 의존성 업데이트 설정 (월 1회, major는 Dependency Dashboard 승인 후) |
 | `deploy/` | Cloud Run·Vercel 배포 스크립트와 가이드 |
 | `.github/workflows-disabled/` | 비활성 배포 workflow. 활성 CI는 아직 없다 |
 
@@ -38,10 +40,15 @@
 | 영역 | 명령 | 현재 기준선 (2026-10-03) |
 |---|---|---|
 | 백엔드 컴파일·테스트 | `cd backend && ./gradlew test` | 통과. 테스트는 `contextLoads` 1개뿐이다 |
-| 프론트 설치 | `cd frontend && npm ci` | Node `^20.19.0` 또는 `>=22.12.0` 필요 |
-| 프론트 빌드 | `npm run build` | 통과. 메인 JS 청크 약 1,048 kB |
-| 프론트 린트 | `npm run lint` | **오류 227개, 경고 24개.** 바꾼 파일에서 새 오류를 늘리지 않는다 |
-| 프론트 테스트 | 없음 | 테스트 러너가 설정되지 않았다 |
+| 프론트 설치 | `pnpm install` (저장소 루트) | Node 24.21.0(`.node-version`), pnpm 12.8.1(`packageManager`, corepack) |
+| 프론트 빌드 | `pnpm build` | 통과. 메인 JS 청크 약 1,053 kB |
+| 프론트 타입 검사 | `pnpm type-check` | 통과. TypeScript 7이 `.ts`·`.tsx`만 검사한다(`allowJs`, `checkJs: false`) |
+| 프론트 린트 | `pnpm lint` | **오류 323개, 경고 24개** (oxlint type-aware). 바꾼 파일에서 새 오류를 늘리지 않는다 |
+| 프론트 서식 | `pnpm format:check` | 통과 (Prettier) |
+| 프론트 단위 테스트 | `pnpm test:unit --run` | 통과. Vitest 테스트 5개 |
+| 프론트 e2e | `pnpm test:e2e` | 통과. 백엔드 없는 홈 화면 스모크 1개(Chromium). 처음 한 번 `pnpm --filter @hongbookstore/frontend exec playwright install chromium`이 필요하다 |
+
+- 커밋하면 pre-commit 훅이 스테이징한 프론트 파일에 oxlint `--fix`와 Prettier를 실행한다. 오류가 남으면 커밋을 막는다.
 
 - 로컬 실행에는 MySQL·Redis와 `.env`가 필요하다. 필요한 키는 `README.md`의 환경 변수 절에 있다.
 - 실행하지 못한 검증은 성공으로 적지 않는다. 무엇을 왜 못 했는지 적는다.
