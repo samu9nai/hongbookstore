@@ -15,7 +15,7 @@
 | P2 | 운영 안정성, 유지보수성 |
 | P3 | 정리 |
 
-상태: `대기` → `진행`(브랜치 이름) → `완료`(PR 번호). 진행 중인 항목은 한 에이전트만 맡는다.
+상태: `대기` → `진행`(Issue 번호) → `완료`(PR 번호). 진행 중인 항목은 한 에이전트만 맡는다. 작업은 Issue로 시작한다([CONTRIBUTING.md](../CONTRIBUTING.md)).
 
 ## 다음 작업 순서 (제안)
 
@@ -90,3 +90,9 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | OPS-06 | P3 | 대기 | Vercel `rewrite`와 서버리스 프록시가 함께 있고, 프록시가 보내는 `x-edge-key`를 백엔드가 검증하지 않는다. Cloud Run 주소가 하드코딩돼 있다 | `src/main/frontend/vercel.json`, `src/main/frontend/api/[...path].js`, `application.yml:201` | C |
 | OPS-07 | P3 | 대기 | 코드 위생: `DepartmentNormalizer` 중복, `weather/utill` 오타, `catch (Exception …)` 44곳, 작업 지시용 주석 | 여러 곳 | C |
 | OPS-08 | P2 | 대기 | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다 | `backend/build.gradle.kts` | |
+
+## 문서 (DOC)
+
+| ID | 우선 | 상태 | 문제 | 위치 | 출처 |
+|---|---|---|---|---|---|
+| DOC-01 | P3 | 대기 | 영역별 개발 컨벤션 문서가 없다. NA-WA의 프론트엔드·백엔드 컨벤션은 Vue·MyBatis 기준이라 React·Spring Data JPA에 맞게 다시 써야 한다. TS 전환을 시작할 때 실제 코드를 보고 쓴다 | `frontend/docs/`, `backend/docs/` | #11 |

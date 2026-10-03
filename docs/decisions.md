@@ -22,6 +22,9 @@
 | D-F | 2026-10-03 | 저장소를 `backend/`(Spring Boot), `frontend/`(React), `toxic-filter/`(유해 표현 검사 서비스) 레이아웃으로 바꾼다. toxic-filter는 별도 저장소에서 이 저장소로 옮긴다 | `server/`는 toxic-filter도 서버라서 뜻이 겹친다. `client/`는 `ToxicFilterClient`·OAuth2 client와 이름이 겹친다. NA-WA와 같은 구조라 도구 설정을 옮기기 쉽다 |
 | D-G | 2026-10-03 | 프론트엔드 패키지 매니저는 pnpm 12.8.1, Node는 24.21.0 LTS로 정한다. 의존성 업데이트는 Dependabot 대신 Renovate가 맡는다 | NA-WA와 도구를 맞춘다. Dependabot은 pnpm v10까지만 지원한다. Mend Renovate Community Cloud는 개인 저장소에서 무료다 |
 | D-H | 2026-10-03 | 프론트엔드 린트·타입 검사는 oxlint 1.86 + oxlint-tsgolint 7.0.2003 + TypeScript 7.0.2, 서식은 Prettier 3.9로 정한다. Vite+는 지금 도입하지 않고 FE-08에서 다시 검토한다 | typescript-eslint 8.71은 TypeScript 6.1 미만만 지원한다. tsgolint는 TS 7 위에서 동작하고 type-aware 린트가 stable이다. Vite+ 1.0은 2026-09-28에 나왔고, 포매터로 1.0 전인 oxfmt를 쓴다 |
+| D-I | 2026-10-03 | PR은 `Create a merge commit`으로만 병합한다. 저장소 설정으로 squash·rebase merge를 막지는 않는다 | PR 안에서 목적별로 나눈 커밋(파일 이동, 일괄 서식)을 남기고, `.git-blame-ignore-revs`의 커밋 해시를 유지한다. 쌓은 PR을 차례로 병합할 수 있다. NA-WA는 squash merge를 쓰지만 이 저장소는 다르게 정했다 |
+| D-J | 2026-10-03 | 작업은 Issue로 시작한다. `docs/backlog.md`는 결함 목록으로 유지하고, 진행 중인 항목에 Issue 번호를 적는다 | 사람은 GitHub Issue로, 에이전트는 저장소 안의 백로그로 같은 작업을 추적한다 |
+| D-K | 2026-10-03 | 브랜치·커밋·PR 제목은 NA-WA 형식을 쓴다. 브랜치 `<type>/#<issue>-<desc>`, 커밋 `<type>(<scope>): <한글 요약> (#<issue>)`, PR 제목 `[Type] 한글 설명` | 두 포트폴리오 저장소의 규칙을 맞춘다. 이전 커밋은 다시 쓰지 않는다 |
 
 ## 확인이 필요한 제안
 
