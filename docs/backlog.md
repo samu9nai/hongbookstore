@@ -40,7 +40,7 @@
 | SEC-10 | P1 | 대기 | 업로드 파일의 확장자와 Content-Type을 클라이언트 값 그대로 저장한다 | `common/util/GcpStorageUtil.java:45`, `common/util/LocalStorageUtil.java:38` | C-10 |
 | SEC-11 | P2 | 대기 | 외부 지도 API 프록시(`/api/naver/**`, `/api/directions/**`)를 로그인 없이 호출할 수 있어 API 쿼터를 소모시킬 수 있다 | `config/SecurityConfig.java` | C-11 |
 | SEC-12 | P2 | 대기 | 기본 프로필이 `dev`이고, dev 프로필은 actuator 엔드포인트를 모두 노출한다 | `src/main/resources/application.yml:5`, `:252` | C |
-| SEC-13 | P1 | 대기 | 프론트 의존성에 공개된 취약점(GHSA) 49건이 있다. axios 1.13.4(35건, 1.20.0에서 모두 수정), vite 7.2.4(5건, 7.3.5), postcss 8.5.6(4건, 8.5.23), next-auth 4.24.13(3건, 4.24.15), http-proxy-middleware 3.0.5(2건, 3.0.7). next-auth와 http-proxy-middleware는 쓰지 않는 의존성이다(FE-04). Renovate 보안 수정 PR로 고친다 | `frontend/package.json`, `pnpm-lock.yaml` | Renovate OSV 조회(#15) |
+| SEC-13 | P1 | 진행 | 프론트 의존성에 공개된 취약점(GHSA)이 있다. 처음 49건 중 next-auth(3건)와 http-proxy-middleware(2건)는 패키지를 지워서 해소했다(#23). 남은 것: axios 1.13.4(35건, 1.20.0에서 모두 수정), vite 7.2.4(5건, 7.3.5), postcss 8.5.6(4건, 8.5.23). Renovate 보안 수정 PR로 고친다 | `frontend/package.json`, `pnpm-lock.yaml` | Renovate OSV 조회(#15) |
 
 ## 거래 정합성 (TXN)
 
@@ -70,7 +70,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | FE-01 | P1 | 대기 | 조기 반환 뒤에 Hook을 호출한다 (eslint `rules-of-hooks` 4건) | `components/PlaceDetailModal/PlaceDetailModal.jsx:522`, `:545`, `:588`, `:671` | H-05 |
 | FE-02 | P2 | 대기 | `AuthProvider`가 두 번 감싸져 있다 | `main.jsx:10`, `App.jsx:86` | H-05 |
 | FE-03 | P2 | 대기 | API 접근 방식이 axios 인스턴스·직접 axios·`fetch`로 나뉘고, `localStorage`의 토큰을 52곳에서 직접 읽는다 | `src/main/frontend/src` 전반 | C, H-05 |
-| FE-04 | P1 | 대기 | 쓰지 않는 의존성: `next-auth`(→`next`), `http-proxy-middleware`, `dotenv`, `zod`, `@tanstack/react-query`, `react-kakao-maps-sdk`. `npm audit`의 critical 2건이 모두 `next-auth` 경로다 | `src/main/frontend/package.json` | C, H-05 |
+| FE-04 | P1 | 완료 (#23) | 쓰지 않는 의존성: `next-auth`(→`next`), `http-proxy-middleware`, `dotenv`, `zod`, `@tanstack/react-query`, `react-kakao-maps-sdk`. `npm audit`의 critical 2건이 모두 `next-auth` 경로다 | `src/main/frontend/package.json` | C, H-05 |
 | FE-05 | P2 | 대기 | 유지보수가 끝난 `stompjs` 2.3.3을 쓰고, 연결할 때 인증 헤더를 보내지 않는다 | `pages/Chat/ChatRoom.jsx:9`, `:1010` | C |
 | FE-06 | P2 | 대기 | 2,000줄이 넘는 화면 컴포넌트(PostWrite, ChatRoom)와 1 MB 단일 번들. 라우트 단위 코드 분할이 없다 | `pages/PostWrite`, `pages/Chat`, `App.jsx` | C, H-05 |
 | FE-07 | P3 | 대기 | CRA 잔재(`App.test.js`, `setupTests.js`, `reportWebVitals.js`)가 남아 있다. 테스트 러너는 Vitest로 들였고, Vitest는 `*.test.{ts,tsx}`만 실행한다 | `src/main/frontend/src` | C, H-07 |
