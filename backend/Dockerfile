@@ -9,7 +9,7 @@ COPY gradle gradle
 RUN chmod +x gradlew
 
 # Copy build descriptors first for better layer caching
-COPY build.gradle settings.gradle ./
+COPY build.gradle.kts settings.gradle.kts ./
 
 # Copy sources
 COPY src src
