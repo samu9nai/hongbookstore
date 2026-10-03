@@ -1,0 +1,25 @@
+{
+  "name": "hongbookstore",
+  "private": true,
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @hongbookstore/frontend dev",
+    "build": "pnpm --filter @hongbookstore/frontend build",
+    "type-check": "pnpm --filter @hongbookstore/frontend type-check",
+    "lint": "pnpm --filter @hongbookstore/frontend lint",
+    "lint:fix": "pnpm --filter @hongbookstore/frontend lint:fix",
+    "format": "pnpm --filter @hongbookstore/frontend format",
+    "format:check": "pnpm --filter @hongbookstore/frontend format:check",
+    "lint:staged": "lint-staged",
+    "prepare": "husky",
+    "test:unit": "pnpm --filter @hongbookstore/frontend test:unit",
+    "test:e2e": "pnpm --filter @hongbookstore/frontend test:e2e"
+  },
+  "devDependencies": {
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0"
+  }
+}
