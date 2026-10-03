@@ -79,9 +79,13 @@
 
 ## Git 규칙
 
+Issue, 브랜치, 커밋, PR, 병합 규칙의 정본은 [CONTRIBUTING.md](CONTRIBUTING.md)다. 에이전트가 특히 지킬 것은 아래와 같다.
+
+- 작업은 Issue로 시작한다. 백로그 항목이면 Issue에 ID를 적는다(D-J).
 - `main`에 직접 push하지 않는다. 브랜치를 만들고 PR로 합친다. PR 병합은 사용자가 한다.
-- 브랜치 이름은 `<종류>/<요약>` 형식이다. 종류는 `feat`, `fix`, `refactor`, `docs`, `chore`, `test` 중 하나다.
-- 커밋 메시지는 한국어로, 첫 줄에 무엇을 바꿨는지 쓴다. 본문에는 필요할 때 이유를 쓴다.
+- 브랜치 이름은 `<type>/#<issue-number>-<short-description>`, 커밋 첫 줄은
+  `<type>(<scope>): <한글 요약> (#<issue-number>)` 형식이다(D-K).
+- 병합은 merge commit으로 한다(D-I). 그래서 PR 안의 커밋을 목적별로 나눠 둔다.
 - AI 에이전트가 작성한 커밋에는 `Co-Authored-By` 트레일러를, PR 본문에는 에이전트 서명 줄을 붙여도 된다.
   이 저장소에서만 허용하는 규칙이다.
 - PR 본문은 `.github/pull_request_template.md` 형식을 따른다.
@@ -90,7 +94,7 @@
 
 - **결정이 필요하면 멈춘다.** `docs/decisions.md`의 미결정 항목에 걸리는 작업은 구현하지 말고 사용자에게 묻는다.
   사용자가 정하면 그 결정을 `docs/decisions.md`에 기록한다.
-- **백로그를 갱신한다.** 작업을 시작하면 `docs/backlog.md`의 상태를 바꾸고, 끝나면 PR 번호를 적는다.
+- **백로그를 갱신한다.** 작업을 시작하면 `docs/backlog.md`의 상태를 `진행`으로 바꾸고 Issue 번호를 적는다. 끝나면 PR 번호를 적는다.
   새 결함을 찾으면 근거와 함께 항목을 추가한다.
 - **리뷰는 문서로 남긴다.** 다른 에이전트의 분석이나 PR을 검토한 결과는
   `docs/reviews/YYYY-MM-DD-<에이전트>-<주제>.md`에 쓴다. 리뷰 문서에는 아래 내용을 적는다.
