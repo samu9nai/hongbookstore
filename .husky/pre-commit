@@ -1,0 +1,32 @@
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+# GUI IDE는 대화형 셸의 fnm 환경을 물려받지 않을 수 있다. 그때는 .node-version의 Node를 직접 찾는다.
+if ! command -v node >/dev/null 2>&1 && [ -f "$repo_root/.node-version" ]; then
+  IFS= read -r node_version < "$repo_root/.node-version"
+  node_version=${node_version#v}
+  node_install="${XDG_DATA_HOME:-$HOME/.local/share}/fnm/node-versions/v${node_version}/installation"
+
+  if [ -x "$node_install/bin/node" ]; then
+    PATH="$node_install/bin:$PATH"
+    export PATH
+  fi
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js를 찾을 수 없습니다. 저장소의 .node-version에 적힌 버전을 설치해 주세요."
+  exit 1
+fi
+
+lint_staged_bin="$repo_root/node_modules/.bin/lint-staged"
+
+if [ ! -x "$lint_staged_bin" ]; then
+  echo "lint-staged가 설치되지 않았습니다. 저장소 루트에서 pnpm install을 실행해 주세요."
+  exit 1
+fi
+
+# lint-staged는 작업을 저장소 루트에서 실행한다. oxlint는 작업 디렉터리의 node_modules/.bin에서
+# tsgolint를 찾으므로, 루트에서는 찾지 못한다. oxlint가 먼저 읽는 환경 변수로 위치를 알려 준다.
+OXLINT_TSGOLINT_PATH="$repo_root/frontend/node_modules/.bin"
+export OXLINT_TSGOLINT_PATH
+
+"$lint_staged_bin"
