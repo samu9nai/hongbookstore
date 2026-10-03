@@ -29,7 +29,8 @@
 | `package.json`, `pnpm-workspace.yaml` | pnpm 워크스페이스 루트. husky·lint-staged 커밋 훅을 둔다 |
 | `renovate.json` | 의존성 업데이트 설정 (월 1회, major는 Dependency Dashboard 승인 후) |
 | `deploy/` | Cloud Run·Vercel 배포 스크립트와 가이드 |
-| `.github/workflows-disabled/` | 비활성 배포 workflow. 활성 CI는 아직 없다 |
+| `.github/workflows/ci.yml` | PR과 `main` push마다 백엔드 테스트, 프론트 검사, e2e를 실행한다 |
+| `.github/workflows-disabled/` | 비활성 배포 workflow |
 
 유해 표현 검사 API는 별도 저장소 [HongikBookStore/toxic-filter](https://github.com/HongikBookStore/toxic-filter)에 있다.
 
@@ -49,6 +50,7 @@
 | 프론트 e2e | `pnpm test:e2e` | 통과. 백엔드 없는 홈 화면 스모크 1개(Chromium). 처음 한 번 `pnpm --filter @hongbookstore/frontend exec playwright install chromium`이 필요하다 |
 
 - 커밋하면 pre-commit 훅이 스테이징한 프론트 파일에 oxlint `--fix`와 Prettier를 실행한다. 오류가 남으면 커밋을 막는다.
+- CI는 위 명령을 같은 순서로 실행한다. 린트만은 기준선 오류 때문에 전체가 아니라 PR에서 추가·수정한 JS·TS 파일만 검사한다.
 
 - 로컬 실행에는 MySQL·Redis와 `.env`가 필요하다. 필요한 키는 `README.md`의 환경 변수 절에 있다.
 - 실행하지 못한 검증은 성공으로 적지 않는다. 무엇을 왜 못 했는지 적는다.

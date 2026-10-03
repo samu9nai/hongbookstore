@@ -129,6 +129,19 @@ cd backend
 ./gradlew test
 ```
 
+### CI
+
+PR을 열거나 `main`에 push하면 [CI](./.github/workflows/ci.yml)가 아래 job을 실행한다. 모든 job이 통과해야 병합한다.
+
+| Job | 실행 내용 |
+| --- | --- |
+| 백엔드 테스트 | `./gradlew test` (JDK 21) |
+| 프론트엔드 검사 | `format:check`, `type-check`, 바뀐 파일 린트, `test:unit --run`, `build` |
+| 프론트엔드 e2e | Playwright Chromium. build + preview 서버에서 실행한다 |
+
+린트는 기존 오류가 남아 있어서 PR에서 추가·수정한 JS·TS 파일만 검사한다. pre-commit 훅과 같은 기준이다.
+기존 오류가 있는 파일을 고치면 그 파일의 오류도 함께 고쳐야 한다.
+
 문서만 바꿨더라도 링크, 명령, 코드 예시가 실제 저장소와 맞는지 확인한다.
 
 ## 7. 리뷰하고 병합하기
