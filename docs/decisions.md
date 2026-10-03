@@ -18,6 +18,8 @@
 | D-C | 2026-10-03 | 코드 수정보다 에이전트 협업 문서(AGENTS.md, docs/)를 먼저 준비한다 | Claude와 Codex가 같은 규칙·백로그·결정 기록을 보고 일하게 하기 위해서다 |
 | D-D | 2026-10-03 | 기존 React/Vite + Spring Boot 스택을 유지하고 단계적으로 고친다. 전면 재작성·프레임워크 교체를 하지 않는다 | Claude·Codex 분석 모두 결함의 원인을 빠진 검사와 갈라진 계약으로 보았고, 프레임워크의 한계는 찾지 못했다 |
 | D-E | 2026-10-03 | `main`에 직접 push하지 않고 브랜치와 PR로 합친다. 한 PR은 한 에이전트가 쓰고 다른 에이전트가 검토한다. 병합은 사용자가 한다 | 에이전트의 작업을 독립된 시각으로 검토받기 위해서다 |
+| D-06 | 2026-10-03 | 이 프로젝트의 목표는 포트폴리오용 정리다. 실제 서비스 재운영은 하지 않는다 | 사용자가 정했다. 배포 인프라보다 로컬 재현성·문서·CI를 우선한다 |
+| D-F | 2026-10-03 | 저장소를 `backend/`(Spring Boot), `frontend/`(React), `toxic-filter/`(유해 표현 검사 서비스) 레이아웃으로 바꾼다. toxic-filter는 별도 저장소에서 이 저장소로 옮긴다 | `server/`는 toxic-filter도 서버라서 뜻이 겹친다. `client/`는 `ToxicFilterClient`·OAuth2 client와 이름이 겹친다. NA-WA와 같은 구조라 도구 설정을 옮기기 쉽다 |
 
 ## 확인이 필요한 제안
 
@@ -32,5 +34,4 @@
 | D-03 | 인증 토큰을 어디에 저장하는가? | HttpOnly 쿠키(같은 사이트 구성과 CSRF 대책 필요) / localStorage 유지(access 토큰 수명 단축과 refresh 회전 필요) | SEC-06, SEC-07 |
 | D-04 | 유해 표현 검사를 할 수 없을 때 게시를 허용하는가? | 필드별로 정한다. 예: BLOCK 필드(채팅·장소 리뷰)는 거부, WARN 필드(판매글 본문)는 허용 | MOD-02 |
 | D-05 | toxic-filter 모델을 유지·재학습·교체할 것인가? | 평가 결과를 본 뒤 정한다. 평가에 필요한 아티팩트는 [Claude 검토 6절](reviews/2026-10-03-claude-review.md#6-toxic-filter-모델-판단-전에-확보할-것) 참고 | MOD-05 |
-| D-06 | 이 프로젝트의 목표는 무엇인가? | 실제 서비스 재운영 / 포트폴리오용 정리 | 배포 인프라, OPS 항목의 범위 |
 | D-07 | `/api/users/{userId}`의 수정(PUT)·삭제(DELETE) API를 어떻게 할 것인가? 본인 수정은 이미 `PATCH /api/my/profile`, 탈퇴는 `POST /api/my/deactivate`가 있다 | 관리자 전용으로 제한 / 제거 | SEC-01 (조회 응답에서 email·univEmail을 빼는 작업은 이 결정과 무관하게 진행한다. `UserProfile.jsx`가 이 조회 API를 공개 프로필로 쓴다) |

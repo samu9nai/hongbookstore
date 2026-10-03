@@ -6,5 +6,5 @@
   - `SECRET_MANAGER.md`: GCP Secret Manager 운영 가이드
 - `vercel/` — 프론트엔드(React + Vite) Vercel 설정 (`README.md`)
 
-백엔드 도커 관련 파일(`Dockerfile`, `.dockerignore`)은 repo root에 유지</br>
+백엔드 도커 관련 파일(`Dockerfile`, `.dockerignore`)은 `backend/`에 유지</br>
 실제 자격 증명은 `.env` 등 개인 파일에 보관, 버전 관리에서 제외되어 있으니 건드리지 않아도 됨.

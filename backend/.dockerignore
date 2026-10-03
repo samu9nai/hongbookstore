@@ -5,7 +5,6 @@
 .git
 .gitignore
 Dockerfile
-src/main/frontend
 *.iml
 target
 

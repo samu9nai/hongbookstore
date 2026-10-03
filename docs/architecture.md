@@ -22,7 +22,7 @@ Spring Boot 백엔드 (Cloud Run, 최대 인스턴스 1개)
 
 ## 백엔드 패키지
 
-루트는 `src/main/java/com/hongik/books`다.
+루트는 `backend/src/main/java/com/hongik/books`다.
 
 | 패키지 | 역할 |
 |---|---|
@@ -42,7 +42,7 @@ Spring Boot 백엔드 (Cloud Run, 최대 인스턴스 1개)
 
 ## 프론트엔드
 
-루트는 `src/main/frontend/src`다.
+루트는 `frontend/src`다.
 
 - 라우팅은 `App.jsx` 한 파일에 있다. 주요 화면은 `pages/` 아래 화면별 폴더에 있다.
 - API 호출은 `lib/api.js`의 axios 인스턴스, `api/` 폴더의 함수, 화면 안의 직접 `fetch`가 섞여 있다.
@@ -91,6 +91,6 @@ Spring Boot 백엔드 (Cloud Run, 최대 인스턴스 1개)
 
 ## 배포
 
-- 백엔드: `Dockerfile`로 이미지를 만들어 Cloud Run에 배포한다. 설정은 `deploy/cloudrun/`에 있다. 요청 제한 시간 60초, 최대 인스턴스 1개.
+- 백엔드: `backend/Dockerfile`로 이미지를 만들어 Cloud Run에 배포한다. 설정은 `deploy/cloudrun/`에 있다. 요청 제한 시간 60초, 최대 인스턴스 1개.
 - 프론트: Vercel. `vercel.json`이 `/api/*`를 Cloud Run 주소로 rewrite한다. `api/[...path].js` 서버리스 프록시도 함께 있다.
 - 스키마 마이그레이션 도구는 없다. 개발 프로필은 `ddl-auto: update`, 기본값은 `none`이다.
