@@ -40,6 +40,7 @@
 | SEC-10 | P1 | 대기 | 업로드 파일의 확장자와 Content-Type을 클라이언트 값 그대로 저장한다 | `common/util/GcpStorageUtil.java:45`, `common/util/LocalStorageUtil.java:38` | C-10 |
 | SEC-11 | P2 | 대기 | 외부 지도 API 프록시(`/api/naver/**`, `/api/directions/**`)를 로그인 없이 호출할 수 있어 API 쿼터를 소모시킬 수 있다 | `config/SecurityConfig.java` | C-11 |
 | SEC-12 | P2 | 대기 | 기본 프로필이 `dev`이고, dev 프로필은 actuator 엔드포인트를 모두 노출한다 | `src/main/resources/application.yml:5`, `:252` | C |
+| SEC-13 | P1 | 대기 | 프론트 의존성에 공개된 취약점(GHSA) 49건이 있다. axios 1.13.4(35건, 1.20.0에서 모두 수정), vite 7.2.4(5건, 7.3.5), postcss 8.5.6(4건, 8.5.23), next-auth 4.24.13(3건, 4.24.15), http-proxy-middleware 3.0.5(2건, 3.0.7). next-auth와 http-proxy-middleware는 쓰지 않는 의존성이다(FE-04). Renovate 보안 수정 PR로 고친다 | `frontend/package.json`, `pnpm-lock.yaml` | Renovate OSV 조회(#15) |
 
 ## 거래 정합성 (TXN)
 
