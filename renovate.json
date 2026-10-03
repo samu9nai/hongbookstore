@@ -1,6 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", "schedule:monthly", ":timezone(Asia/Seoul)"],
+  "minimumReleaseAge": "3 days",
+  "osvVulnerabilityAlerts": true,
+  "dependencyDashboardOSVVulnerabilitySummary": "unresolved",
   "packageRules": [
     {
       "description": "minor·patch 업데이트는 한 PR로 묶는다",
@@ -12,6 +15,24 @@
       "description": "major 업데이트는 Dependency Dashboard에서 승인한 것만 PR을 연다",
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "react-i18next 17은 peer로 i18next 26.2 이상을 요구한다",
+      "matchDepNames": ["i18next", "react-i18next"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "i18next major"
+    },
+    {
+      "description": "@vitejs/plugin-react 6은 peer로 vite 8을 요구한다",
+      "matchDepNames": ["vite", "@vitejs/plugin-react"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "vite major"
+    },
+    {
+      "description": "spring-cloud-gcp 8.x는 Spring Boot 4.0·4.1용이다",
+      "matchDepNames": ["org.springframework.boot", "com.google.cloud:spring-cloud-gcp-dependencies"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "spring boot major"
     }
   ]
 }
