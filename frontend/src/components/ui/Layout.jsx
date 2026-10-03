@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled from 'styled-components'
 
 // 공통 컨테이너
 export const Container = styled.div`
@@ -23,7 +23,7 @@ export const Container = styled.div`
   @media (max-width: 480px) {
     padding: 0 var(--space-4);
   }
-`;
+`
 
 // 페이지 컨테이너
 export const PageContainer = styled.div`
@@ -32,17 +32,17 @@ export const PageContainer = styled.div`
   padding-top: 96px;
   background: var(--background);
   min-height: 100vh;
-  
+
   @media (max-width: 900px) {
     padding-top: 72px;
     padding: 1rem;
   }
-  
+
   @media (max-width: 600px) {
     padding-top: 56px;
     padding: 0.5rem;
   }
-`;
+`
 
 // 폼 컨테이너
 export const FormContainer = styled.div`
@@ -56,12 +56,12 @@ export const FormContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  
+
   @media (max-width: 600px) {
     padding: 4rem 0.5rem 2rem;
     max-width: 98vw;
   }
-`;
+`
 
 // 그리드 레이아웃
 export const Grid = styled.div`
@@ -69,17 +69,17 @@ export const Grid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 20px;
   width: 100%;
-  
+
   @media (max-width: 900px) {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 12px;
   }
-  
+
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
     gap: 8px;
   }
-`;
+`
 
 // 플렉스 레이아웃
 export const Flex = styled.div`
@@ -89,13 +89,13 @@ export const Flex = styled.div`
   gap: ${props => props.gap || '0'};
   flex-direction: ${props => props.direction || 'row'};
   flex-wrap: ${props => props.wrap || 'nowrap'};
-`;
+`
 
 // 섹션
 export const Section = styled.section`
   margin-bottom: ${props => props.marginBottom || '2rem'};
   padding: ${props => props.padding || '0'};
-`;
+`
 
 // 헤더
 export const Header = styled.div`
@@ -103,13 +103,13 @@ export const Header = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 15px;
     align-items: stretch;
   }
-`;
+`
 
 // 뒤로가기 버튼
 export const BackButton = styled.button`
@@ -129,7 +129,7 @@ export const BackButton = styled.button`
   &:hover {
     background: #5a6268;
   }
-`;
+`
 
 // 제목
 export const Title = styled.h2`
@@ -138,17 +138,17 @@ export const Title = styled.h2`
   color: ${props => props.color || 'var(--text-primary)'};
   margin-bottom: ${props => props.marginBottom || '1rem'};
   text-align: ${props => props.align || 'left'};
-`;
+`
 
 // 빈 상태
 export const EmptyState = styled.div`
   text-align: center;
   padding: 60px 20px;
   color: #666;
-`;
+`
 
 export const EmptyIcon = styled.div`
   font-size: 4rem;
   color: #ddd;
   margin-bottom: 20px;
-`; 
+`

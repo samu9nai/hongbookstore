@@ -625,7 +625,7 @@
     "allCategories": "All Categories",
     "bookCondition": {
       "excellent": "Excellent",
-      "good": "Good", 
+      "good": "Good",
       "fair": "Fair"
     },
     "status": {
@@ -1335,4 +1335,4 @@
   "searchingBooks": "I'm looking for a book.",
   "flipPage": "I'm turning the page.",
   "noPermission": "You do not have permission."
-} 
+}

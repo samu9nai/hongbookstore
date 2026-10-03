@@ -266,7 +266,7 @@
     "allCategories": "전체 카테고리",
     "bookCondition": {
       "excellent": "상",
-      "good": "중", 
+      "good": "중",
       "fair": "하"
     },
     "status": {
@@ -553,7 +553,7 @@
     },
     "statusLabels": {
       "forSale": "판매중",
-      "reserved": "예약중", 
+      "reserved": "예약중",
       "soldOut": "판매완료"
     },
     "phone": {
@@ -1336,4 +1336,4 @@
   "searchingBooks": "책을 찾고 있어요.",
   "flipPage": "페이지를 넘기고 있어요.",
   "noPermission": "권한이 없습니다."
-} 
+}

@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components';
+import styled, { css } from 'styled-components'
 
 const cardVariants = {
   default: css`
@@ -27,7 +27,7 @@ const cardVariants = {
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: var(--shadow-lg);
   `
-};
+}
 
 const cardSizes = {
   sm: css`
@@ -46,7 +46,7 @@ const cardSizes = {
     padding: var(--space-10);
     border-radius: var(--radius-3xl);
   `
-};
+}
 
 const StyledCard = styled.div`
   position: relative;
@@ -60,29 +60,33 @@ const StyledCard = styled.div`
   ${props => cardSizes[props.$size] || cardSizes.md}
 
   /* Hover effects */
-  ${props => props.$hoverable && css`
-    cursor: pointer;
-    
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-lg);
-    }
-  `}
+  ${props =>
+    props.$hoverable &&
+    css`
+      cursor: pointer;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+      }
+    `}
 
   /* Interactive */
-  ${props => props.$interactive && css`
-    cursor: pointer;
-    transition: var(--transition-normal);
-    
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-    }
-    
-    &:active {
-      transform: translateY(0);
-    }
-  `}
+  ${props =>
+    props.$interactive &&
+    css`
+      cursor: pointer;
+      transition: var(--transition-normal);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    `}
 
   /* Focus styles */
   &:focus-visible {
@@ -91,22 +95,24 @@ const StyledCard = styled.div`
   }
 
   /* Loading state */
-  ${props => props.$loading && css`
-    position: relative;
-    overflow: hidden;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.2);
-      animation: shimmer 1.5s infinite;
-    }
-  `}
-`;
+  ${props =>
+    props.$loading &&
+    css`
+      position: relative;
+      overflow: hidden;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        animation: shimmer 1.5s infinite;
+      }
+    `}
+`
 
 const CardHeader = styled.div`
   margin-bottom: var(--space-4);
@@ -125,12 +131,12 @@ const CardHeader = styled.div`
     color: var(--text-secondary);
     font-size: 0.875rem;
   }
-`;
+`
 
 const CardContent = styled.div`
   color: var(--text-primary);
   line-height: 1.6;
-`;
+`
 
 const CardFooter = styled.div`
   margin-top: var(--space-4);
@@ -145,7 +151,7 @@ const CardFooter = styled.div`
     flex-direction: column;
     align-items: stretch;
   }
-`;
+`
 
 const CardImage = styled.div`
   width: 100%;
@@ -162,11 +168,13 @@ const CardImage = styled.div`
     object-fit: cover;
   }
 
-  ${props => props.$aspectRatio && css`
-    aspect-ratio: ${props.$aspectRatio};
-    height: auto;
-  `}
-`;
+  ${props =>
+    props.$aspectRatio &&
+    css`
+      aspect-ratio: ${props.$aspectRatio};
+      height: auto;
+    `}
+`
 
 const CardBadge = styled.span`
   display: inline-flex;
@@ -181,16 +189,16 @@ const CardBadge = styled.span`
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.025em;
-`;
+`
 
-const Card = ({ 
-  children, 
-  variant = 'default', 
-  size = 'md', 
-  hoverable = false, 
+const Card = ({
+  children,
+  variant = 'default',
+  size = 'md',
+  hoverable = false,
   interactive = false,
   loading = false,
-  ...props 
+  ...props
 }) => {
   return (
     <StyledCard
@@ -199,17 +207,16 @@ const Card = ({
       $hoverable={hoverable}
       $interactive={interactive}
       $loading={loading}
-      {...props}
-    >
+      {...props}>
       {children}
     </StyledCard>
-  );
-};
+  )
+}
 
-Card.Header = CardHeader;
-Card.Content = CardContent;
-Card.Footer = CardFooter;
-Card.Image = CardImage;
-Card.Badge = CardBadge;
+Card.Header = CardHeader
+Card.Content = CardContent
+Card.Footer = CardFooter
+Card.Image = CardImage
+Card.Badge = CardBadge
 
-export default Card; 
+export default Card

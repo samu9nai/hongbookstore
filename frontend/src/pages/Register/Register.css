@@ -82,7 +82,7 @@
   background: #c7e6ff;
 }
 
-.register-form button[type="submit"] {
+.register-form button[type='submit'] {
   margin-top: 10px;
   background: #007bff;
   color: white;
@@ -94,7 +94,7 @@
   transition: background 0.2s;
 }
 
-.register-form button[type="submit"]:hover {
+.register-form button[type='submit']:hover {
   background: #0056b3;
 }
 
@@ -144,11 +144,11 @@
   padding: 0 10px;
   box-sizing: border-box;
 }
-.input-group.email-group input[name="emailId"] {
+.input-group.email-group input[name='emailId'] {
   width: 120px;
 }
 .input-group.email-group select,
-.input-group.email-group input[name="customDomain"] {
+.input-group.email-group input[name='customDomain'] {
   width: 120px;
 }
 .input-group.email-group span {
@@ -174,4 +174,4 @@
 }
 .input-group.email-group button:hover {
   background: #e0e7ff;
-} 
+}

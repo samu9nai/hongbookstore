@@ -19,7 +19,7 @@
 
 ## 다음 작업 순서 (제안)
 
-1. **FE-04 + OPS-04**: 미사용 의존성을 지우고 최소 CI(`./gradlew test`, `npm run build`)를 만든다.
+1. **FE-04 + OPS-04**: 미사용 의존성을 지우고 최소 CI(`./gradlew test`, `pnpm build`)를 만든다.
 2. **SEC-01, SEC-02, SEC-04의 REST 부분**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
 3. **SEC-04의 STOMP 부분, SEC-03, SEC-05, SEC-09**: 실시간 채널 인증과 남은 인증 경로를 막는다.
 4. **SEC-06, SEC-07**: 토큰 구조를 다시 설계한다. D-03 결정이 필요하다.
@@ -72,7 +72,9 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | FE-04 | P1 | 대기 | 쓰지 않는 의존성: `next-auth`(→`next`), `http-proxy-middleware`, `dotenv`, `zod`, `@tanstack/react-query`, `react-kakao-maps-sdk`. `npm audit`의 critical 2건이 모두 `next-auth` 경로다 | `src/main/frontend/package.json` | C, H-05 |
 | FE-05 | P2 | 대기 | 유지보수가 끝난 `stompjs` 2.3.3을 쓰고, 연결할 때 인증 헤더를 보내지 않는다 | `pages/Chat/ChatRoom.jsx:9`, `:1010` | C |
 | FE-06 | P2 | 대기 | 2,000줄이 넘는 화면 컴포넌트(PostWrite, ChatRoom)와 1 MB 단일 번들. 라우트 단위 코드 분할이 없다 | `pages/PostWrite`, `pages/Chat`, `App.jsx` | C, H-05 |
-| FE-07 | P3 | 대기 | CRA 잔재(`App.test.js`, `setupTests.js`, `reportWebVitals.js`)가 남아 있고 테스트 러너가 없다 | `src/main/frontend/src` | C, H-07 |
+| FE-07 | P3 | 대기 | CRA 잔재(`App.test.js`, `setupTests.js`, `reportWebVitals.js`)가 남아 있다. 테스트 러너는 Vitest로 들였고, Vitest는 `*.test.{ts,tsx}`만 실행한다 | `src/main/frontend/src` | C, H-07 |
+| FE-08 | P3 | 대기 | Vite+(`vp`)로 옮길지 검토한다. 지금 쓰는 Vite·Vitest·oxlint·tsgolint가 Vite+에 들어 있어 `vp migrate`로 옮길 수 있다. oxfmt 1.0과 Vite+ 안정화 이후에 판단한다 | `frontend/` | D-H |
+| FE-09 | P3 | 대기 | `i18next` 25·`react-i18next` 16의 선택적 peer가 TypeScript `^5`라 TS 7과 맞지 않는다. 26·17부터 `^7`을 지원한다(major 업데이트) | `frontend/package.json` | D-H |
 
 ## 백엔드·운영 (BE, OPS)
 
@@ -87,3 +89,4 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | OPS-05 | P2 | 대기 | WebClient 하나를 위해 webflux 전체를 쓴다. macOS 전용 netty 의존성이 운영 빌드에 들어간다. `RestTemplate`에 제한 시간이 없다 | `build.gradle`, `config/RestTemplateConfig.java` | C |
 | OPS-06 | P3 | 대기 | Vercel `rewrite`와 서버리스 프록시가 함께 있고, 프록시가 보내는 `x-edge-key`를 백엔드가 검증하지 않는다. Cloud Run 주소가 하드코딩돼 있다 | `src/main/frontend/vercel.json`, `src/main/frontend/api/[...path].js`, `application.yml:201` | C |
 | OPS-07 | P3 | 대기 | 코드 위생: `DepartmentNormalizer` 중복, `weather/utill` 오타, `catch (Exception …)` 44곳, 작업 지시용 주석 | 여러 곳 | C |
+| OPS-08 | P2 | 대기 | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다 | `backend/build.gradle.kts` | |

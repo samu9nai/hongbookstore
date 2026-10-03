@@ -1,13 +1,19 @@
 {
-  "name": "frontend",
+  "name": "@hongbookstore/frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
+    "lint": "oxlint --type-aware --max-warnings=0",
+    "lint:fix": "oxlint --type-aware --fix --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:unit": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
@@ -31,21 +37,18 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.19.1",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.24",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.26",
-    "globals": "^16.5.0",
-    "jest": "^30.2.0",
+    "oxlint": "^1.86.0",
+    "oxlint-tsgolint": "^7.0.2003",
     "postcss": "^8.5.6",
-    "prettier": "^3.7.1",
-    "vite": "^7.2.4"
+    "prettier": "^3.9.9",
+    "typescript": "~7.0.2",
+    "vite": "^7.2.4",
+    "vitest": "^5.0.3"
   }
 }

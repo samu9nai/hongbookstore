@@ -144,10 +144,9 @@ VITE_NAVER_MAP_CLIENT_SECRET=
 1. `cd backend`
 2. `./gradlew bootRun`
 
-**Frontend**
-1. `cd frontend`
-2. `npm install`
-3. `npm run dev`
+**Frontend** (Node 24.21.0, pnpm 12.8.1. `corepack enable pnpm` 후 저장소 루트에서 실행)
+1. `pnpm install`
+2. `pnpm dev`
 
 ### Docker
 1. `docker build -t hongbookstore backend`
@@ -160,4 +159,5 @@ VITE_NAVER_MAP_CLIENT_SECRET=
 
 ### 테스트/품질
 - Backend 테스트: `cd backend && ./gradlew test`
-- Frontend 린트: `cd frontend && npm run lint`
+- Frontend 타입 검사·린트·서식: `pnpm type-check`, `pnpm lint`, `pnpm format:check`
+- Frontend 테스트: `pnpm test:unit --run`, `pnpm test:e2e`

@@ -1,0 +1,16 @@
+packages:
+  - frontend
+
+# pnpm은 허용한 패키지의 설치 스크립트만 실행한다.
+allowBuilds:
+  # Vite가 쓰는 esbuild 바이너리를 설치 시점에 검증한다.
+  esbuild: true
+  # stompjs → websocket의 선택적 네이티브 애드온이다. 브라우저 빌드는 쓰지 않는다.
+  bufferutil: false
+  utf-8-validate: false
+  # 설치 후 안내 메시지만 출력한다.
+  es5-ext: false
+  # .env의 VERCEL_ANALYTICS_ID 설정 여부를 안내하는 메시지만 출력한다.
+  '@vercel/speed-insights': false
+  # 쓰지 않는 next-auth → next의 이미지 최적화용 네이티브 모듈이다 (FE-04).
+  sharp: false

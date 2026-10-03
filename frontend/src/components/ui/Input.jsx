@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components';
+import styled, { css } from 'styled-components'
 
 const inputVariants = {
   default: css`
@@ -60,7 +60,7 @@ const inputVariants = {
       box-shadow: 0 0 0 3px var(--primary-100);
     }
   `
-};
+}
 
 const inputSizes = {
   sm: css`
@@ -87,14 +87,14 @@ const inputSizes = {
     border-radius: var(--radius-2xl);
     height: 60px;
   `
-};
+}
 
 const InputWrapper = styled.div`
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
-`;
+`
 
 const StyledInput = styled.input`
   width: 100%;
@@ -117,33 +117,41 @@ const StyledInput = styled.input`
   }
 
   /* Error state */
-  ${props => props.$error && css`
-    border-color: var(--error);
-    
-    &:focus {
+  ${props =>
+    props.$error &&
+    css`
       border-color: var(--error);
-      box-shadow: 0 0 0 3px var(--error-100);
-    }
-  `}
+
+      &:focus {
+        border-color: var(--error);
+        box-shadow: 0 0 0 3px var(--error-100);
+      }
+    `}
 
   /* Success state */
-  ${props => props.$success && css`
-    border-color: var(--success);
-    
-    &:focus {
+  ${props =>
+    props.$success &&
+    css`
       border-color: var(--success);
-      box-shadow: 0 0 0 3px var(--success-100);
-    }
-  `}
+
+      &:focus {
+        border-color: var(--success);
+        box-shadow: 0 0 0 3px var(--success-100);
+      }
+    `}
 
   /* With icon */
-  ${props => props.$hasLeftIcon && css`
-    padding-left: calc(var(--space-4) + 20px);
-  `}
+  ${props =>
+    props.$hasLeftIcon &&
+    css`
+      padding-left: calc(var(--space-4) + 20px);
+    `}
 
-  ${props => props.$hasRightIcon && css`
-    padding-right: calc(var(--space-4) + 20px);
-  `}
+  ${props =>
+    props.$hasRightIcon &&
+    css`
+      padding-right: calc(var(--space-4) + 20px);
+    `}
 
   /* Placeholder styles */
   &::placeholder {
@@ -162,7 +170,7 @@ const StyledInput = styled.input`
     -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset;
     -webkit-text-fill-color: var(--text-primary);
   }
-`;
+`
 
 const InputIcon = styled.div`
   position: absolute;
@@ -174,13 +182,17 @@ const InputIcon = styled.div`
   pointer-events: none;
   z-index: 1;
 
-  ${props => props.$position === 'left' && css`
-    left: var(--space-3);
-  `}
+  ${props =>
+    props.$position === 'left' &&
+    css`
+      left: var(--space-3);
+    `}
 
-  ${props => props.$position === 'right' && css`
-    right: var(--space-3);
-  `}
+  ${props =>
+    props.$position === 'right' &&
+    css`
+      right: var(--space-3);
+    `}
 
   svg {
     width: 20px;
@@ -198,7 +210,7 @@ const InputIcon = styled.div`
   ${StyledInput}[data-success="true"] + & {
     color: var(--success);
   }
-`;
+`
 
 const InputLabel = styled.label`
   display: block;
@@ -208,13 +220,15 @@ const InputLabel = styled.label`
   margin-bottom: var(--space-2);
   transition: var(--transition-normal);
 
-  ${props => props.$required && css`
-    &::after {
-      content: ' *';
-      color: var(--error);
-    }
-  `}
-`;
+  ${props =>
+    props.$required &&
+    css`
+      &::after {
+        content: ' *';
+        color: var(--error);
+      }
+    `}
+`
 
 const InputError = styled.div`
   display: flex;
@@ -230,14 +244,14 @@ const InputError = styled.div`
     height: 16px;
     flex-shrink: 0;
   }
-`;
+`
 
 const InputHint = styled.div`
   color: var(--text-tertiary);
   font-size: 0.875rem;
   margin-top: var(--space-2);
   line-height: 1.4;
-`;
+`
 
 const InputGroup = styled.div`
   display: flex;
@@ -245,20 +259,20 @@ const InputGroup = styled.div`
 
   ${StyledInput} {
     border-radius: 0;
-    
+
     &:first-child {
       border-top-left-radius: var(--radius-lg);
       border-bottom-left-radius: var(--radius-lg);
     }
-    
+
     &:last-child {
       border-top-right-radius: var(--radius-lg);
       border-bottom-right-radius: var(--radius-lg);
     }
   }
-`;
+`
 
-const Input = ({ 
+const Input = ({
   label,
   error,
   success,
@@ -269,19 +283,15 @@ const Input = ({
   size = 'md',
   required = false,
   fullWidth = true,
-  ...props 
+  ...props
 }) => {
-  const hasLeftIcon = !!leftIcon;
-  const hasRightIcon = !!rightIcon;
+  const hasLeftIcon = !!leftIcon
+  const hasRightIcon = !!rightIcon
 
   return (
     <div style={{ width: fullWidth ? '100%' : 'auto' }}>
-      {label && (
-        <InputLabel $required={required}>
-          {label}
-        </InputLabel>
-      )}
-      
+      {label && <InputLabel $required={required}>{label}</InputLabel>}
+
       <InputWrapper>
         <StyledInput
           $variant={variant}
@@ -294,36 +304,28 @@ const Input = ({
           data-success={!!success}
           {...props}
         />
-        
-        {leftIcon && (
-          <InputIcon $position="left">
-            {leftIcon}
-          </InputIcon>
-        )}
-        
-        {rightIcon && (
-          <InputIcon $position="right">
-            {rightIcon}
-          </InputIcon>
-        )}
+
+        {leftIcon && <InputIcon $position="left">{leftIcon}</InputIcon>}
+
+        {rightIcon && <InputIcon $position="right">{rightIcon}</InputIcon>}
       </InputWrapper>
-      
+
       {error && (
         <InputError>
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
           </svg>
           {error}
         </InputError>
       )}
-      
-      {hint && !error && (
-        <InputHint>{hint}</InputHint>
-      )}
+
+      {hint && !error && <InputHint>{hint}</InputHint>}
     </div>
-  );
-};
+  )
+}
 
-Input.Group = InputGroup;
+Input.Group = InputGroup
 
-export default Input; 
+export default Input

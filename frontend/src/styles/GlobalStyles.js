@@ -1,4 +1,4 @@
-import { createGlobalStyle } from 'styled-components';
+import { createGlobalStyle } from 'styled-components'
 
 const GlobalStyles = createGlobalStyle`
   :root {
@@ -723,6 +723,6 @@ const GlobalStyles = createGlobalStyle`
     .2xl\\:contents { display: contents !important; }
     .2xl\\:hidden { display: none !important; }
   }
-`;
+`
 
-export default GlobalStyles; 
+export default GlobalStyles

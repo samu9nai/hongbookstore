@@ -1,11 +1,17 @@
-import styled, { keyframes } from 'styled-components';
-import { useTranslation } from 'react-i18next';
-import { FaGithub, FaTwitter, FaInstagram, FaLinkedin, FaHeart } from 'react-icons/fa';
+import styled, { keyframes } from 'styled-components'
+import { useTranslation } from 'react-i18next'
+import {
+  FaGithub,
+  FaTwitter,
+  FaInstagram,
+  FaLinkedin,
+  FaHeart
+} from 'react-icons/fa'
 
 const float = keyframes`
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-10px) rotate(5deg); }
-`;
+`
 
 const fadeInUp = keyframes`
   from {
@@ -16,18 +22,18 @@ const fadeInUp = keyframes`
     opacity: 1;
     transform: translateY(0);
   }
-`;
+`
 
 const pulse = keyframes`
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
-`;
+`
 
 const gradientShift = keyframes`
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
-`;
+`
 
 const FooterContainer = styled.footer`
   width: 100%;
@@ -40,12 +46,12 @@ const FooterContainer = styled.footer`
   right: 0;
   bottom: 0;
   z-index: var(--z-fixed);
-  box-shadow: 0 -1px 8px 0 rgba(0,0,0,0.04);
+  box-shadow: 0 -1px 8px 0 rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-`;
+`
 
 const FloatingElement = styled.div`
   position: absolute;
@@ -77,7 +83,7 @@ const FloatingElement = styled.div`
     width: 30px;
     height: 30px;
   }
-`;
+`
 
 const FooterContent = styled.div`
   max-width: 1440px;
@@ -105,10 +111,11 @@ const FooterContent = styled.div`
     grid-template-columns: 1fr;
     gap: var(--space-12);
   }
-`;
+`
 
 const FooterSection = styled.div`
-  animation: ${fadeInUp} 0.6s ease-out ${props => props.$delay || '0s'} backwards;
+  animation: ${fadeInUp} 0.6s ease-out ${props => props.$delay || '0s'}
+    backwards;
 
   h3 {
     font-size: clamp(1.5rem, 2.5vw, 1.75rem);
@@ -142,8 +149,7 @@ const FooterSection = styled.div`
   li {
     margin-bottom: var(--space-5);
   }
-`;
-
+`
 
 const SocialLinks = styled.div`
   display: flex;
@@ -153,7 +159,7 @@ const SocialLinks = styled.div`
   @media (max-width: 768px) {
     gap: var(--space-4);
   }
-`;
+`
 
 const SocialLink = styled.a`
   display: flex;
@@ -167,13 +173,13 @@ const SocialLink = styled.a`
   text-decoration: none;
   transition: var(--transition-normal);
   box-shadow: var(--shadow-sm);
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
     background: var(--primary-dark);
   }
-`;
+`
 
 const ContactInfo = styled.div`
   margin-top: var(--space-6);
@@ -192,7 +198,7 @@ const ContactInfo = styled.div`
     color: white;
     font-weight: 600;
   }
-`;
+`
 
 const FooterBottom = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -200,15 +206,14 @@ const FooterBottom = styled.div`
   text-align: center;
   position: relative;
   z-index: 1;
-`;
+`
 
 const Copyright = styled.p`
   color: var(--gray-400);
   font-size: 0.8rem;
   margin: 0;
   text-align: center;
-`;
-
+`
 
 const NewsletterSection = styled.div`
   background: rgba(255, 255, 255, 0.05);
@@ -230,7 +235,7 @@ const NewsletterSection = styled.div`
     margin-bottom: var(--space-4);
     line-height: 1.6;
   }
-`;
+`
 
 const NewsletterForm = styled.form`
   display: flex;
@@ -239,7 +244,7 @@ const NewsletterForm = styled.form`
   @media (max-width: 768px) {
     flex-direction: column;
   }
-`;
+`
 
 const NewsletterInput = styled.input`
   flex: 1;
@@ -260,7 +265,7 @@ const NewsletterInput = styled.input`
     border-color: var(--primary);
     background: rgba(255, 255, 255, 0.15);
   }
-`;
+`
 
 const NewsletterButton = styled.button`
   padding: var(--space-3) var(--space-6);
@@ -278,16 +283,18 @@ const NewsletterButton = styled.button`
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
   }
-`;
+`
 
 const Footer = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <FooterContainer>
-      <Copyright>© {t('title')}. {t('allRightsReserved')}</Copyright>
+      <Copyright>
+        © {t('title')}. {t('allRightsReserved')}
+      </Copyright>
     </FooterContainer>
-  );
-};
+  )
+}
 
-export default Footer;
+export default Footer

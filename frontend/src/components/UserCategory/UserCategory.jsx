@@ -1,51 +1,56 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { FaPlus, FaTrash, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
-import { IoMdClose } from 'react-icons/io';
-import { useTranslation } from 'react-i18next';
+import React, { useState } from 'react'
+import styled from 'styled-components'
+import { FaPlus, FaTrash, FaEdit, FaCheck, FaTimes } from 'react-icons/fa'
+import { IoMdClose } from 'react-icons/io'
+import { useTranslation } from 'react-i18next'
 
-const UserCategory = ({ categories, onAddCategory, onDeleteCategory, onUpdateCategory }) => {
-  const { t } = useTranslation();
-  const [editingId, setEditingId] = useState(null);
-  const [editName, setEditName] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
+const UserCategory = ({
+  categories,
+  onAddCategory,
+  onDeleteCategory,
+  onUpdateCategory
+}) => {
+  const { t } = useTranslation()
+  const [editingId, setEditingId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
 
   const handleAddCategory = () => {
     if (newCategoryName.trim()) {
-      onAddCategory(newCategoryName.trim());
-      setNewCategoryName('');
-      setShowAddModal(false);
+      onAddCategory(newCategoryName.trim())
+      setNewCategoryName('')
+      setShowAddModal(false)
     }
-  };
+  }
 
-  const handleStartEdit = (category) => {
-    setEditingId(category.id);
-    setEditName(category.name);
-  };
+  const handleStartEdit = category => {
+    setEditingId(category.id)
+    setEditName(category.name)
+  }
 
   const handleSaveEdit = () => {
     if (editName.trim()) {
-      onUpdateCategory(editingId, editName.trim());
-      setEditingId(null);
-      setEditName('');
+      onUpdateCategory(editingId, editName.trim())
+      setEditingId(null)
+      setEditName('')
     }
-  };
+  }
 
   const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditName('');
-  };
+    setEditingId(null)
+    setEditName('')
+  }
 
   const openAddModal = () => {
-    setShowAddModal(true);
-    setNewCategoryName('');
-  };
+    setShowAddModal(true)
+    setNewCategoryName('')
+  }
 
   const closeAddModal = () => {
-    setShowAddModal(false);
-    setNewCategoryName('');
-  };
+    setShowAddModal(false)
+    setNewCategoryName('')
+  }
 
   return (
     <CategoryContainer>
@@ -57,15 +62,15 @@ const UserCategory = ({ categories, onAddCategory, onDeleteCategory, onUpdateCat
       </CategoryHeader>
 
       <CategoryList>
-        {categories.map((category) => (
+        {categories.map(category => (
           <CategoryItem key={category.id}>
             {editingId === category.id ? (
               <EditForm>
                 <EditInput
                   type="text"
                   value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                  onChange={e => setEditName(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && handleSaveEdit()}
                 />
                 <EditButton onClick={handleSaveEdit}>
                   <FaCheck />
@@ -106,15 +111,17 @@ const UserCategory = ({ categories, onAddCategory, onDeleteCategory, onUpdateCat
                 type="text"
                 placeholder={t('map.enterCategoryName')}
                 value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+                onChange={e => setNewCategoryName(e.target.value)}
+                onKeyPress={e => e.key === 'Enter' && handleAddCategory()}
                 autoFocus
               />
               <ButtonGroup>
                 <CancelModalButton onClick={closeAddModal}>
                   {t('common.cancel')}
                 </CancelModalButton>
-                <AddModalButton onClick={handleAddCategory} disabled={!newCategoryName.trim()}>
+                <AddModalButton
+                  onClick={handleAddCategory}
+                  disabled={!newCategoryName.trim()}>
                   {t('map.add')}
                 </AddModalButton>
               </ButtonGroup>
@@ -123,23 +130,23 @@ const UserCategory = ({ categories, onAddCategory, onDeleteCategory, onUpdateCat
         </Modal>
       )}
     </CategoryContainer>
-  );
-};
+  )
+}
 
 const CategoryContainer = styled.div`
   margin-bottom: 20px;
-`;
+`
 
 const CategoryHeader = styled.div`
   margin-bottom: 15px;
-  
+
   h3 {
     margin: 0 0 10px 0;
     font-size: 16px;
     font-weight: 600;
     color: #333;
   }
-`;
+`
 
 const AddCategoryButton = styled.button`
   display: flex;
@@ -154,17 +161,17 @@ const AddCategoryButton = styled.button`
   font-size: 14px;
   font-weight: 500;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background: #0056b3;
   }
-`;
+`
 
 const CategoryList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-`;
+`
 
 const CategoryItem = styled.div`
   display: flex;
@@ -174,25 +181,25 @@ const CategoryItem = styled.div`
   background: #f8f9fa;
   border-radius: 6px;
   border: 1px solid #e9ecef;
-`;
+`
 
 const CategoryName = styled.span`
   font-size: 14px;
   color: #333;
   flex: 1;
-`;
+`
 
 const CategoryActions = styled.div`
   display: flex;
   gap: 4px;
-`;
+`
 
 const EditForm = styled.div`
   display: flex;
   align-items: center;
   gap: 4px;
   flex: 1;
-`;
+`
 
 const EditInput = styled.input`
   flex: 1;
@@ -200,12 +207,12 @@ const EditInput = styled.input`
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  
+
   &:focus {
     outline: none;
     border-color: #007bff;
   }
-`;
+`
 
 const EditButton = styled.button`
   padding: 6px 8px;
@@ -218,11 +225,11 @@ const EditButton = styled.button`
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  
+
   &:hover {
     background: #218838;
   }
-`;
+`
 
 const CancelButton = styled.button`
   padding: 6px 8px;
@@ -235,11 +242,11 @@ const CancelButton = styled.button`
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  
+
   &:hover {
     background: #5a6268;
   }
-`;
+`
 
 const DeleteButton = styled.button`
   padding: 6px 8px;
@@ -252,11 +259,11 @@ const DeleteButton = styled.button`
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  
+
   &:hover {
     background: #c82333;
   }
-`;
+`
 
 // 모달 스타일
 const Modal = styled.div`
@@ -270,7 +277,7 @@ const Modal = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 2000;
-`;
+`
 
 const ModalContent = styled.div`
   background: white;
@@ -279,7 +286,7 @@ const ModalContent = styled.div`
   width: 400px;
   max-width: 90%;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-`;
+`
 
 const ModalHeader = styled.div`
   display: flex;
@@ -288,14 +295,14 @@ const ModalHeader = styled.div`
   border-bottom: 1px solid #eee;
   padding-bottom: 16px;
   margin-bottom: 24px;
-  
+
   h3 {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
     color: #333;
   }
-`;
+`
 
 const CloseButton = styled.button`
   background: none;
@@ -304,17 +311,17 @@ const CloseButton = styled.button`
   color: #666;
   cursor: pointer;
   padding: 4px;
-  
+
   &:hover {
     color: #333;
   }
-`;
+`
 
 const ModalBody = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
-`;
+`
 
 const Input = styled.input`
   width: 100%;
@@ -323,19 +330,19 @@ const Input = styled.input`
   border-radius: 8px;
   box-sizing: border-box;
   font-size: 14px;
-  
+
   &:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
   }
-`;
+`
 
 const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-`;
+`
 
 const CancelModalButton = styled.button`
   padding: 10px 20px;
@@ -346,11 +353,11 @@ const CancelModalButton = styled.button`
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  
+
   &:hover {
     background: #5a6268;
   }
-`;
+`
 
 const AddModalButton = styled.button`
   padding: 10px 20px;
@@ -361,15 +368,15 @@ const AddModalButton = styled.button`
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  
+
   &:hover:not(:disabled) {
     background: #0056b3;
   }
-  
+
   &:disabled {
     background: #ccc;
     cursor: not-allowed;
   }
-`;
+`
 
-export default UserCategory; 
+export default UserCategory
