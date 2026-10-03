@@ -68,15 +68,15 @@ HongBookStore는 **홍익대학교 학생 전용 중고 교재 거래 및 정보
 
 ### 프로젝트 구조
 ```
-src/main/java/com/hongik/books   # Spring Boot 백엔드
-src/main/resources              # application.yml, 템플릿, GCP 키(개발용)
-src/main/frontend               # React + Vite 프론트엔드
-deploy                          # 배포 스크립트/가이드 (Cloud Run, Vercel)
-Dockerfile                      # 백엔드 컨테이너 빌드
+backend/src/main/java/com/hongik/books   # Spring Boot 백엔드
+backend/src/main/resources              # application.yml, 템플릿, GCP 키(개발용)
+backend/Dockerfile                      # 백엔드 컨테이너 빌드
+frontend                                # React + Vite 프론트엔드
+deploy                                  # 배포 스크립트/가이드 (Cloud Run, Vercel)
 ```
 
 ### 환경 변수
-**백엔드 (.env, repo root)**  
+**백엔드 (backend/.env)**  
 `application.yml`이 `.env`를 자동으로 읽습니다.
 ```bash
 # DB
@@ -130,7 +130,7 @@ MANAGEMENT_PORT=8080
 TOXIC_FILTER_API_KEY=
 ```
 
-**프론트엔드 (src/main/frontend/.env)**  
+**프론트엔드 (frontend/.env)**  
 ```bash
 VITE_API_BASE=http://localhost:8080/api
 VITE_BACKEND_ORIGIN=http://localhost:8080
@@ -141,22 +141,23 @@ VITE_NAVER_MAP_CLIENT_SECRET=
 
 ### 로컬 실행
 **Backend**
-1. `./gradlew bootRun`
+1. `cd backend`
+2. `./gradlew bootRun`
 
 **Frontend**
-1. `cd src/main/frontend`
+1. `cd frontend`
 2. `npm install`
 3. `npm run dev`
 
 ### Docker
-1. `docker build -t hongbookstore .`
-2. `docker run --env-file .env -p 8080:8080 hongbookstore`
+1. `docker build -t hongbookstore backend`
+2. `docker run --env-file backend/.env -p 8080:8080 hongbookstore`
 
 ### 배포
 - 백엔드: `deploy/cloudrun/README.md`
 - 프론트엔드: `deploy/vercel/README.md`
-- 프록시/리라이트: `src/main/frontend/vercel.json`
+- 프록시/리라이트: `frontend/vercel.json`
 
 ### 테스트/품질
-- Backend 테스트: `./gradlew test`
-- Frontend 린트: `cd src/main/frontend && npm run lint`
+- Backend 테스트: `cd backend && ./gradlew test`
+- Frontend 린트: `cd frontend && npm run lint`

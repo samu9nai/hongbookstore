@@ -65,7 +65,7 @@ IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${SERVICE_NAME}:${TAG}
 
 echo "[build] Submitting image: ${IMAGE_URI}"
 SUBMIT_OUTPUT=$(mktemp)
-if ! gcloud builds submit --project "${PROJECT_ID}" --tag "${IMAGE_URI}" . --async >"${SUBMIT_OUTPUT}" 2>&1; then
+if ! gcloud builds submit --project "${PROJECT_ID}" --tag "${IMAGE_URI}" backend --async >"${SUBMIT_OUTPUT}" 2>&1; then
   cat "${SUBMIT_OUTPUT}" >&2
   rm -f "${SUBMIT_OUTPUT}"
   echo "[error] Failed to submit Cloud Build." >&2

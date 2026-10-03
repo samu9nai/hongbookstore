@@ -22,10 +22,10 @@
 
 | 경로 | 내용 |
 |---|---|
-| `src/main/java/com/hongik/books` | Spring Boot 백엔드 (Java 21, Boot 3.5) |
-| `src/main/resources/application.yml` | 백엔드 설정. 비밀값은 `.env`(커밋 금지)에서 읽는다 |
-| `src/test` | 백엔드 테스트. `test` 프로필은 H2를 쓴다 |
-| `src/main/frontend` | React 19 + Vite 7 프론트엔드 (JavaScript/JSX) |
+| `backend/src/main/java/com/hongik/books` | Spring Boot 백엔드 (Java 21, Boot 3.5) |
+| `backend/src/main/resources/application.yml` | 백엔드 설정. 비밀값은 `backend/.env`(커밋 금지)에서 읽는다 |
+| `backend/src/test` | 백엔드 테스트. `test` 프로필은 H2를 쓴다 |
+| `frontend` | React 19 + Vite 7 프론트엔드 (JavaScript/JSX) |
 | `deploy/` | Cloud Run·Vercel 배포 스크립트와 가이드 |
 | `.github/workflows-disabled/` | 비활성 배포 workflow. 활성 CI는 아직 없다 |
 
@@ -37,8 +37,8 @@
 
 | 영역 | 명령 | 현재 기준선 (2026-10-03) |
 |---|---|---|
-| 백엔드 컴파일·테스트 | `./gradlew test` | 통과. 테스트는 `contextLoads` 1개뿐이다 |
-| 프론트 설치 | `cd src/main/frontend && npm ci` | Node `^20.19.0` 또는 `>=22.12.0` 필요 |
+| 백엔드 컴파일·테스트 | `cd backend && ./gradlew test` | 통과. 테스트는 `contextLoads` 1개뿐이다 |
+| 프론트 설치 | `cd frontend && npm ci` | Node `^20.19.0` 또는 `>=22.12.0` 필요 |
 | 프론트 빌드 | `npm run build` | 통과. 메인 JS 청크 약 1,048 kB |
 | 프론트 린트 | `npm run lint` | **오류 227개, 경고 24개.** 바꾼 파일에서 새 오류를 늘리지 않는다 |
 | 프론트 테스트 | 없음 | 테스트 러너가 설정되지 않았다 |

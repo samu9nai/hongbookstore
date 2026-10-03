@@ -3,7 +3,7 @@ React + Vite 프런트엔드를 Vercel에 배포하는 과정을 정리
 
 ## 프로젝트 설정
 1. Git 저장소를 Vercel 프로젝트로 연결
-2. **Root Directory**는 `src/main/frontend`로 지정
+2. **Root Directory**는 `frontend`로 지정
 3. 프레임워크는 기본 Vite 프리셋(또는 Other)을 사용
 4. Build command: `npm run build`
 5. Output directory: `dist`
@@ -19,7 +19,7 @@ React + Vite 프런트엔드를 Vercel에 배포하는 과정을 정리
 운영/스테이징 값을 각각 등록해 두면 롤백이나 프리뷰 환경을 쉽게 분리 가능
 
 ## 프록시 동작
-- `src/main/frontend/api/[...path].js`는 모든 `/api/*` 요청을 `BACKEND_ORIGIN`으로 그대로 전달
+- `frontend/api/[...path].js`는 모든 `/api/*` 요청을 `BACKEND_ORIGIN`으로 그대로 전달
 - Authorization, Cookie 등 모든 헤더를 유지
 - `EDGE_SHARED_SECRET`이 설정돼 있으면 `x-edge-key` 헤더를 추가
 

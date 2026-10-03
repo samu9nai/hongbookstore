@@ -42,7 +42,7 @@
    ```
 
 ## 참고 사항
-- 도커 이미지는 루트 `Dockerfile`을 사용하며, 멀티 스테이지 빌드와 Spring Boot 레이어 추출이 적용됨.
+- 도커 이미지는 `backend/Dockerfile`을 사용하며, 멀티 스테이지 빌드와 Spring Boot 레이어 추출이 적용됨.
 - Actuator 헬스 체크는 `/actuator/health/{liveness,readiness}`에서 제공되며, `service.yaml`에 이미 프로브 설정이 되어 있음.
 - 애플리케이션에서 새로운 민감 정보가 필요해지면 `secrets.list`를 업데이트해 CI/CD와 동기화.
 - 실제 `.env` 파일은 버전 관리에 포함하지 말고, `.dockerignore`를 이용해 도커 이미지에도 포함되지 않도록 유지.
