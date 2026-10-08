@@ -3,7 +3,7 @@ packages:
 
 # pnpm은 허용한 패키지의 설치 스크립트만 실행한다.
 allowBuilds:
-  # Vite가 쓰는 esbuild 바이너리를 설치 시점에 검증한다.
+  # Vite 8의 선택 peer로 설치되는 esbuild 바이너리를 설치 시점에 검증한다. Vite 8은 기본 설정에서 esbuild를 쓰지 않는다.
   esbuild: true
   # stompjs → websocket의 선택적 네이티브 애드온이다. 브라우저 빌드는 쓰지 않는다.
   bufferutil: false
