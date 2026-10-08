@@ -175,9 +175,6 @@ importers:
 
   frontend:
     dependencies:
-      '@fortawesome/fontawesome-free':
-        specifier: ^7.1.0
-        version: 7.1.0
       axios:
         specifier: ^1.13.4
         version: 1.20.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
@@ -476,10 +473,6 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
-
-  '@fortawesome/fontawesome-free@7.1.0':
-    resolution: {integrity: sha512-+WxNld5ZCJHvPQCr/GnzCTVREyStrAJjisUPtUxG5ngDA8TMlPnKp6dddlTpai4+1GNmltAeuk1hJEkBohwZYA==}
-    engines: {node: '>=6'}
 
   '@jridgewell/resolve-uri@3.1.2':
     resolution: {integrity: sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==}
@@ -1835,8 +1828,6 @@ snapshots:
     optional: true
 
   '@exodus/bytes@1.16.0': {}
-
-  '@fortawesome/fontawesome-free@7.1.0': {}
 
   '@jridgewell/resolve-uri@3.1.2': {}
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import styled, { keyframes } from 'styled-components'
+import { LucideCircleCheck, LucideCircleX } from 'lucide-react'
 
 const PageContainer = styled.div`
   display: flex;
@@ -152,7 +153,7 @@ function VerificationConfirmPage() {
         return (
           <>
             <StatusIcon status="success">
-              <i className="fas fa-check-circle"></i>
+              <LucideCircleCheck />
             </StatusIcon>
             <Title>인증 완료!</Title>
             <Message>
@@ -192,7 +193,7 @@ function VerificationConfirmPage() {
         return (
           <>
             <StatusIcon status="error">
-              <i className="fas fa-times-circle"></i>
+              <LucideCircleX />
             </StatusIcon>
             <Title>인증 실패</Title>
             <Message>

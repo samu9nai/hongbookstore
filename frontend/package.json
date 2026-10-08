@@ -16,7 +16,6 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.1.0",
     "axios": "^1.13.4",
     "i18next": "^26.4.2",
     "lucide-react": "^1.52.0",
