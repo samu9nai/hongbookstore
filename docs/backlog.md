@@ -74,7 +74,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | FE-04 | P1 | 완료 (#23) | 쓰지 않는 의존성: `next-auth`(→`next`), `http-proxy-middleware`, `dotenv`, `zod`, `@tanstack/react-query`, `react-kakao-maps-sdk`. `npm audit`의 critical 2건이 모두 `next-auth` 경로다 | `src/main/frontend/package.json` | C, H-05 |
 | FE-05 | P2 | 대기 | 유지보수가 끝난 `stompjs` 2.3.3을 쓰고, 연결할 때 인증 헤더를 보내지 않는다 | `pages/Chat/ChatRoom.jsx:9`, `:1010` | C |
 | FE-06 | P2 | 대기 | 2,000줄이 넘는 화면 컴포넌트(PostWrite, ChatRoom)와 1 MB 단일 번들. 라우트 단위 코드 분할이 없다 | `pages/PostWrite`, `pages/Chat`, `App.jsx` | C, H-05 |
-| FE-07 | P3 | 대기 | CRA 잔재(`App.test.js`, `setupTests.js`, `reportWebVitals.js`)가 남아 있다. 테스트 러너는 Vitest로 들였고, Vitest는 `*.test.{ts,tsx}`만 실행한다 | `src/main/frontend/src` | C, H-07 |
+| FE-07 | P3 | 완료 (#33) | CRA 잔재(`index.js`, `reportWebVitals.js`, `App.test.js`, `setupTests.js`)와 이 파일만 쓰던 `web-vitals` 의존성을 지웠다. 앱 진입점은 `main.jsx`라 빌드 결과물은 바뀌지 않았다 | `frontend/src` | C, H-07 |
 | FE-08 | P3 | 대기 | Vite+(`vp`)로 옮길지 검토한다. 지금 쓰는 Vite·Vitest·oxlint·tsgolint가 Vite+에 들어 있어 `vp migrate`로 옮길 수 있다. oxfmt 1.0과 Vite+ 안정화 이후에 판단한다 | `frontend/` | D-H |
 | FE-09 | P3 | 완료 (#29) | `i18next` 25·`react-i18next` 16의 선택적 peer가 TypeScript `^5`라 TS 7과 맞지 않았다. `i18next` 26.4.2·`react-i18next` 17.0.15로 올려 `pnpm peers check` 결과 0건이다 | `frontend/package.json` | D-H |
 

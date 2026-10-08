@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   test: {
-    // CRA 시절의 App.test.js는 Jest용이라 실행하지 않는다 (FE-07).
+    // e2e/*.spec.ts는 Playwright 스펙이라 Vitest가 실행하지 않게 단위 테스트만 고른다.
     include: ['src/**/*.test.{ts,tsx}']
   },
   resolve: {

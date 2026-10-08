@@ -208,9 +208,6 @@ importers:
       styled-components:
         specifier: ^6.1.19
         version: 6.5.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      web-vitals:
-        specifier: ^5.1.0
-        version: 5.1.0
     devDependencies:
       '@playwright/test':
         specifier: ^1.63.0
@@ -1525,9 +1522,6 @@ packages:
       jsdom:
         optional: true
 
-  web-vitals@5.1.0:
-    resolution: {integrity: sha512-ArI3kx5jI0atlTtmV0fWU3fjpLmq/nD3Zr1iFFlJLaqa5wLBkUSzINwBPySCX/8jRyjlmy1Volw1kz1g9XE4Jg==}
-
   websocket@1.0.35:
     resolution: {integrity: sha512-/REy6amwPZl44DDzvRCkaI1q1bIiQB0mEFQLUrhz3z2EK91cp3n72rAjUlrTP0zV22HJIUOVHQGPxhFRjxjt+Q==}
     engines: {node: '>=4.0.0'}
@@ -2492,8 +2486,6 @@ snapshots:
       '@types/node': 24.19.1
     transitivePeerDependencies:
       - msw
-
-  web-vitals@5.1.0: {}
 
   websocket@1.0.35(supports-color@8.1.1):
     dependencies:

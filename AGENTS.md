@@ -44,7 +44,7 @@
 | 프론트 설치 | `pnpm install` (저장소 루트) | Node 24.21.0(`.node-version`), pnpm 12.8.1(`packageManager`, corepack) |
 | 프론트 빌드 | `pnpm build` | 통과. 메인 JS 청크 약 1,053 kB |
 | 프론트 타입 검사 | `pnpm type-check` | 통과. TypeScript 7이 `.ts`·`.tsx`만 검사한다(`allowJs`, `checkJs: false`) |
-| 프론트 린트 | `pnpm lint` | **오류 323개, 경고 24개** (oxlint type-aware). 바꾼 파일에서 새 오류를 늘리지 않는다 |
+| 프론트 린트 | `pnpm lint` | **오류 322개, 경고 24개** (oxlint type-aware). 바꾼 파일에서 새 오류를 늘리지 않는다 |
 | 프론트 서식 | `pnpm format:check` | 통과 (Prettier) |
 | 프론트 단위 테스트 | `pnpm test:unit --run` | 통과. Vitest 테스트 5개 |
 | 프론트 e2e | `pnpm test:e2e` | 통과. 백엔드 없는 홈 화면 스모크 1개(Chromium). 처음 한 번 `pnpm --filter @hongbookstore/frontend exec playwright install chromium`이 필요하다 |
