@@ -1,4 +1,6 @@
-export async function getCurrentReservation(roomId) {
+export async function getCurrentReservation(
+  roomId: number | string
+): Promise<unknown> {
   const token = localStorage.getItem('accessToken')
   const res = await fetch(`/api/chat/rooms/${roomId}/reservation`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -8,7 +10,10 @@ export async function getCurrentReservation(roomId) {
   return res.json()
 }
 
-export async function upsertReservation(roomId, payload) {
+export async function upsertReservation(
+  roomId: number | string,
+  payload: unknown
+): Promise<unknown> {
   const token = localStorage.getItem('accessToken')
   const res = await fetch(`/api/chat/rooms/${roomId}/reservation`, {
     method: 'POST',
@@ -22,7 +27,11 @@ export async function upsertReservation(roomId, payload) {
   return res.json()
 }
 
-export async function cancelReservation(roomId, reservationId, reason) {
+export async function cancelReservation(
+  roomId: number | string,
+  reservationId: number | string,
+  reason?: string
+): Promise<unknown> {
   const token = localStorage.getItem('accessToken')
   const res = await fetch(
     `/api/chat/rooms/${roomId}/reservation/${reservationId}/cancel`,
@@ -39,7 +48,10 @@ export async function cancelReservation(roomId, reservationId, reason) {
   return res.json()
 }
 
-export async function completeReservation(roomId, reservationId) {
+export async function completeReservation(
+  roomId: number | string,
+  reservationId: number | string
+): Promise<unknown> {
   const token = localStorage.getItem('accessToken')
   const res = await fetch(
     `/api/chat/rooms/${roomId}/reservation/${reservationId}/complete`,

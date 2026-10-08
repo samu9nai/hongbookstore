@@ -1,7 +1,11 @@
-let _es = null // 단일 SSE 연결
-let _retryTimer = null // 재연결 타이머
+/** 서버가 보낸 알림. JSON이면 파싱한 값, 아니면 원문 문자열이다 */
+export type NotificationHandler = (event: unknown) => void
+export type NotificationErrorHandler = (error: unknown) => void
 
-function safeEnv() {
+let _es: EventSource | null = null // 단일 SSE 연결
+let _retryTimer: ReturnType<typeof setTimeout> | null = null // 재연결 타이머
+
+function safeEnv(): Partial<ImportMetaEnv> {
   try {
     return import.meta?.env ?? {}
   } catch {
@@ -9,7 +13,7 @@ function safeEnv() {
   }
 }
 
-function resolveBackendOrigin() {
+function resolveBackendOrigin(): string | null {
   const env = safeEnv()
   const pageHttps =
     typeof window !== 'undefined' && window.location.protocol === 'https:'
@@ -29,7 +33,7 @@ function resolveBackendOrigin() {
     typeof window !== 'undefined' && window.location.port === '5173'
       ? 'http://localhost:8080'
       : null
-  ].filter(Boolean)
+  ].filter((v): v is string => Boolean(v))
 
   for (const raw of candidates) {
     try {
@@ -61,14 +65,17 @@ function resolveBackendOrigin() {
   return typeof window !== 'undefined' ? window.location.origin : null
 }
 
-function buildStreamUrl(token) {
+function buildStreamUrl(token: string): string | null {
   const origin = resolveBackendOrigin()
   if (!origin) return null
   const base = origin.replace(/\/+$/, '')
   return `${base}/api/notifications/stream${token ? `?token=${encodeURIComponent(token)}` : ''}`
 }
 
-export function startNotificationStream(onEvent, onError) {
+export function startNotificationStream(
+  onEvent?: NotificationHandler,
+  onError?: NotificationErrorHandler
+): EventSource | null {
   // 브라우저 환경 가드
   if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
     return null
@@ -95,7 +102,7 @@ export function startNotificationStream(onEvent, onError) {
   }
 
   // 서버가 "notification" 타입 이벤트를 보낼 때
-  const handleNotification = e => {
+  const handleNotification = (e: MessageEvent<string>) => {
     try {
       onEvent?.(JSON.parse(e.data))
     } catch {
@@ -115,7 +122,7 @@ export function startNotificationStream(onEvent, onError) {
 
   _es.onerror = err => {
     try {
-      _es.close()
+      _es?.close()
     } catch {}
     _es = null
 
@@ -131,7 +138,7 @@ export function startNotificationStream(onEvent, onError) {
   return _es
 }
 
-export function stopNotificationStream() {
+export function stopNotificationStream(): void {
   if (_retryTimer) {
     clearTimeout(_retryTimer)
     _retryTimer = null

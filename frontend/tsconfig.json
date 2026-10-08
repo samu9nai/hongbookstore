@@ -10,6 +10,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "strict": true,
     "allowJs": true,
     "checkJs": false,
     "isolatedModules": true,
