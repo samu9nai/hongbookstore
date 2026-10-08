@@ -83,7 +83,7 @@ export const CardPrice = styled.div`
 `
 
 // 카드 상태
-export const CardStatus = styled.div`
+export const CardStatus = styled.div<{ status?: string }>`
   display: flex;
   align-items: center;
   gap: 6px;
@@ -133,7 +133,7 @@ export const CardActions = styled.div`
 `
 
 // 액션 버튼
-export const ActionButton = styled.button`
+export const ActionButton = styled.button<{ variant?: string }>`
   padding: 8px 16px;
   border: none;
   border-radius: 6px;

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { type MouseEvent, type ReactNode } from 'react'
 import styled, { keyframes } from 'styled-components'
 
 const fadeIn = keyframes`
@@ -90,10 +90,17 @@ const ModalBody = styled.div`
   }
 `
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+export interface ModalProps {
+  isOpen: boolean
+  onClose: () => void
+  title?: ReactNode
+  children?: ReactNode
+}
+
+const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   if (!isOpen) return null
 
-  const handleOverlayClick = e => {
+  const handleOverlayClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose()
     }

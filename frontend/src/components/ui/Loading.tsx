@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import styled, { keyframes, css } from 'styled-components'
 import { useTranslation } from 'react-i18next'
 
@@ -25,15 +26,6 @@ const bounce = keyframes`
   }
   40% {
     transform: scale(1);
-  }
-`
-
-const shimmer = keyframes`
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
   }
 `
 
@@ -82,7 +74,7 @@ const floating = keyframes`
   }
 `
 
-const Spinner = styled.div`
+const Spinner = styled.div<{ $size?: string }>`
   width: ${props => props.$size || '24px'};
   height: ${props => props.$size || '24px'};
   border: 2px solid var(--border-light);
@@ -114,7 +106,7 @@ const Dot = styled.div`
   }
 `
 
-const Pulse = styled.div`
+const Pulse = styled.div<{ $size?: string }>`
   width: ${props => props.$size || '24px'};
   height: ${props => props.$size || '24px'};
   border-radius: 50%;
@@ -129,7 +121,10 @@ const Shimmer = styled.div`
   animation: shimmer 1.5s infinite;
 `
 
-const LoadingContainer = styled.div`
+const LoadingContainer = styled.div<{
+  $fullScreen?: boolean
+  $overlay?: boolean
+}>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,7 +167,7 @@ const LoadingText = styled.span`
 `
 
 // 홍책방 전용 로딩 컴포넌트들
-const BookIcon = styled.div`
+const BookIcon = styled.div<{ $size?: string }>`
   font-size: ${props => props.$size || '32px'};
   animation: ${floating} 2s ease-in-out infinite;
   color: var(--primary);
@@ -185,7 +180,7 @@ const BookStack = styled.div`
   gap: 2px;
 `
 
-const Book = styled.div`
+const Book = styled.div<{ $size?: string; $delay?: string }>`
   width: ${props => props.$size || '24px'};
   height: ${props => props.$size || '18px'};
   background: linear-gradient(135deg, var(--primary), #8b5cf6);
@@ -203,7 +198,7 @@ const HongBookLoading = styled.div`
   padding: 24px;
 `
 
-const HongBookText = styled.div`
+const HongBookText = styled.div<{ $delay?: string }>`
   display: flex;
   align-items: center;
   gap: 8px;
@@ -224,7 +219,7 @@ const HongBookSubtext = styled.div`
   line-height: 1.4;
 `
 
-const BookFlip = styled.div`
+const BookFlip = styled.div<{ $size?: string }>`
   width: ${props => props.$size || '40px'};
   height: ${props => props.$size || '30px'};
   background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
@@ -250,6 +245,28 @@ const BookFlip = styled.div`
   }
 `
 
+type LoadingSize = 'sm' | 'md' | 'lg' | 'xl'
+
+/** hongbook·bookstack·bookflip은 문구가 정해져 있어 text를 띄우지 않는다 */
+type LoadingType =
+  | 'hongbook'
+  | 'bookstack'
+  | 'bookflip'
+  | 'dots'
+  | 'pulse'
+  | 'shimmer'
+  | 'spinner'
+
+export interface LoadingProps {
+  type?: LoadingType
+  size?: LoadingSize
+  text?: ReactNode
+  fullScreen?: boolean
+  overlay?: boolean
+  className?: string
+  subtext?: ReactNode
+}
+
 const Loading = ({
   type = 'hongbook',
   size = 'md',
@@ -258,9 +275,9 @@ const Loading = ({
   overlay = false,
   className,
   subtext
-}) => {
+}: LoadingProps) => {
   const { t } = useTranslation()
-  const sizeMap = {
+  const sizeMap: Record<LoadingSize, string> = {
     sm: '16px',
     md: '24px',
     lg: '32px',
