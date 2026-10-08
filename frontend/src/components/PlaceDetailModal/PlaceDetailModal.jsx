@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useContext, useMemo } from 'react'
 import styled from 'styled-components'
 import { useTranslation } from 'react-i18next'
-import { AuthCtx } from '../../contexts/AuthContext.jsx'
+import { AuthCtx } from '../../contexts/AuthContext'
 import {
   LucideChevronLeft,
   LucideChevronRight,

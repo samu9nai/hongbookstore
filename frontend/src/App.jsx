@@ -5,7 +5,7 @@ import {
   Route,
   Navigate
 } from 'react-router-dom'
-import GlobalStyles from './styles/GlobalStyles.js'
+import GlobalStyles from './styles/GlobalStyles'
 import Header from './components/Header/Header.jsx'
 import i18n from './i18n.js'
 import Hero from './components/Hero/Hero.jsx'
@@ -36,7 +36,7 @@ import UserProfile from './pages/UserProfile/UserProfile.jsx'
 import VerificationConfirmPage from './pages/VerificationConfirmPage/VerificationConfirmPage.jsx'
 import OAuth2RedirectHandler from './pages/Login/OAuth2RedirectHandler.jsx'
 
-import FloatingChatBot from './components/ui/FloatingChatBot.jsx'
+import FloatingChatBot from './components/ui/FloatingChatBot'
 
 import { AuthProvider } from './contexts/AuthContext'
 import { WritingProvider } from './contexts/WritingContext'
@@ -48,17 +48,15 @@ import AccountDeactivate from './pages/AccountDeactivate/AccountDeactivate.jsx' 
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false)
+  // 온보딩(임시 false)
+  const [onboardingCompleted] = useState(false)
 
   useEffect(() => {
     // 언어 설정 복원
     const savedLang = localStorage.getItem('lang')
     if (savedLang) {
-      i18n.changeLanguage(savedLang)
+      void i18n.changeLanguage(savedLang)
     }
-
-    // 온보딩(임시 false)
-    setOnboardingCompleted(false)
 
     // 만료된 토큰 정리
     try {
