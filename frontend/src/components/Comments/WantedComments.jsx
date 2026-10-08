@@ -1,5 +1,5 @@
 // src/components/Comments/WantedComments.jsx
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components'
 import { useTranslation } from 'react-i18next'
 import { FaReply, FaTrash, FaUser, FaClock } from 'react-icons/fa'
@@ -300,7 +300,7 @@ export default function WantedComments({ wantedId }) {
 
   const tree = useMemo(() => buildTree(list), [list])
 
-  async function fetchList() {
+  const fetchList = useCallback(async () => {
     setLoading(true)
     try {
       // ✅ GET도 쿠키 포함(세션 로그인이면 목록에 권한 플래그 내려올 수 있음)
@@ -314,11 +314,12 @@ export default function WantedComments({ wantedId }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [wantedId])
 
   useEffect(() => {
-    fetchList()
-  }, [wantedId])
+    // oxlint-disable-next-line react/set-state-in-effect -- 목록을 불러오는 동안 로딩 상태를 먼저 켠다
+    void fetchList()
+  }, [fetchList])
 
   async function submitRoot() {
     const body = { content: text.trim() }
