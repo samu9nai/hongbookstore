@@ -1,3 +1,4 @@
+import type { InputHTMLAttributes, ReactNode } from 'react'
 import styled, { css } from 'styled-components'
 
 const inputVariants = {
@@ -96,7 +97,19 @@ const InputWrapper = styled.div`
   width: 100%;
 `
 
-const StyledInput = styled.input`
+type InputVariant = keyof typeof inputVariants
+type InputSize = keyof typeof inputSizes
+
+interface StyledInputProps {
+  $variant: InputVariant
+  $size: InputSize
+  $error?: string
+  $success?: boolean
+  $hasLeftIcon: boolean
+  $hasRightIcon: boolean
+}
+
+const StyledInput = styled.input<StyledInputProps>`
   width: 100%;
   font-family: inherit;
   transition: var(--transition-normal);
@@ -172,7 +185,7 @@ const StyledInput = styled.input`
   }
 `
 
-const InputIcon = styled.div`
+const InputIcon = styled.div<{ $position: 'left' | 'right' }>`
   position: absolute;
   display: flex;
   align-items: center;
@@ -212,7 +225,7 @@ const InputIcon = styled.div`
   }
 `
 
-const InputLabel = styled.label`
+const InputLabel = styled.label<{ $required: boolean }>`
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
@@ -272,6 +285,26 @@ const InputGroup = styled.div`
   }
 `
 
+/** input의 size 속성(글자 수)은 쓰지 않고, size는 높이·여백 단계를 고른다 */
+export interface InputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size'
+> {
+  label?: ReactNode
+  /** 값이 있으면 입력 칸을 오류 색으로 바꾸고 아래에 문구를 띄운다 */
+  error?: string
+  success?: boolean
+  /** 오류가 없을 때 입력 칸 아래에 띄운다 */
+  hint?: ReactNode
+  leftIcon?: ReactNode
+  rightIcon?: ReactNode
+  variant?: InputVariant
+  size?: InputSize
+  /** 라벨에 * 표시만 붙인다. input의 required 속성은 넘기지 않는다 */
+  required?: boolean
+  fullWidth?: boolean
+}
+
 const Input = ({
   label,
   error,
@@ -284,7 +317,7 @@ const Input = ({
   required = false,
   fullWidth = true,
   ...props
-}) => {
+}: InputProps) => {
   const hasLeftIcon = !!leftIcon
   const hasRightIcon = !!rightIcon
 

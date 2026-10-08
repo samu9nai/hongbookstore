@@ -82,7 +82,13 @@ export const Grid = styled.div`
 `
 
 // 플렉스 레이아웃
-export const Flex = styled.div`
+export const Flex = styled.div<{
+  align?: string
+  justify?: string
+  gap?: string
+  direction?: string
+  wrap?: string
+}>`
   display: flex;
   align-items: ${props => props.align || 'center'};
   justify-content: ${props => props.justify || 'flex-start'};
@@ -92,7 +98,10 @@ export const Flex = styled.div`
 `
 
 // 섹션
-export const Section = styled.section`
+export const Section = styled.section<{
+  marginBottom?: string
+  padding?: string
+}>`
   margin-bottom: ${props => props.marginBottom || '2rem'};
   padding: ${props => props.padding || '0'};
 `
@@ -132,7 +141,12 @@ export const BackButton = styled.button`
 `
 
 // 제목
-export const Title = styled.h2`
+export const Title = styled.h2<{
+  size?: string
+  weight?: string
+  marginBottom?: string
+  align?: string
+}>`
   font-size: ${props => props.size || '2rem'};
   font-weight: ${props => props.weight || '600'};
   color: ${props => props.color || 'var(--text-primary)'};

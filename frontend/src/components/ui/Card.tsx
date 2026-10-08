@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from 'react'
 import styled, { css } from 'styled-components'
 
 const cardVariants = {
@@ -48,7 +49,18 @@ const cardSizes = {
   `
 }
 
-const StyledCard = styled.div`
+type CardVariant = keyof typeof cardVariants
+type CardSize = keyof typeof cardSizes
+
+interface StyledCardProps {
+  $variant: CardVariant
+  $size: CardSize
+  $hoverable: boolean
+  $interactive: boolean
+  $loading: boolean
+}
+
+const StyledCard = styled.div<StyledCardProps>`
   position: relative;
   transition: var(--transition-normal);
   overflow: hidden;
@@ -153,7 +165,7 @@ const CardFooter = styled.div`
   }
 `
 
-const CardImage = styled.div`
+const CardImage = styled.div<{ $aspectRatio?: string }>`
   width: 100%;
   height: 200px;
   background: var(--gray-100);
@@ -191,6 +203,14 @@ const CardBadge = styled.span`
   letter-spacing: 0.025em;
 `
 
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  variant?: CardVariant
+  size?: CardSize
+  hoverable?: boolean
+  interactive?: boolean
+  loading?: boolean
+}
+
 const Card = ({
   children,
   variant = 'default',
@@ -199,7 +219,7 @@ const Card = ({
   interactive = false,
   loading = false,
   ...props
-}) => {
+}: CardProps) => {
   return (
     <StyledCard
       $variant={variant}

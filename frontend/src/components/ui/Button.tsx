@@ -1,3 +1,4 @@
+import type { ButtonHTMLAttributes } from 'react'
 import styled, { css } from 'styled-components'
 
 const buttonVariants = {
@@ -96,7 +97,18 @@ const buttonSizes = {
   `
 }
 
-const StyledButton = styled.button`
+type ButtonVariant = keyof typeof buttonVariants
+type ButtonSize = keyof typeof buttonSizes
+
+interface StyledButtonProps {
+  $variant: ButtonVariant
+  $size: ButtonSize
+  $loading: boolean
+  $fullWidth: boolean
+  $iconOnly: boolean
+}
+
+const StyledButton = styled.button<StyledButtonProps>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -182,6 +194,15 @@ const StyledButton = styled.button`
   }
 `
 
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant
+  size?: ButtonSize
+  /** true면 버튼을 비활성화하고 회전 표시를 띄운다 */
+  loading?: boolean
+  fullWidth?: boolean
+  iconOnly?: boolean
+}
+
 const Button = ({
   children,
   variant = 'primary',
@@ -190,7 +211,7 @@ const Button = ({
   fullWidth = false,
   iconOnly = false,
   ...props
-}) => {
+}: ButtonProps) => {
   return (
     <StyledButton
       $variant={variant}

@@ -1,9 +1,62 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode
+} from 'react'
 import api from '../lib/api'
 import { AuthCtx } from './AuthContext'
 
-const LocationContext = createContext()
+/**
+ * 저장한 위치. 서버 응답은 MyLocationDto.Response와 같다.
+ * 로그인하지 않았을 때는 localStorage에만 저장하므로 좌표가 없을 수 있다
+ */
+export interface SavedLocation {
+  id: number
+  name: string
+  address: string
+  lat?: number | null
+  lng?: number | null
+  isDefault: boolean
+}
 
+/** 지도가 중심으로 쓰는 현재 위치 */
+export interface UserLocation {
+  lat?: number | null
+  lng?: number | null
+  name: string
+  address: string
+}
+
+/** 위치를 추가할 때 받는 값 */
+export type NewLocation = Omit<SavedLocation, 'id' | 'isDefault'>
+
+/** 서버는 배열을 보낸다. { data }는 예전 코드가 대비하던 모양이다 */
+type LocationsResponse = SavedLocation[] | { data?: SavedLocation[] }
+
+export interface LocationContextValue {
+  userLocation: UserLocation | null
+  /** 기본 위치가 먼저, 나머지는 이름순이다 */
+  locations: SavedLocation[]
+  setDefaultLocation: (locationId: number) => Promise<void>
+  addLocation: (location: NewLocation) => Promise<void>
+  deleteLocation: (locationId: number) => Promise<void>
+  updateCurrentLocation: (
+    lat: number | null | undefined,
+    lng: number | null | undefined,
+    name: string,
+    address: string
+  ) => void
+  getDefaultLocation: () => SavedLocation | undefined
+  updateLocation: (id: number, partial: Partial<NewLocation>) => Promise<void>
+}
+
+const LocationContext = createContext<LocationContextValue | undefined>(
+  undefined
+)
+
+// oxlint-disable-next-line react/only-export-components -- 컨텍스트 훅을 Provider와 같은 파일에 둔다
 export const useLocation = () => {
   const context = useContext(LocationContext)
   if (!context) {
@@ -12,13 +65,13 @@ export const useLocation = () => {
   return context
 }
 
-export const LocationProvider = ({ children }) => {
-  const { user, token } = useContext(AuthCtx) || {}
+export const LocationProvider = ({ children }: { children?: ReactNode }) => {
+  const { user, token } = useContext(AuthCtx)
   const userKey = user?.id ? String(user.id) : 'guest'
   const LS_LOCATIONS_KEY = `userLocations:${userKey}`
   const LS_LOCATION_KEY = `userLocation:${userKey}`
 
-  const [userLocation, setUserLocation] = useState(() => {
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(() => {
     // localStorage에서 저장된 위치 정보 불러오기
     try {
       const saved = localStorage.getItem(LS_LOCATION_KEY)
@@ -28,7 +81,7 @@ export const LocationProvider = ({ children }) => {
     }
   })
 
-  const [locations, setLocations] = useState(() => {
+  const [locations, setLocations] = useState<SavedLocation[]>(() => {
     // localStorage에서 저장된 위치 목록 불러오기
     try {
       const saved = localStorage.getItem(LS_LOCATIONS_KEY)
@@ -73,9 +126,9 @@ export const LocationProvider = ({ children }) => {
   useEffect(() => {
     const currentToken = token || localStorage.getItem('accessToken')
     if (!currentToken || !user?.id) return // 비로그인 시 로컬 유지
-    ;(async () => {
+    void (async () => {
       try {
-        const res = await api.get('/my/locations')
+        const res = await api.get<LocationsResponse>('/my/locations')
         const list = Array.isArray(res)
           ? res
           : Array.isArray(res?.data)
@@ -95,7 +148,7 @@ export const LocationProvider = ({ children }) => {
               : null
           )
         }
-      } catch (e) {}
+      } catch {}
     })()
   }, [user?.id, token])
 
@@ -103,19 +156,20 @@ export const LocationProvider = ({ children }) => {
   useEffect(() => {
     try {
       const savedLocs = localStorage.getItem(LS_LOCATIONS_KEY)
+      // oxlint-disable-next-line react/set-state-in-effect -- 사용자가 바뀌면 그 사용자의 저장값으로 바꾼다
       if (savedLocs) setLocations(JSON.parse(savedLocs))
       const savedLoc = localStorage.getItem(LS_LOCATION_KEY)
       if (savedLoc) setUserLocation(JSON.parse(savedLoc))
-    } catch (_) {}
+    } catch {}
   }, [LS_LOCATIONS_KEY, LS_LOCATION_KEY])
 
   // 기본 위치 설정
-  const setDefaultLocation = async locationId => {
+  const setDefaultLocation = async (locationId: number) => {
     const token = localStorage.getItem('accessToken')
     if (token) {
       try {
         await api.patch(`/my/locations/${locationId}/default`)
-        const server = await api.get('/my/locations')
+        const server = await api.get<LocationsResponse>('/my/locations')
         const list = Array.isArray(server) ? server : server?.data
         setLocations(list || [])
         const def = (list || []).find(l => l.isDefault) || (list || [])[0]
@@ -127,7 +181,7 @@ export const LocationProvider = ({ children }) => {
             address: def.address
           })
         return
-      } catch (e) {}
+      } catch {}
     }
     // 로컬 폴백
     setLocations(prev =>
@@ -144,7 +198,7 @@ export const LocationProvider = ({ children }) => {
   }
 
   // 위치 추가
-  const addLocation = async location => {
+  const addLocation = async (location: NewLocation) => {
     const token = localStorage.getItem('accessToken')
     if (token) {
       try {
@@ -156,7 +210,7 @@ export const LocationProvider = ({ children }) => {
           makeDefault: locations.length === 0
         }
         await api.post('/my/locations', payload)
-        const server = await api.get('/my/locations')
+        const server = await api.get<LocationsResponse>('/my/locations')
         const list = Array.isArray(server) ? server : server?.data
         setLocations(list || [])
         const def = (list || []).find(l => l.isDefault) || (list || [])[0]
@@ -168,7 +222,7 @@ export const LocationProvider = ({ children }) => {
             address: def.address
           })
         return
-      } catch (e) {}
+      } catch {}
     }
     // 로컬 폴백
     const newLocation = {
@@ -187,12 +241,12 @@ export const LocationProvider = ({ children }) => {
   }
 
   // 위치 삭제
-  const deleteLocation = async locationId => {
+  const deleteLocation = async (locationId: number) => {
     const token = localStorage.getItem('accessToken')
     if (token) {
       try {
         await api.delete(`/my/locations/${locationId}`)
-        const server = await api.get('/my/locations')
+        const server = await api.get<LocationsResponse>('/my/locations')
         const list = Array.isArray(server) ? server : server?.data
         setLocations(list || [])
         const def = (list || []).find(l => l.isDefault) || (list || [])[0]
@@ -205,7 +259,7 @@ export const LocationProvider = ({ children }) => {
           })
         else setUserLocation(null)
         return
-      } catch (e) {}
+      } catch {}
     }
     // 로컬 폴백
     const locationToDelete = locations.find(loc => loc.id === locationId)
@@ -230,7 +284,12 @@ export const LocationProvider = ({ children }) => {
   }
 
   // 현재 위치 업데이트
-  const updateCurrentLocation = (lat, lng, name, address) => {
+  const updateCurrentLocation: LocationContextValue['updateCurrentLocation'] = (
+    lat,
+    lng,
+    name,
+    address
+  ) => {
     setUserLocation({ lat, lng, name, address })
   }
 
@@ -239,11 +298,11 @@ export const LocationProvider = ({ children }) => {
     return locations.find(loc => loc.isDefault) || locations[0]
   }
 
-  const value = {
+  const value: LocationContextValue = {
     userLocation,
     locations: [...locations].sort(
       (a, b) =>
-        b.isDefault - a.isDefault ||
+        Number(b.isDefault) - Number(a.isDefault) ||
         String(a.name || '').localeCompare(String(b.name || ''))
     ),
     setDefaultLocation,
@@ -256,7 +315,7 @@ export const LocationProvider = ({ children }) => {
       if (token) {
         try {
           await api.patch(`/my/locations/${id}`, partial)
-          const server = await api.get('/my/locations')
+          const server = await api.get<LocationsResponse>('/my/locations')
           const list = Array.isArray(server) ? server : server?.data
           setLocations(list || [])
           const def = (list || []).find(l => l.isDefault) || (list || [])[0]
@@ -268,11 +327,11 @@ export const LocationProvider = ({ children }) => {
               address: def.address
             })
           return
-        } catch (e) {}
+        } catch {}
       }
       // 로컬 폴백 업데이트
       setLocations(prev =>
-        prev.map(l => (l.id === id ? { ...l, ...(partial || {}) } : l))
+        prev.map(l => (l.id === id ? { ...l, ...partial } : l))
       )
     }
   }

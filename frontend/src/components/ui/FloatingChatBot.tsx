@@ -3,11 +3,6 @@ import styled, { keyframes } from 'styled-components'
 import ChatBotContent from '../ChatBotModal/ChatBotContent'
 import { useTranslation } from 'react-i18next'
 
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`
-
 const slideInFromRight = keyframes`
   from { 
     transform: translateX(100%); 
@@ -16,17 +11,6 @@ const slideInFromRight = keyframes`
   to { 
     transform: translateX(0); 
     opacity: 1; 
-  }
-`
-
-const slideOutToRight = keyframes`
-  from { 
-    transform: translateX(0); 
-    opacity: 1; 
-  }
-  to { 
-    transform: translateX(100%); 
-    opacity: 0; 
   }
 `
 
@@ -161,8 +145,11 @@ const FloatingChatBot = () => {
   // 언어 변경 시 초기 메시지 업데이트
   useEffect(() => {
     if (messages.length === 1 && messages[0].sender === 'bot') {
+      // oxlint-disable-next-line react/set-state-in-effect -- 언어가 바뀌면 첫 인사 문구를 새 언어로 바꾼다
       setMessages([{ sender: 'bot', text: t('chatbot.welcome') }])
     }
+    // messages를 넣으면 인사 문구를 바꿀 때마다 다시 실행되어 무한 반복된다
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- 언어가 바뀔 때만 실행한다
   }, [i18n.language, t])
 
   const handleOpen = () => {
