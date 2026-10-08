@@ -9,14 +9,12 @@ import styled from 'styled-components'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { useLocation } from '../../contexts/LocationContext' // TODO: 위치 관리 기능 구현
 import axios from 'axios'
 import { getUserPeerReviews, getUserPeerSummary } from '../../api/peerReviews'
 import { useNavigate as useRouterNavigate } from 'react-router-dom'
 import Modal from '../../components/ui/Modal'
 import Loading from '../../components/ui/Loading'
 // 지도 선택 기능 제거로 NaverMap import 불필요
-import { openDaumPostcode } from '../../utils/daumPostcode'
 import { AuthCtx } from '../../contexts/AuthContext'
 import AdminReportCard from './AdminReportCard.jsx'
 
@@ -958,7 +956,7 @@ const getAuthHeader = () => {
 const getDisplayAuthor = (author, authorDeactivated) => {
   const name = String(author ?? '')
   if (authorDeactivated) return '탈퇴한 회원'
-  if (/^탈퇴회원#/i.test(name)) return '탈퇴한 회원'
+  if (name.startsWith('탈퇴회원#')) return '탈퇴한 회원'
   return name || '사용자'
 }
 
@@ -980,22 +978,11 @@ const MyPage = () => {
   })
   const [isSubmitting, setIsSubmitting] = useState(false) // API 호출 중복 방지
 
-  const {
-    locations,
-    setDefaultLocation,
-    addLocation,
-    deleteLocation,
-    updateLocation
-  } = useLocation()
-
-  const [profileImage, setProfileImage] = useState(null)
-  const [isDefaultImage, setIsDefaultImage] = useState(true)
-  const [newLocation, setNewLocation] = useState({ name: '', address: '' })
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [, setProfileImage] = useState(null)
   // 우편번호 전용으로 단순화: 주소 검색 관련 상태 제거
 
-  const [editingId, setEditingId] = useState(null)
-  const [editDraft, setEditDraft] = useState({
+  const [, setEditingId] = useState(null)
+  const [, setEditDraft] = useState({
     name: '',
     address: '',
     lat: null,
@@ -1044,10 +1031,10 @@ const MyPage = () => {
             'user',
             JSON.stringify({ ...userObj, username: updated.username })
           )
-        } catch (_) {}
+        } catch {}
         try {
           updateUser?.({ username: updated.username })
-        } catch (_) {}
+        } catch {}
       } else {
         alert(res?.data?.message || t('mypage.nicknameChangeFailed'))
         setProfileName(current)
@@ -1079,7 +1066,7 @@ const MyPage = () => {
   const [roleReviews, setRoleReviews] = useState([])
   const [rolePage, setRolePage] = useState(0)
   const [roleSize, setRoleSize] = useState(5)
-  const [roleTotal, setRoleTotal] = useState(0)
+  const [, setRoleTotal] = useState(0)
   const [roleLast, setRoleLast] = useState(true)
   const [roleLoading, setRoleLoading] = useState(false)
   const [roleError, setRoleError] = useState('')
@@ -1100,16 +1087,16 @@ const MyPage = () => {
           setUnivEmail(userProfile.univEmail)
         }
       }
-    } catch (error) {
+    } catch {
       // 토큰 만료 등의 이유로 실패 시 로그인 페이지로 이동
-      navigate('/login')
+      void navigate('/login')
     } finally {
       setLoading(false)
     }
   }, [navigate])
 
   useEffect(() => {
-    fetchProfile()
+    void fetchProfile()
   }, [fetchProfile])
 
   // 최근 본 게시글 목록
@@ -1125,7 +1112,7 @@ const MyPage = () => {
         headers: getAuthHeader()
       })
       setRecentPosts(res.data || [])
-    } catch (e) {
+    } catch {
       setRecentPosts([])
     } finally {
       setRecentLoading(false)
@@ -1133,7 +1120,7 @@ const MyPage = () => {
   }, [])
 
   useEffect(() => {
-    fetchRecent()
+    void fetchRecent()
   }, [fetchRecent])
 
   const openConfirm = post => setConfirmPost(post)
@@ -1142,7 +1129,7 @@ const MyPage = () => {
     if (confirmPost) {
       const id = confirmPost.postId
       setConfirmPost(null)
-      routerNavigate(`/posts/${id}`)
+      void routerNavigate(`/posts/${id}`)
     }
   }
 
@@ -1165,8 +1152,9 @@ const MyPage = () => {
       }
     }
     if (profile?.id) {
-      fetchRating(profile.id)
+      void fetchRating(profile.id)
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- t는 오류 문구에만 쓴다. 넣으면 언어를 바꿀 때 평점을 다시 불러온다
   }, [profile?.id])
 
   // 역할별 요약/목록 조회
@@ -1202,11 +1190,11 @@ const MyPage = () => {
         setRoleLoading(false)
       }
     },
-    [roleSize]
+    [roleSize, t]
   )
 
   useEffect(() => {
-    if (profile?.id) fetchRoleData(profile.id, reviewTab, 0, roleSize)
+    if (profile?.id) void fetchRoleData(profile.id, reviewTab, 0, roleSize)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, reviewTab])
 
@@ -1230,171 +1218,13 @@ const MyPage = () => {
     }
   }, [showPhotoMenu])
 
-  const handleSetDefault = locationId => {
-    setDefaultLocation(locationId)
-  }
-
-  const handleDeleteLocation = locationId => {
-    deleteLocation(locationId)
-  }
-
-  const handleAddLocation = async () => {
-    const name = (newLocation.name || '').trim()
-    const address = (newLocation.address || '').trim()
-    if (name.length < 2) {
-      alert(t('mypage.locationNameMinLength'))
-      return
-    }
-    if (address.length < 3) {
-      alert(t('mypage.addressMinLength'))
-      return
-    }
-    if (
-      locations.some(
-        l => String(l.name || '').toLowerCase() === name.toLowerCase()
-      )
-    ) {
-      alert(t('mypage.locationNameExists'))
-      return
-    }
-
-    let lat = newLocation.lat ?? null
-    let lng = newLocation.lng ?? null
-    if (lat == null || lng == null) {
-      try {
-        // 우편번호/주소 선택으로 채워졌을 수 있는 roadAddress를 우선 지오코딩
-        const geo = await axios.get('/api/places/geocode/forward', {
-          params: { query: newLocation.address }
-        })
-        const g = typeof geo.data === 'string' ? JSON.parse(geo.data) : geo.data
-        if (g && typeof g.lat === 'number' && typeof g.lng === 'number') {
-          lat = g.lat
-          lng = g.lng
-        } else {
-          // 폴백: 기존 로컬 검색 사용
-          const res = await axios.get('/api/places/search', {
-            params: { query: newLocation.address }
-          })
-          const raw =
-            typeof res.data === 'string' ? JSON.parse(res.data) : res.data
-          const item =
-            Array.isArray(raw?.items) && raw.items.length > 0
-              ? raw.items[0]
-              : null
-          if (item) {
-            lat = Number(item.mapy) * 0.0000001
-            lng = Number(item.mapx) * 0.0000001
-          }
-        }
-      } catch (_) {}
-    }
-
-    await addLocation({
-      name: newLocation.name,
-      address: newLocation.address,
-      lat,
-      lng
-    })
-    setNewLocation({ name: '', address: '' })
-    setShowAddForm(false)
-  }
-
-  // 우편번호(다음) 검색으로 주소 선택 → 좌표 자동 보강
-  const handlePostcodeSelect = async (forEdit = false) => {
-    try {
-      const data = await openDaumPostcode()
-      const road = data.roadAddress || data.address || ''
-      if (!road) return
-      if (forEdit) {
-        setEditDraft(prev => ({ ...prev, address: road }))
-      } else {
-        setNewLocation(prev => ({ ...prev, address: road }))
-      }
-      try {
-        const geo = await axios.get('/api/places/geocode/forward', {
-          params: { query: road }
-        })
-        const g = typeof geo.data === 'string' ? JSON.parse(geo.data) : geo.data
-        if (typeof g?.lat === 'number' && typeof g?.lng === 'number') {
-          if (forEdit) {
-            setEditDraft(prev => ({ ...prev, lat: g.lat, lng: g.lng }))
-          } else {
-            setNewLocation(prev => ({ ...prev, lat: g.lat, lng: g.lng }))
-          }
-        }
-      } catch (e) {}
-    } catch (e) {
-      // 사용자가 창을 닫은 경우 등 무시
-    }
-  }
-
   // 주소 검색 기능 제거
 
-  const beginEdit = loc => {
-    setEditingId(loc.id)
-    setEditDraft({
-      name: loc.name || '',
-      address: loc.address || '',
-      lat: loc.lat ?? null,
-      lng: loc.lng ?? null
-    })
-  }
-  const hasEditChanged = () => {
-    const original = locations.find(l => l.id === editingId) || {}
-    return (
-      (original.name || '') !== (editDraft.name || '') ||
-      (original.address || '') !== (editDraft.address || '') ||
-      (original.lat ?? null) !== (editDraft.lat ?? null) ||
-      (original.lng ?? null) !== (editDraft.lng ?? null)
-    )
-  }
   const cancelEditNow = () => {
     setEditingId(null)
     setEditDraft({ name: '', address: '', lat: null, lng: null })
     setEditResults([])
   }
-  const requestCancelEdit = () => {
-    if (!hasEditChanged()) return cancelEditNow()
-    setShowEditCancelConfirm(true)
-  }
-  const saveEdit = async () => {
-    const name = (editDraft.name || '').trim()
-    const address = (editDraft.address || '').trim()
-    if (name.length < 2) {
-      alert(t('mypage.locationNameMinLength'))
-      return
-    }
-    if (address.length < 3) {
-      alert(t('mypage.addressMinLength'))
-      return
-    }
-    if (
-      locations.some(
-        l =>
-          l.id !== editingId &&
-          String(l.name || '').toLowerCase() === name.toLowerCase()
-      )
-    ) {
-      alert(t('mypage.locationNameExists'))
-      return
-    }
-    try {
-      await updateLocation(editingId, {
-        name,
-        address,
-        lat: editDraft.lat,
-        lng: editDraft.lng
-      })
-      cancelEdit()
-    } catch (e) {
-      alert(e?.response?.data?.message || t('mypage.locationUpdateError'))
-    }
-  }
-
-  const handlePhotoMenuClick = () => {
-    setShowPhotoMenu(prev => !prev)
-  }
-
   const handlePhotoMenuSelect = option => {
     setShowPhotoMenu(false)
     if (option === 'default') {
@@ -1414,12 +1244,12 @@ const MyPage = () => {
         headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' }
       })
       const newUrl = res.data // 백엔드가 String URL을 반환
-      setProfile(prev => ({ ...(prev || {}), profileImageUrl: newUrl }))
+      setProfile(prev => ({ ...prev, profileImageUrl: newUrl }))
       setProfileImage(newUrl)
       // 전역 사용자 정보 동기화
       try {
         updateUser?.({ profileImageUrl: newUrl, profileImage: newUrl })
-      } catch (_) {}
+      } catch {}
       try {
         const userJson = localStorage.getItem('user')
         const userObj = userJson ? JSON.parse(userJson) : {}
@@ -1431,7 +1261,7 @@ const MyPage = () => {
             profileImageUrl: newUrl
           })
         )
-      } catch (_) {}
+      } catch {}
     } catch (err) {
       alert(err?.response?.data?.message || t('mypage.profileImageUploadError'))
     } finally {
@@ -1617,7 +1447,7 @@ const MyPage = () => {
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault()
-                          ;(async () => {
+                          void (async () => {
                             await saveProfileName()
                             setEditingName(false)
                           })()

@@ -689,8 +689,6 @@ const MyBookstore = () => {
 
   const [showAllMyBooks, setShowAllMyBooks] = useState(false)
   const [wishlist, setWishlist] = useState([]) // 찜 목록 상태
-  const [showAllRecent, setShowAllRecent] = useState(false)
-  const [showAllWanted, setShowAllWanted] = useState(false)
   const [loading, setLoading] = useState({ myPosts: true, wishlist: true })
   const [error, setError] = useState({ myPosts: null, wishlist: null }) // 에러 상태 관리
   const navigate = useNavigate()
@@ -716,11 +714,12 @@ const MyBookstore = () => {
         headers: getAuthHeader()
       })
       setMyPosts(response.data)
-    } catch (error) {
+    } catch {
       setError(prev => ({ ...prev, myPosts: t('myBookstore.fetchPostsError') })) // 에러 상태 설정
     } finally {
       setLoading(prev => ({ ...prev, myPosts: false }))
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- t는 오류 문구에만 쓴다. 넣으면 언어를 바꿀 때 목록을 다시 불러온다
   }, [])
 
   // 내 찜 목록을 불러오는 API 호출 함수
@@ -732,7 +731,7 @@ const MyBookstore = () => {
         headers: getAuthHeader()
       })
       setWishlist(response.data)
-    } catch (error) {
+    } catch {
       setError(prev => ({
         ...prev,
         wishlist: t('myBookstore.fetchWishlistError')
@@ -740,14 +739,8 @@ const MyBookstore = () => {
     } finally {
       setLoading(prev => ({ ...prev, wishlist: false }))
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- t는 오류 문구에만 쓴다. 넣으면 언어를 바꿀 때 목록을 다시 불러온다
   }, [])
-
-  // 컴포넌트 마운트 시 API 호출
-  useEffect(() => {
-    fetchMyPosts()
-    fetchWishlist()
-    fetchMyReviews(0, reviewSize)
-  }, [fetchMyPosts, fetchWishlist])
 
   const fetchMyReviews = useCallback(
     async (page = 0, size = reviewSize) => {
@@ -770,7 +763,7 @@ const MyBookstore = () => {
           typeof data.totalPages === 'number' ? data.totalPages : 0
         )
         setReviewLast(Boolean(data.last))
-      } catch (e) {
+      } catch {
         setErrorReviews('myBookstore.fetchReviewsError')
       } finally {
         setLoadingReviews(false)
@@ -778,6 +771,17 @@ const MyBookstore = () => {
     },
     [reviewSize]
   )
+
+  // 컴포넌트 마운트 시 API 호출
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- 목록을 불러오는 동안 로딩 상태를 먼저 켠다
+    void fetchMyPosts()
+    void fetchWishlist()
+    void fetchMyReviews(0, reviewSize)
+    // 후기는 마운트할 때 첫 페이지만 불러온다. fetchMyReviews는 서버 응답으로 reviewSize를 바꿔
+    // 의존성에 넣으면 페이지 크기가 바뀔 때 첫 페이지를 다시 불러온다
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- 마운트할 때 한 번만 실행한다
+  }, [fetchMyPosts, fetchWishlist])
 
   // 내 프로필 ID → 전체 요약 불러오기
   const fetchProfileId = useCallback(async () => {
@@ -787,11 +791,11 @@ const MyBookstore = () => {
       })
       const uid = response?.data?.data?.id
       if (uid) setProfileId(uid)
-    } catch (_) {}
+    } catch {}
   }, [])
 
   useEffect(() => {
-    fetchProfileId()
+    void fetchProfileId()
   }, [fetchProfileId])
 
   useEffect(() => {
@@ -801,11 +805,11 @@ const MyBookstore = () => {
           headers: getAuthHeader()
         })
         setOverallAvg(res.data?.overallAverage ?? null)
-      } catch (_) {
+      } catch {
         setOverallAvg(null)
       }
     }
-    if (profileId) fetchSummary(profileId)
+    if (profileId) void fetchSummary(profileId)
   }, [profileId])
 
   // 탭에 따라 게시글을 필터링하는 함수
@@ -821,7 +825,7 @@ const MyBookstore = () => {
   }
 
   const handleEditBook = postId => {
-    navigate(`/postwrite/${postId}`)
+    void navigate(`/postwrite/${postId}`)
   }
 
   // 게시글 삭제 핸들러
@@ -830,18 +834,14 @@ const MyBookstore = () => {
       try {
         await axios.delete(`/api/posts/${postId}`, { headers: getAuthHeader() })
         alert(t('myBookstore.deleteSuccess'))
-        fetchMyPosts() // 목록 새로고침
-      } catch (error) {
+        void fetchMyPosts() // 목록 새로고침
+      } catch {
         alert(t('myBookstore.deleteError'))
       }
     }
   }
 
   const handleViewBook = postId => navigate(`/posts/${postId}`)
-
-  const handleAddBook = () => {
-    navigate('/book-write')
-  }
 
   // 찜 해제 핸들러
   const handleRemoveFromWishlist = async postId => {
@@ -851,19 +851,11 @@ const MyBookstore = () => {
           headers: getAuthHeader()
         })
         alert('찜이 해제되었습니다.')
-        fetchWishlist() // 찜 목록 새로고침
-      } catch (error) {
+        void fetchWishlist() // 찜 목록 새로고침
+      } catch {
         alert('찜 해제 중 오류가 발생했습니다.')
       }
     }
-  }
-
-  const handleViewWanted = wantedId => {
-    navigate(`/wanted/${wantedId}`)
-  }
-
-  const handleEditWanted = wantedId => {
-    navigate(`/wantedwrite/${wantedId}`)
   }
 
   const filteredBooks = getFilteredBooks()
@@ -930,7 +922,7 @@ const MyBookstore = () => {
         { headers: getAuthHeader() }
       )
       alert(t('myBookstore.statusChangeSuccess'))
-      fetchMyPosts()
+      void fetchMyPosts()
     } catch (e) {
       alert(e.response?.data?.message || t('myBookstore.statusChangeError'))
     }
@@ -957,7 +949,7 @@ const MyBookstore = () => {
       )
       alert(t('myBookstore.statusChangedToSold'))
       closeBuyerModal()
-      fetchMyPosts()
+      void fetchMyPosts()
     } catch (e) {
       alert(e.response?.data?.message || t('myBookstore.buyerConfirmError'))
     } finally {
@@ -968,16 +960,16 @@ const MyBookstore = () => {
   const handleSidebarMenu = menu => {
     switch (menu) {
       case 'bookstore/add':
-        navigate('/bookstore/add')
+        void navigate('/bookstore/add')
         break
       case 'wanted':
-        navigate('/wanted')
+        void navigate('/wanted')
         break
       case 'mybookstore':
-        navigate('/bookstore')
+        void navigate('/bookstore')
         break
       case 'chat':
-        navigate('/chat')
+        void navigate('/chat')
         break
       default:
         break
