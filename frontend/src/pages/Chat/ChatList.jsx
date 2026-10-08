@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useContext } from 'react'
 import styled from 'styled-components'
 import {
-  FaArrowLeft,
-  FaSearch,
-  FaBook,
-  FaExclamationCircle,
-  FaCheckCircle
-} from 'react-icons/fa'
+  LucideArrowLeft,
+  LucideBook,
+  LucideCircleAlert,
+  LucideCircleCheck,
+  LucideSearch
+} from 'lucide-react'
 import SidebarMenu, {
   MainContent
 } from '../../components/SidebarMenu/SidebarMenu'
@@ -116,7 +116,7 @@ const SearchInput = styled.input`
   }
 `
 
-const SearchIcon = styled(FaSearch)`
+const SearchIcon = styled(LucideSearch)`
   position: absolute;
   right: 15px;
   top: 50%;
@@ -351,7 +351,7 @@ const EmptyState = styled.div`
   padding: 40px;
 `
 
-const EmptyIcon = styled(FaBook)`
+const EmptyIcon = styled(LucideBook)`
   font-size: 3rem;
   color: #ddd;
   margin-bottom: 20px;
@@ -846,7 +846,7 @@ const ChatListPage = () => {
           <Header>
             <HeaderLeft>
               <BackButton onClick={handleBack}>
-                <FaArrowLeft />
+                <LucideArrowLeft />
                 {t('chat.back')}
               </BackButton>
               <Title>{t('chat.title')}</Title>
@@ -887,7 +887,7 @@ const ChatListPage = () => {
               </div>
             ) : error ? (
               <EmptyState>
-                <FaExclamationCircle
+                <LucideCircleAlert
                   style={{ color: '#f66', fontSize: '2rem', marginBottom: 12 }}
                 />
                 <h3>{t('chat.loadFailed')}</h3>
@@ -931,7 +931,7 @@ const ChatListPage = () => {
                     <ChatInfo>
                       <UserName>{chat.userName}</UserName>
                       <BookTitle>
-                        <FaBook style={{ color: '#666' }} />
+                        <LucideBook style={{ color: '#666' }} />
                         {chat.bookTitle}
                       </BookTitle>
                       <TradeStatus $status={chat.tradeStatus}>
@@ -956,7 +956,7 @@ const ChatListPage = () => {
                       {isCompleted &&
                         (alreadyReviewed ? (
                           <ReviewDoneBadge title={t('chat.reviewCompleted')}>
-                            <FaCheckCircle /> {t('chat.reviewCompleted')}
+                            <LucideCircleCheck /> {t('chat.reviewCompleted')}
                           </ReviewDoneBadge>
                         ) : (
                           <SmallBtn onClick={() => openReviewForChat(chat)}>

@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components'
 import { useTranslation } from 'react-i18next'
-import { FaReply, FaTrash, FaUser, FaClock } from 'react-icons/fa'
+import { LucideClock, LucideReply, LucideTrash, LucideUser } from 'lucide-react'
 import { displayMaskedName } from '../../utils/nameMask'
 
 const Box = styled.div`
@@ -429,13 +429,13 @@ export default function WantedComments({ wantedId }) {
         <Meta>
           <span
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <FaUser />
+            <LucideUser />
             {displayName}
           </span>
           {created && (
             <span
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <FaClock />
+              <LucideClock />
               {created.toLocaleString('ko-KR')}
             </span>
           )}
@@ -468,13 +468,13 @@ export default function WantedComments({ wantedId }) {
               setReplyFor(key)
               setReplyText('')
             }}>
-            <FaReply /> {t('wantedComments.reply')}
+            <LucideReply /> {t('wantedComments.reply')}
           </Button>
           {mine && (
             <Button
               $variant="danger"
               onClick={() => remove(key)}>
-              <FaTrash /> {t('wantedComments.delete')}
+              <LucideTrash /> {t('wantedComments.delete')}
             </Button>
           )}
         </Actions>

@@ -1,22 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import styled from 'styled-components'
 import {
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaEye,
-  FaBook,
-  FaUser,
-  FaClock,
-  FaMoneyBillWave,
-  FaChartLine,
-  FaHeart,
-  FaSearch,
-  FaHandPaper,
-  FaArrowRight,
-  FaRegEye,
-  FaExchangeAlt
-} from 'react-icons/fa'
+  LucideArrowRight,
+  LucideBook,
+  LucideClock,
+  LucideEye,
+  LucideHeart,
+  LucideSearch,
+  LucideSquarePen,
+  LucideTrash,
+  LucideUser
+} from 'lucide-react'
 import SidebarMenu, {
   MainContent
 } from '../../components/SidebarMenu/SidebarMenu'
@@ -993,12 +987,12 @@ const MyBookstore = () => {
           <SectionContainer>
             <SectionHeader>
               <SectionTitle>
-                <FaBook /> {t('myBookstore.myRegisteredBooks')}
+                <LucideBook /> {t('myBookstore.myRegisteredBooks')}
               </SectionTitle>
               <ViewMoreButton
                 onClick={() => setShowAllMyBooks(!showAllMyBooks)}>
                 {showAllMyBooks ? t('common.collapse') : t('common.viewMore')}
-                <FaArrowRight
+                <LucideArrowRight
                   style={{
                     transform: showAllMyBooks ? 'rotate(90deg)' : 'none'
                   }}
@@ -1045,7 +1039,7 @@ const MyBookstore = () => {
               ) : error.myPosts ? (
                 <EmptyState>
                   <EmptyIcon>
-                    <FaBook />
+                    <LucideBook />
                   </EmptyIcon>
                   <h3>{error.myPosts}</h3>
                   <button
@@ -1073,7 +1067,7 @@ const MyBookstore = () => {
                             alt={post.bookTitle}
                           />
                         ) : (
-                          <FaBook size={40} />
+                          <LucideBook size={40} />
                         )}
                       </BookImage>
 
@@ -1081,10 +1075,10 @@ const MyBookstore = () => {
 
                       <BookMeta>
                         <span>
-                          <FaClock size={12} />{' '}
+                          <LucideClock size={12} />{' '}
                           {new Date(post.createdAt).toLocaleDateString()}
                         </span>
-                        {/* <span><FaEye size={12} /> {post.views}</span> */}
+                        {/* <span><LucideEye size={12} /> {post.views}</span> */}
                       </BookMeta>
 
                       <BookPrice>
@@ -1099,12 +1093,12 @@ const MyBookstore = () => {
                       <BookActions>
                         <ActionButton
                           onClick={() => handleViewBook(post.postId)}>
-                          <FaSearch /> {t('common.view')}
+                          <LucideSearch /> {t('common.view')}
                         </ActionButton>
                         {post.status === 'FOR_SALE' && (
                           <ActionButton
                             onClick={() => handleEditBook(post.postId)}>
-                            <FaEdit /> {t('common.edit')}
+                            <LucideSquarePen /> {t('common.edit')}
                           </ActionButton>
                         )}
                         {post.status === 'FOR_SALE' && (
@@ -1135,7 +1129,7 @@ const MyBookstore = () => {
                         <ActionButton
                           className="delete"
                           onClick={() => handleDeleteBook(post.postId)}>
-                          <FaTrash /> {t('common.delete')}
+                          <LucideTrash /> {t('common.delete')}
                         </ActionButton>
                       </BookActions>
                     </BookCard>
@@ -1144,7 +1138,7 @@ const MyBookstore = () => {
               ) : (
                 <NoBooks>
                   <EmptyIcon>
-                    <FaBook />
+                    <LucideBook />
                   </EmptyIcon>
                   {/* 탭에 따른 메시지 조건 수정 */}
                   <h3>
@@ -1279,7 +1273,7 @@ const MyBookstore = () => {
           <SectionContainer>
             <SectionHeader>
               <SectionTitle>
-                <FaHeart /> {t('myBookstore.wishlist')} (
+                <LucideHeart /> {t('myBookstore.wishlist')} (
                 {Array.isArray(wishlist) ? wishlist.length : 0})
               </SectionTitle>{' '}
               {/* 배열 체크 추가 */}
@@ -1296,7 +1290,7 @@ const MyBookstore = () => {
             ) : error.wishlist ? (
               <EmptyState>
                 <EmptyIcon>
-                  <FaHeart />
+                  <LucideHeart />
                 </EmptyIcon>
                 <h3>{error.wishlist}</h3>
                 <button
@@ -1325,17 +1319,17 @@ const MyBookstore = () => {
                           alt={item.postTitle}
                         />
                       ) : (
-                        <FaBook size={20} />
+                        <LucideBook size={20} />
                       )}
                     </CompactBookImage>
                     <CompactBookInfo>
                       <CompactBookTitle>{item.postTitle}</CompactBookTitle>
                       <CompactBookMeta>
                         <span>
-                          <FaUser size={10} /> {item.sellerNickname}
+                          <LucideUser size={10} /> {item.sellerNickname}
                         </span>
                         <span>
-                          <FaClock size={10} />{' '}
+                          <LucideClock size={10} />{' '}
                           {new Date(item.createdAt).toLocaleDateString()}
                         </span>
                       </CompactBookMeta>
@@ -1346,12 +1340,12 @@ const MyBookstore = () => {
                     </CompactBookInfo>
                     <BookActions>
                       <ActionButton onClick={() => handleViewBook(item.postId)}>
-                        <FaEye /> {t('common.view')}
+                        <LucideEye /> {t('common.view')}
                       </ActionButton>
                       <ActionButton
                         className="delete"
                         onClick={() => handleRemoveFromWishlist(item.postId)}>
-                        <FaHeart /> {t('myBookstore.removeFromWishlist')}
+                        <LucideHeart /> {t('myBookstore.removeFromWishlist')}
                       </ActionButton>
                     </BookActions>
                   </CompactBookCard>
@@ -1360,7 +1354,7 @@ const MyBookstore = () => {
             ) : (
               <EmptyState>
                 <EmptyIcon>
-                  <FaHeart />
+                  <LucideHeart />
                 </EmptyIcon>
                 <h3>{t('myBookstore.noWishlist')}</h3>
               </EmptyState>

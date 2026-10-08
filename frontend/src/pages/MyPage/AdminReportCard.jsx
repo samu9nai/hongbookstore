@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import styled from 'styled-components'
+import { LucideFlag } from 'lucide-react'
 import api from '../../lib/api'
 import { useNavigate } from 'react-router-dom'
 
@@ -178,8 +179,7 @@ export default function AdminReportCard() {
     <Card>
       <Header>
         <h3>
-          <i className="fas fa-flag" /> 신고 내역{' '}
-          <Muted>({sorted.length}건)</Muted>
+          <LucideFlag /> 신고 내역 <Muted>({sorted.length}건)</Muted>
         </h3>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <Btn onClick={() => setOrder(o => (o === 'desc' ? 'asc' : 'desc'))}>

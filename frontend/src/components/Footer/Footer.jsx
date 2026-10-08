@@ -1,12 +1,5 @@
 import styled, { keyframes } from 'styled-components'
 import { useTranslation } from 'react-i18next'
-import {
-  FaGithub,
-  FaTwitter,
-  FaInstagram,
-  FaLinkedin,
-  FaHeart
-} from 'react-icons/fa'
 
 const float = keyframes`
   0%, 100% { transform: translateY(0px) rotate(0deg); }

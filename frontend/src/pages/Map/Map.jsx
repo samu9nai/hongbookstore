@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import styled from 'styled-components'
 import {
-  FaPlus,
-  FaSearch,
-  FaMapMarkerAlt,
-  FaChevronDown,
-  FaSyncAlt,
-  FaTrash,
-  FaTimes,
-  FaMinus,
-  FaTrashAlt
-} from 'react-icons/fa'
+  LucideChevronDown,
+  LucideMapPin,
+  LucideRefreshCw,
+  LucideSearch,
+  LucideTrash,
+  LucideX
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import NaverMap from '../../components/NaverMap/Navermap'
@@ -493,7 +490,8 @@ const MapPage = () => {
             <AddButton
               onClick={refreshFromDB}
               title="DB에서 새로고침">
-              <FaSyncAlt /> {loadingDB ? t('map.loading') : t('map.refresh')}
+              <LucideRefreshCw />{' '}
+              {loadingDB ? t('map.loading') : t('map.refresh')}
             </AddButton>
           </HeaderButtons>
 
@@ -585,7 +583,7 @@ const MapPage = () => {
                           const openObj = full?.id ? full : null
                           if (openObj) handlePlaceClick(full)
                         }}>
-                        <FaMapMarkerAlt />
+                        <LucideMapPin />
                         <div>
                           <div className="name">{full?.name || p.name}</div>
                           <div className="addr">
@@ -598,7 +596,7 @@ const MapPage = () => {
                         onClick={() =>
                           handleRemovePlaceFromSelectedCategory(p.id)
                         }>
-                        <FaTrashAlt />
+                        <LucideTrash />
                         삭제
                       </RemoveBtn>
                     </PlaceItem>
@@ -618,7 +616,7 @@ const MapPage = () => {
             onChange={e => setSearchQuery(e.target.value)}
           />
           <MapSearchIcon>
-            <FaSearch />
+            <LucideSearch />
           </MapSearchIcon>
         </MapSearchContainer>
 
@@ -631,7 +629,7 @@ const MapPage = () => {
                 : categories.find(cat => cat.id === selectedType)?.name ||
                   t('map.all')}
             </span>
-            <FaChevronDown />
+            <LucideChevronDown />
           </TypeFilterButton>
           {showTypeDropdown && (
             <TypeDropdownMenu>
@@ -666,7 +664,7 @@ const MapPage = () => {
                 : `검색 결과 (${searchResults.length})`}
             </SearchResultsTitle>
             <CloseSearchButton onClick={() => setShowSearchResults(false)}>
-              <FaTimes />
+              <LucideX />
             </CloseSearchButton>
           </SearchResultsHeader>
           <SearchResultsList>
@@ -687,7 +685,7 @@ const MapPage = () => {
                     </SearchResultCategory>
                   </SearchResultHeader>
                   <SearchResultAddress>
-                    <FaMapMarkerAlt /> {place.address}
+                    <LucideMapPin /> {place.address}
                   </SearchResultAddress>
                 </SearchResultItem>
               ))
@@ -718,7 +716,7 @@ const MapPage = () => {
             <ModalHeader>
               <h3>{t('map.addNewPlace')}</h3>
               <CloseButton onClick={() => setShowAddPlace(false)}>
-                <FaTimes />
+                <LucideX />
               </CloseButton>
             </ModalHeader>
             <ModalBody>

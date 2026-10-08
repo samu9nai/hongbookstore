@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import { FaExclamationTriangle } from 'react-icons/fa'
+import { LucideTriangleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 const ModalOverlay = styled.div`
@@ -140,7 +140,7 @@ const WarningModal = ({
       onClick={onClose}>
       <ModalContent onClick={e => e.stopPropagation()}>
         <WarningIcon>
-          <FaExclamationTriangle />
+          <LucideTriangleAlert />
         </WarningIcon>
 
         <ModalTitle>{content.title}</ModalTitle>

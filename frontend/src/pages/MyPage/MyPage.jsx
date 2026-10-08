@@ -6,7 +6,20 @@ import React, {
   useContext
 } from 'react'
 import styled from 'styled-components'
-import '@fortawesome/fontawesome-free/css/all.min.css'
+import {
+  LucideCamera,
+  LucideCircleAlert,
+  LucideCircleCheck,
+  LucideGraduationCap,
+  LucideMail,
+  LucidePen,
+  LucideRotateCcwClock,
+  LucideStar,
+  LucideUniversity,
+  LucideUpload,
+  LucideUser,
+  LucideUserX
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -187,7 +200,7 @@ const ProfileImageBig = styled.div`
     z-index: 2;
   }
 
-  i {
+  svg {
     font-size: 48px;
     color: var(--primary);
     position: relative;
@@ -198,7 +211,7 @@ const ProfileImageBig = styled.div`
     width: 100px;
     height: 100px;
 
-    i {
+    svg {
       font-size: 40px;
     }
   }
@@ -398,7 +411,7 @@ const SettingsSection = styled.div`
       box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
     }
 
-    i {
+    svg {
       font-size: 1rem;
     }
   }
@@ -1336,20 +1349,20 @@ const MyPage = () => {
                 alt="Profile"
               />
             ) : (
-              <i
-                className="fas fa-user"
-                style={{ fontSize: '48px', color: 'var(--primary)' }}></i>
+              <LucideUser
+                style={{ fontSize: '48px', color: 'var(--primary)' }}
+              />
             )}
             <StyledPhotoChangeButton
               type="button"
               onClick={() => fileInputRef.current.click()}>
-              <i
-                className="fas fa-camera-retro"
+              <LucideCamera
                 style={{
                   position: 'relative',
                   zIndex: 6,
                   fontSize: '16px'
-                }}></i>
+                }}
+              />
             </StyledPhotoChangeButton>
             {showPhotoMenu && (
               <div
@@ -1387,9 +1400,9 @@ const MyPage = () => {
                   onMouseEnter={e => (e.target.style.background = '#f8fafc')}
                   onMouseLeave={e => (e.target.style.background = 'none')}
                   onClick={() => handlePhotoMenuSelect('default')}>
-                  <i
-                    className="fas fa-user"
-                    style={{ color: 'var(--primary)', fontSize: '1rem' }}></i>
+                  <LucideUser
+                    style={{ color: 'var(--primary)', fontSize: '1rem' }}
+                  />
                   기본 아이콘
                 </button>
                 <button
@@ -1411,9 +1424,9 @@ const MyPage = () => {
                   onMouseEnter={e => (e.target.style.background = '#f8fafc')}
                   onMouseLeave={e => (e.target.style.background = 'none')}
                   onClick={() => handlePhotoMenuSelect('upload')}>
-                  <i
-                    className="fas fa-upload"
-                    style={{ color: 'var(--primary)', fontSize: '1rem' }}></i>
+                  <LucideUpload
+                    style={{ color: 'var(--primary)', fontSize: '1rem' }}
+                  />
                   사진 업로드
                 </button>
               </div>
@@ -1472,7 +1485,7 @@ const MyPage = () => {
                       <SmallButton
                         style={{ marginLeft: 2 }}
                         onClick={() => setEditingName(true)}>
-                        <i className="fas fa-pen"></i>
+                        <LucidePen />
                       </SmallButton>
                     </>
                   )}
@@ -1535,9 +1548,7 @@ const MyPage = () => {
         {/* 거래 후기 섹션 (판매자/구매자 탭) */}
         <SettingsSection>
           <h3>
-            <i
-              className="fas fa-star"
-              style={{ color: 'var(--primary)' }}></i>{' '}
+            <LucideStar style={{ color: 'var(--primary)' }} />{' '}
             {t('mypage.transactionReview')}
           </h3>
           <TabContainer>
@@ -1668,9 +1679,7 @@ const MyPage = () => {
         </SettingsSection>
         <SettingsSection>
           <h3>
-            <i
-              className="fas fa-history"
-              style={{ color: 'var(--primary)' }}></i>{' '}
+            <LucideRotateCcwClock style={{ color: 'var(--primary)' }} />{' '}
             {t('mypage.recentlyViewedPosts')}
           </h3>
           {recentLoading ? (
@@ -1793,9 +1802,7 @@ const MyPage = () => {
           <SettingsList>
             <SettingsItem>
               <span>
-                <i
-                  className="fas fa-envelope"
-                  style={{ marginRight: 8, color: '#6B7280' }}></i>
+                <LucideMail style={{ marginRight: 8, color: '#6B7280' }} />
                 {profile.email}
               </span>
             </SettingsItem>
@@ -1804,23 +1811,24 @@ const MyPage = () => {
 
         <SettingsSection>
           <h3>
-            <i
-              className="fas fa-graduation-cap"
-              style={{ color: 'var(--primary)' }}></i>{' '}
+            <LucideGraduationCap style={{ color: 'var(--primary)' }} />{' '}
             {t('mypage.studentVerification')}
           </h3>
           <SettingsList>
             <SettingsItem>
               <span>
-                <i
-                  className="fas fa-university"
-                  style={{ marginRight: 8, color: '#6B7280' }}></i>
+                <LucideUniversity
+                  style={{ marginRight: 8, color: '#6B7280' }}
+                />
                 {t('mypage.currentStudentVerification')}
               </span>
               <span
                 className={`verification-status ${profile.studentVerified ? 'verified' : 'not-verified'}`}>
-                <i
-                  className={`fas fa-${profile.studentVerified ? 'check-circle' : 'exclamation-circle'}`}></i>
+                {profile.studentVerified ? (
+                  <LucideCircleCheck />
+                ) : (
+                  <LucideCircleAlert />
+                )}
                 {profile.studentVerified
                   ? t('mypage.verificationComplete')
                   : t('mypage.notVerified')}
@@ -1869,15 +1877,19 @@ const MyPage = () => {
           {/* 서버 응답 메시지 표시 UI */}
           {verificationMessage.text && (
             <VerificationMessage className={verificationMessage.type}>
-              <i
-                className={`fas fa-${verificationMessage.type === 'success' || verificationMessage.type === 'info' ? 'check-circle' : 'exclamation-circle'}`}></i>
+              {verificationMessage.type === 'success' ||
+              verificationMessage.type === 'info' ? (
+                <LucideCircleCheck />
+              ) : (
+                <LucideCircleAlert />
+              )}
               {verificationMessage.text}
             </VerificationMessage>
           )}
 
           {profile.studentVerified && (
             <VerificationMessage className="success">
-              <i className="fas fa-check-circle"></i>
+              <LucideCircleCheck />
               {t('mypage.verificationCompleteMessage', {
                 email: profile.univEmail
               })}
@@ -1889,9 +1901,7 @@ const MyPage = () => {
           <SettingsList>
             <SettingsItem>
               <span>
-                <i
-                  className="fas fa-user-slash"
-                  style={{ marginRight: 6 }}></i>
+                <LucideUserX style={{ marginRight: 6 }} />
                 {t('deleteAccount')}
               </span>
               {/* ✅ 여기 onClick 추가 */}

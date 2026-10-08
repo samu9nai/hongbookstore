@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import styled from 'styled-components'
-import { FaPlus, FaSearch } from 'react-icons/fa'
+import { LucidePlus, LucideSearch } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import SidebarMenu, {
   MainContent
@@ -277,7 +277,7 @@ const Wanted = () => {
           <WantedHeader>
             <WantedTitle>{t('wanted.title')}</WantedTitle>
             <WriteButton onClick={handleWriteClick}>
-              <FaPlus /> {t('wanted.write')}
+              <LucidePlus /> {t('wanted.write')}
             </WriteButton>
           </WantedHeader>
 
@@ -291,7 +291,7 @@ const Wanted = () => {
                 onChange={e => setSearchTerm(e.target.value)}
               />
               <SearchButton type="submit">
-                <FaSearch />
+                <LucideSearch />
               </SearchButton>
             </SearchForm>
 

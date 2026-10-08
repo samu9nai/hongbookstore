@@ -8,19 +8,14 @@ import React, {
 } from 'react'
 import styled from 'styled-components'
 import {
-  FaHeart,
-  FaShare,
-  FaMapMarkerAlt,
-  FaUser,
-  FaCalendar,
-  FaEye,
-  FaArrowLeft,
-  FaPhone,
-  FaComment,
-  FaStar,
-  FaTimes,
-  FaExclamationTriangle
-} from 'react-icons/fa'
+  LucideArrowLeft,
+  LucideMapPin,
+  LucideMessageCircle,
+  LucideStar,
+  LucideTriangleAlert,
+  LucideUser,
+  LucideX
+} from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AuthCtx } from '../../contexts/AuthContext'
@@ -373,8 +368,9 @@ const Stars = styled.div`
   gap: 0.1rem;
 `
 
-const Star = styled(FaStar)`
+const Star = styled(LucideStar)`
   color: ${props => (props.filled ? '#ffc107' : '#e0e0e0')};
+  fill: currentColor;
   font-size: 0.9rem;
 `
 
@@ -1122,7 +1118,7 @@ const PostDetail = () => {
       <div className="header-spacer" />
       <DetailContainer>
         <BackButton onClick={() => navigate(-1)}>
-          <FaArrowLeft /> {t('postDetail.back')}
+          <LucideArrowLeft /> {t('postDetail.back')}
         </BackButton>
 
         <PostDetailGrid>
@@ -1163,7 +1159,7 @@ const PostDetail = () => {
                     <ReportButton
                       onClick={openReport}
                       title={t('postDetail.report')}>
-                      <FaExclamationTriangle />
+                      <LucideTriangleAlert />
                       {t('postDetail.report')}
                     </ReportButton>
                   )}
@@ -1376,7 +1372,7 @@ const PostDetail = () => {
 
             <SellerSection>
               <SellerTitle>
-                <FaUser /> {t('postDetail.seller.title')}
+                <LucideUser /> {t('postDetail.seller.title')}
               </SellerTitle>
               <SellerInfo>
                 <SellerAvatar>
@@ -1392,7 +1388,7 @@ const PostDetail = () => {
                 <SellerDetails>
                   <SellerName>{getDisplaySellerName(post)}</SellerName>
                   <SellerLocation>
-                    <FaMapMarkerAlt />
+                    <LucideMapPin />
                     {post.sellerLocation || '위치 정보 없음'}
                   </SellerLocation>
                   {typeof post.sellerRating === 'number' && (
@@ -1463,13 +1459,13 @@ const PostDetail = () => {
                         ? '학생 인증이 필요한 기능입니다.'
                         : undefined
                   }>
-                  <FaComment />
+                  <LucideMessageCircle />
                   {t('postDetail.contact')}
                 </ChatButton>
                 <ViewOtherBooksButton
                   onClick={handleViewOtherBooks}
                   disabled={isSellerDeactivated(post)}>
-                  <FaUser />
+                  <LucideUser />
                   {t('postDetail.viewOtherBooks')}{' '}
                   {sellerOtherBooks.length > 0 &&
                     `(${sellerOtherBooks.length})`}
@@ -1485,11 +1481,11 @@ const PostDetail = () => {
           <ModalContent onClick={e => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>
-                <FaUser /> {getDisplaySellerName(post)}
+                <LucideUser /> {getDisplaySellerName(post)}
                 {t('postDetail.seller.otherBooks')}
               </ModalTitle>
               <CloseButton onClick={() => setShowOtherBooks(false)}>
-                <FaTimes />
+                <LucideX />
               </CloseButton>
             </ModalHeader>
 
@@ -1585,7 +1581,7 @@ const PostDetail = () => {
             <ModalHeader>
               <ModalTitle>후기 남기기</ModalTitle>
               <CloseButton onClick={() => setReviewOpen(false)}>
-                <FaTimes />
+                <LucideX />
               </CloseButton>
             </ModalHeader>
             <div style={{ marginBottom: 12 }}>
@@ -1666,7 +1662,7 @@ const PostDetail = () => {
                 {t('postDetail.reportModal.selectReason')}
               </ModalTitle>
               <CloseButton onClick={() => setShowReportModal(false)}>
-                <FaTimes />
+                <LucideX />
               </CloseButton>
             </ModalHeader>
 
@@ -1775,7 +1771,7 @@ const PostDetail = () => {
             <ModalHeader>
               <ModalTitle>{t('postDetail.reportModal.submitted')}</ModalTitle>
               <CloseButton onClick={() => setShowReportDoneModal(false)}>
-                <FaTimes />
+                <LucideX />
               </CloseButton>
             </ModalHeader>
             <div style={{ color: '#333', lineHeight: 1.6 }}>

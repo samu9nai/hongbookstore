@@ -5,7 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { AuthCtx } from '../../contexts/AuthContext'
 import { useWriting } from '../../contexts/WritingContext'
 import WarningModal from '../WarningModal/WarningModal'
-import { FaBell, FaComment, FaHeart, FaTag } from 'react-icons/fa'
+import {
+  LucideBell,
+  LucideHeart,
+  LucideMessageCircle,
+  LucideTag
+} from 'lucide-react'
 import { startNotificationStream } from '../../api/notifications'
 
 const slideDown = keyframes`
@@ -1065,7 +1070,7 @@ const Header = () => {
               {isLoggedIn && (
                 <NotificationContainer className="notification-container">
                   <NotificationButton onClick={toggleNotifications}>
-                    <FaBell />
+                    <LucideBell />
                     {unreadCount > 0 && (
                       <NotificationBadge>
                         {unreadCount > 9 ? '9+' : unreadCount}
@@ -1096,9 +1101,13 @@ const Header = () => {
                                 handleNotificationClick(notification)
                               }>
                               <NotificationIcon type={notification.type}>
-                                {notification.type === 'chat' && <FaComment />}
-                                {notification.type === 'price' && <FaTag />}
-                                {notification.type === 'system' && <FaHeart />}
+                                {notification.type === 'chat' && (
+                                  <LucideMessageCircle />
+                                )}
+                                {notification.type === 'price' && <LucideTag />}
+                                {notification.type === 'system' && (
+                                  <LucideHeart />
+                                )}
                               </NotificationIcon>
                               <NotificationContent>
                                 <NotificationText>
