@@ -41,7 +41,7 @@
 | SEC-11 | P2 | 대기 | 외부 지도 API 프록시(`/api/naver/**`, `/api/directions/**`)를 로그인 없이 호출할 수 있어 API 쿼터를 소모시킬 수 있다 | `config/SecurityConfig.java` | C-11 |
 | SEC-12 | P2 | 대기 | 기본 프로필이 `dev`이고, dev 프로필은 actuator 엔드포인트를 모두 노출한다 | `src/main/resources/application.yml:5`, `:252` | C |
 | SEC-13 | P1 | 완료 (#25) | 프론트 직접 의존성의 공개 취약점(GHSA) 49건. next-auth(3건)·http-proxy-middleware(2건)는 패키지를 지워서(#23), vite 7.3.5(5건)·axios 1.20.0(35건)·postcss 8.5.23(4건)은 Renovate 보안 PR(#22, #21, #19)로 고쳤다. Dependency Dashboard의 OSV 조회 결과 0건이다 | `frontend/package.json`, `pnpm-lock.yaml` | Renovate OSV 조회(#15) |
-| SEC-14 | P1 | 대기 | 전이 의존성에 공개 취약점 25건(high 14, moderate 8, low 3)이 있다. Renovate OSV는 직접 의존성만 조회해서 잡지 못한다. react-router 7.13.0(react-router-dom 경유, 12건, 7.18.2에서 모두 수정), styled-components 경유 postcss 8.4.49(4건)·nanoid 3.3.11(3건), autoprefixer 경유 browserslist 4.28.1(2건)·baseline-browser-mapping(1건), vite 경유 rollup 4.53.3(1건)·esbuild 0.27.7(1건), plugin-react 경유 @babel/core 7.28.5(1건). 모두 semver 범위 안의 업데이트로 고칠 수 있다. react-router 취약점이 이 앱의 SPA 사용 방식에 해당하는지는 확인하지 않았다 | `pnpm-lock.yaml` | `pnpm audit` (#24) |
+| SEC-14 | P1 | 완료 (#27) | 전이 의존성의 공개 취약점 26건(high 15, moderate 8, low 3). Renovate OSV는 직접 의존성만 조회해서 잡지 못한다. 기록한 25건에 styled-components 경유 source-map-js 1.2.1(1건)이 더해졌다. lockfile만 고쳐서 semver 범위 안에서 모두 해소했다: react-router 7.18.4(12건), styled-components 6.5.3으로 postcss 8.4.49 의존 제거(postcss 4건, nanoid 3건, source-map-js 1건), vite 7.3.6·esbuild 0.28.2(1건), rollup 4.64.0(1건), @babel/core 7.29.7(1건), browserslist 4.29.3(2건), baseline-browser-mapping 2.11.27(1건). `pnpm audit` 결과 0건이다 | `pnpm-lock.yaml` | `pnpm audit` (#24) |
 
 ## 거래 정합성 (TXN)
 
