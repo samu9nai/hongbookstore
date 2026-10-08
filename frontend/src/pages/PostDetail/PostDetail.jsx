@@ -747,8 +747,9 @@ const normalizePostSummary = raw => {
 // ✅ 탈퇴 판매자 판별 & 표시명/클릭 가능 여부
 const isSellerDeactivated = p =>
   Boolean(p?.sellerDeactivated) ||
-  /^탈퇴회원#/i.test(String(p?.sellerNickname ?? '')) ||
-  (p?.sellerId == null && /^탈퇴회원#/i.test(String(p?.sellerUsername ?? '')))
+  String(p?.sellerNickname ?? '').startsWith('탈퇴회원#') ||
+  (p?.sellerId == null &&
+    String(p?.sellerUsername ?? '').startsWith('탈퇴회원#'))
 
 const getDisplaySellerName = p =>
   isSellerDeactivated(p)
@@ -879,14 +880,15 @@ const PostDetail = () => {
   )
 
   useEffect(() => {
-    fetchPost()
-    fetchMyLikes()
+    // oxlint-disable-next-line react/set-state-in-effect -- 글을 불러오는 동안 로딩 상태를 먼저 켠다
+    void fetchPost()
+    void fetchMyLikes()
   }, [fetchPost, fetchMyLikes])
 
   const handleLikeToggle = useCallback(async () => {
     if (!localStorage.getItem('accessToken')) {
       alert(t('postDetail.loginRequired'))
-      navigate('/login')
+      void navigate('/login')
       return
     }
     const newLikedState = !liked
@@ -916,7 +918,7 @@ const PostDetail = () => {
     const buyerId = user?.id
     if (!buyerId) {
       alert('로그인이 필요합니다.')
-      navigate('/login')
+      void navigate('/login')
       return
     }
     if (!user?.studentVerified) {
@@ -930,7 +932,7 @@ const PostDetail = () => {
         { headers: getAuthHeader() }
       )
       const chatRoom = response.data
-      navigate(`/chat/${chatRoom.id}`)
+      void navigate(`/chat/${chatRoom.id}`)
     } catch (err) {
       const errorMessage =
         err.response?.data?.message ||
@@ -939,15 +941,11 @@ const PostDetail = () => {
     }
   }, [id, user, navigate, post])
 
-  const handleCall = useCallback(() => {
-    alert(t('postDetail.phone.notAvailable'))
-  }, [t])
-
   const handleViewOtherBooks = useCallback(() => {
     if (isSellerDeactivated(post)) return
     setShowOtherBooks(prev => !prev)
     if (!showOtherBooks && post?.sellerId) {
-      fetchSellerOtherBooks(post.sellerId)
+      void fetchSellerOtherBooks(post.sellerId)
     }
   }, [showOtherBooks, post, fetchSellerOtherBooks])
 
@@ -955,7 +953,7 @@ const PostDetail = () => {
   const handleOtherBookClick = useCallback(
     bookId => {
       if (bookId !== parseInt(id)) {
-        navigate(`/posts/${bookId}`, { replace: true })
+        void navigate(`/posts/${bookId}`, { replace: true })
         setShowOtherBooks(false)
       }
     },
@@ -963,8 +961,8 @@ const PostDetail = () => {
   )
 
   const handleRetry = useCallback(() => {
-    fetchPost()
-    fetchMyLikes()
+    void fetchPost()
+    void fetchMyLikes()
   }, [fetchPost, fetchMyLikes])
 
   const canLeaveReview = !!post && post.status === 'SOLD_OUT' && !!user
@@ -1017,11 +1015,6 @@ const PostDetail = () => {
       : 0
   }, [post])
 
-  const bookCondition = useMemo(() => {
-    if (!post) return null
-    return getBookCondition(post.discountRate || discountRate)
-  }, [post, discountRate])
-
   const {
     onLabel: oncampusLabel,
     offStation: offcampusStation,
@@ -1069,10 +1062,6 @@ const PostDetail = () => {
         return reportReason // 이미 ENUM일 가능성
       })()
 
-      const reasonText =
-        reportReason === t('postDetail.reportModal.options.other')
-          ? reportEtcText || t('postDetail.reportModal.options.other')
-          : reportReason
       const payload = {
         type: 'SALE_POST',
         targetId: Number(id),
