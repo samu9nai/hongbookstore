@@ -803,7 +803,7 @@ const Header = () => {
 
   const handleLangChange = e => {
     const newLang = e.target.value
-    i18n.changeLanguage(newLang)
+    void i18n.changeLanguage(newLang)
     localStorage.setItem('lang', newLang)
   }
 
@@ -812,8 +812,8 @@ const Header = () => {
     setIsDropdownOpen(false)
     try {
       await logout()
-      navigate('/')
-    } catch (error) {
+      void navigate('/')
+    } catch {
       alert('로그아웃 중 문제가 발생했습니다.')
     }
   }
@@ -825,7 +825,7 @@ const Header = () => {
       setPendingNavigation(path)
       setShowWarningModal(true)
     } else {
-      navigate(path)
+      void navigate(path)
     }
     setIsMobileMenuOpen(false)
     setIsDropdownOpen(false)
@@ -834,10 +834,10 @@ const Header = () => {
   const handleConfirmExit = () => {
     setShowWarningModal(false)
     if (pendingNavigation) {
-      navigate(pendingNavigation)
+      void navigate(pendingNavigation)
       setPendingNavigation(null)
     } else {
-      navigate('/marketplace')
+      void navigate('/marketplace')
     }
   }
 
@@ -851,13 +851,13 @@ const Header = () => {
       window.dispatchEvent(new CustomEvent('saveDraft'))
       setShowWarningModal(false)
       if (pendingNavigation) {
-        navigate(pendingNavigation)
+        void navigate(pendingNavigation)
         setPendingNavigation(null)
       }
-    } catch (error) {
+    } catch {
       setShowWarningModal(false)
       if (pendingNavigation) {
-        navigate(pendingNavigation)
+        void navigate(pendingNavigation)
         setPendingNavigation(null)
       }
     }
@@ -872,7 +872,7 @@ const Header = () => {
         if (parsedUser && parsedUser.username)
           return parsedUser.username.charAt(0).toUpperCase()
       }
-    } catch (error) {}
+    } catch {}
     return 'U'
   }
 
@@ -881,7 +881,7 @@ const Header = () => {
     try {
       const localUser = localStorage.getItem('user')
       return localUser ? JSON.parse(localUser) : null
-    } catch (error) {
+    } catch {
       return null
     }
   }
@@ -893,14 +893,19 @@ const Header = () => {
     if (!isLoggedIn || !currentUser) return
     const saved = loadSaved(currentUser)
     if (Array.isArray(saved) && saved.length) {
+      // oxlint-disable-next-line react/set-state-in-effect -- 로그인한 사용자의 저장된 알림을 복원한다
       setNotifications(saved)
     }
+    // currentUser는 렌더링마다 새로 만든 객체라 넣으면 무한 반복된다. id가 바뀔 때만 실행한다
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- 사용자 id로 실행 시점을 정한다
   }, [isLoggedIn, currentUser?.id])
 
   // ====== ✅ 알림 변경 시: 사용자별 자동 저장
   useEffect(() => {
     if (!isLoggedIn || !currentUser) return
     saveSaved(currentUser, notifications)
+    // currentUser는 렌더링마다 새로 만든 객체라 넣으면 매 렌더마다 저장한다
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- 사용자 id로 실행 시점을 정한다
   }, [notifications, isLoggedIn, currentUser?.id])
 
   const toggleNotifications = () => setShowNotifications(!showNotifications)
@@ -914,7 +919,7 @@ const Header = () => {
   const handleNotificationClick = notification => {
     markAsRead(notification.id)
     setShowNotifications(false)
-    if (notification.link) navigate(notification.link)
+    if (notification.link) void navigate(notification.link)
   }
 
   const unreadCount = notifications.filter(n => n.unread).length
@@ -939,16 +944,6 @@ const Header = () => {
   const clearAllNotifications = () => {
     setNotifications([])
     if (currentUser) clearSaved(currentUser)
-  }
-
-  // 시간 표시 포맷터
-  const formatTime = iso => {
-    try {
-      const d = iso ? new Date(iso) : new Date()
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    } catch {
-      return '방금 전'
-    }
   }
 
   // ====== ✅ SSE 구독 (중복 방지 포함)
@@ -1001,7 +996,7 @@ const Header = () => {
     )
     return () => {
       try {
-        es && es.close()
+        es?.close()
       } catch {}
     }
   }, [isLoggedIn])

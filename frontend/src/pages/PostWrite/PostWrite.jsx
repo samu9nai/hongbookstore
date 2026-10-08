@@ -16,7 +16,7 @@ import {
   FaUser,
   FaMapMarkerAlt
 } from 'react-icons/fa'
-import { useNavigate, useLocation, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import WarningModal from '../../components/WarningModal/WarningModal'
@@ -1504,7 +1504,6 @@ const normalizeBook = doc => ({
 const PostWrite = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const location = useLocation()
   const { id } = useParams()
   const isEdit = Boolean(id)
 
@@ -1559,7 +1558,7 @@ const PostWrite = () => {
   // 카테고리 트리: 서버 우선, 실패 시 상수 폴백
   const [catTree, setCatTree] = useState([])
   useEffect(() => {
-    ;(async () => {
+    void (async () => {
       try {
         const res = await api.get('/categories')
         const arr = Array.isArray(res)
@@ -1569,7 +1568,7 @@ const PostWrite = () => {
             : []
         const tree = mapServerTree(arr)
         setCatTree(tree && tree.length ? tree : buildTreeFromConst())
-      } catch (_) {
+      } catch {
         setCatTree(buildTreeFromConst())
       }
     })()
@@ -1586,7 +1585,8 @@ const PostWrite = () => {
   const clearErrors = useCallback(fieldName => {
     setErrors(prev => {
       if (prev[fieldName]) {
-        const { [fieldName]: removed, ...rest } = prev
+        const rest = { ...prev }
+        delete rest[fieldName]
         return rest
       }
       return prev
@@ -1607,7 +1607,8 @@ const PostWrite = () => {
 
       if (draftAge < expiryTime) {
         // 임시저장된 데이터가 있으면 자동으로 불러오기 (팝업 없이)
-        const { timestamp, ...dataWithoutTimestamp } = draftData
+        const dataWithoutTimestamp = { ...draftData }
+        delete dataWithoutTimestamp.timestamp
         setFormData(prev => ({
           ...prev,
           ...dataWithoutTimestamp
@@ -1618,7 +1619,7 @@ const PostWrite = () => {
       } else {
         localStorage.removeItem(DRAFT_STORAGE_KEY)
       }
-    } catch (error) {
+    } catch {
       localStorage.removeItem(DRAFT_STORAGE_KEY)
     }
   }, [isEdit])
@@ -1626,6 +1627,7 @@ const PostWrite = () => {
   // 컴포넌트 마운트 시 글쓰기 시작 및 임시저장 데이터 불러오기
   useEffect(() => {
     startWriting('sale')
+    // oxlint-disable-next-line react/set-state-in-effect -- 마운트할 때 임시저장한 글을 폼에 불러온다
     loadDraftData()
 
     return () => {
@@ -1633,19 +1635,14 @@ const PostWrite = () => {
     }
   }, [startWriting, stopWriting, loadDraftData])
 
-  // 등록 방식 전환 시 custom -> search로 변경되면 정가 없음 플래그 해제
-  useEffect(() => {
-    if (inputType === 'search' && unknownOriginalPrice) {
-      setUnknownOriginalPrice(false)
-    }
-  }, [inputType, unknownOriginalPrice])
-
   // 폼 데이터 변경 감지
   useEffect(() => {
     const hasChanges =
       Object.values(formData).some(
         value => value && value.toString().trim() !== ''
       ) || images.length > 0
+    // 임시저장 뒤 false로 되돌리는 경로가 있어 파생값으로 바꾸지 않는다
+    // oxlint-disable-next-line react/set-state-in-effect -- 폼 내용이 바뀔 때 미저장 상태를 맞춘다
     setHasUnsavedChanges(hasChanges)
     setUnsavedChanges(hasChanges)
   }, [formData, images, setUnsavedChanges])
@@ -1663,7 +1660,7 @@ const PostWrite = () => {
         if (typeof url !== 'string' || !url.startsWith('blob:')) return
         try {
           URL.revokeObjectURL(url)
-        } catch (err) {
+        } catch {
           if (typeof console !== 'undefined') {
           }
         }
@@ -1684,10 +1681,10 @@ const PostWrite = () => {
       setHasUnsavedChanges(false)
       setUnsavedChanges(false)
       alert(t('postWrite.draftSaved'))
-    } catch (error) {
+    } catch {
       alert(t('postWrite.draftSaveFailed'))
     }
-  }, [formData, images, setUnsavedChanges])
+  }, [formData, images, setUnsavedChanges, t])
 
   const handleSaveDraftRef = useRef(handleSaveDraft)
   useEffect(() => {
@@ -1779,15 +1776,15 @@ const PostWrite = () => {
         }
 
         setInputType(postData.isbn ? 'search' : 'custom')
-      } catch (error) {
+      } catch {
         alert('게시글 정보를 불러올 수 없어! 🥺')
-        navigate('/marketplace')
+        void navigate('/marketplace')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchPostForEdit()
+    void fetchPostForEdit()
   }, [id, isEdit, navigate])
 
   // ✅ 수정모드에서 저장된 역 이름을 보고 호선 자동 세팅
@@ -1796,6 +1793,8 @@ const PostWrite = () => {
     const found = Object.keys(SUBWAY_MAP).find(line =>
       SUBWAY_MAP[line].includes(formData.offcampusStationCode)
     )
+    // 임시저장 복원에서도 역 코드만 들어오므로 effect에서 맞춘다
+    // oxlint-disable-next-line react/set-state-in-effect -- 저장된 역 코드로 호선을 자동 선택한다
     if (found) setOffcampusLine(found)
   }, [formData.offcampusStationCode, offcampusLine])
 
@@ -1924,7 +1923,7 @@ const PostWrite = () => {
       if (results.length === 0) {
         alert(t('postWrite.noSearchResults'))
       }
-    } catch (error) {
+    } catch {
       alert(t('postWrite.searchError'))
       setSearchResults([])
     } finally {
@@ -2037,7 +2036,7 @@ const PostWrite = () => {
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }, [formData, inputType, offcampusLine])
+  }, [formData, inputType, offcampusLine, unknownOriginalPrice])
 
   // 제출
   const handleSubmit = useCallback(
@@ -2074,12 +2073,6 @@ const PostWrite = () => {
             const fd = new FormData()
             newImageFiles.forEach(f => fd.append('images', f))
 
-            // 디버그 출력
-            try {
-              for (const [k, v] of fd.entries()) {
-              }
-            } catch {}
-
             await axios.post(`/api/posts/${id}/images`, fd, {
               headers: { ...getAuthHeader() }
             })
@@ -2087,7 +2080,7 @@ const PostWrite = () => {
 
           alert('게시글이 성공적으로 수정됐어! 🎉')
           localStorage.removeItem(DRAFT_STORAGE_KEY)
-          navigate(`/posts/${id}`)
+          void navigate(`/posts/${id}`)
         } else {
           // 생성 로직
           const apiData = new FormData()
@@ -2163,7 +2156,7 @@ const PostWrite = () => {
 
           alert('게시글이 성공적으로 등록됐어! 🎉')
           localStorage.removeItem(DRAFT_STORAGE_KEY)
-          navigate('/marketplace')
+          void navigate('/marketplace')
         }
       } catch (error) {
         const serverData = error.response?.data
@@ -2189,7 +2182,7 @@ const PostWrite = () => {
 
         if (error.response?.status === 401) {
           alert(serverMessage || '로그인이 필요해! 다시 로그인해줘 🔐')
-          navigate('/login')
+          void navigate('/login')
         } else if (error.response?.status === 403) {
           alert(serverMessage || t('noPermission'))
         } else if (error.response?.status === 400) {
@@ -2207,7 +2200,17 @@ const PostWrite = () => {
         setLoading(false)
       }
     },
-    [formData, images, isEdit, id, inputType, validateForm, navigate]
+    [
+      formData,
+      images,
+      isEdit,
+      id,
+      inputType,
+      unknownOriginalPrice,
+      validateForm,
+      navigate,
+      t
+    ]
   )
 
   // 안전한 네비게이션
@@ -2217,7 +2220,7 @@ const PostWrite = () => {
         setPendingNavigation(path)
         setShowWarningModal(true)
       } else {
-        navigate(path)
+        void navigate(path)
       }
     },
     [hasUnsavedChanges, navigate]
@@ -2226,7 +2229,7 @@ const PostWrite = () => {
   const handleConfirmExit = useCallback(() => {
     setShowWarningModal(false)
     const targetPath = pendingNavigation || '/marketplace'
-    navigate(targetPath)
+    void navigate(targetPath)
     setPendingNavigation(null)
   }, [navigate, pendingNavigation])
 
@@ -2240,12 +2243,12 @@ const PostWrite = () => {
       await handleSaveDraft()
       setShowWarningModal(false)
       const targetPath = pendingNavigation || '/marketplace'
-      navigate(targetPath)
+      void navigate(targetPath)
       setPendingNavigation(null)
-    } catch (error) {
+    } catch {
       setShowWarningModal(false)
       const targetPath = pendingNavigation || '/marketplace'
-      navigate(targetPath)
+      void navigate(targetPath)
       setPendingNavigation(null)
     }
   }, [handleSaveDraft, navigate, pendingNavigation])
@@ -2267,24 +2270,6 @@ const PostWrite = () => {
     setSearchResults([])
     setSearchLoading(false)
   }, [])
-
-  const handleOpenBookSearch = useCallback(() => {
-    setShowBookSearch(true)
-  }, [])
-
-  const isConditionChecked = useCallback(
-    (conditionType, value) => {
-      return formData[conditionType] === value
-    },
-    [formData]
-  )
-
-  const isNegotiableChecked = useCallback(
-    isNegotiable => {
-      return formData.negotiable === isNegotiable
-    },
-    [formData.negotiable]
-  )
 
   const recommended = getRecommendedPrice()
 
@@ -2327,7 +2312,11 @@ const PostWrite = () => {
                 <InputTypeButton
                   type="button"
                   $active={inputType === 'search'}
-                  onClick={() => setInputType('search')}>
+                  onClick={() => {
+                    // 검색 방식으로 바꾸면 정가 없음 플래그를 해제한다
+                    setInputType('search')
+                    setUnknownOriginalPrice(false)
+                  }}>
                   {t('postWrite.bookSearch')}
                 </InputTypeButton>
                 <InputTypeButton

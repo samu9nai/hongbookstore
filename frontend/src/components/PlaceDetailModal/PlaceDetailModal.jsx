@@ -174,7 +174,7 @@ function maskReviewerName(rawName, deactivated, t) {
   let masked = ''
   try {
     masked = displayMaskedName(base, false) || ''
-  } catch (_) {}
+  } catch {}
 
   // util이 비었거나 "익명"류면 로컬 마스킹
   if (!masked || /^(사용자|user|익명|anonymous)$/i.test(masked)) {
@@ -286,8 +286,6 @@ const PlaceDetailModal = ({
   const prevLightbox = () =>
     setLbIndex(i => (i - 1 + lbImages.length) % lbImages.length)
   const nextLightbox = () => setLbIndex(i => (i + 1) % lbImages.length)
-
-  if (!isOpen || !place) return null
 
   /* ===================== 평균/카운트 ===================== */
   const clientAvg =
@@ -752,11 +750,11 @@ const PlaceDetailModal = ({
         /* no-op */
       }
     }
-    if (isOpen && activeTab === 'route') init()
+    if (isOpen && activeTab === 'route') void init()
   }, [isOpen, activeTab, place, userLocation])
 
   useEffect(() => {
-    if (!(isOpen && activeTab === 'route')) return
+    if (!(isOpen && place && activeTab === 'route')) return
     if (!window.naver?.maps || !mapInstanceRef.current) return
 
     const { naver } = window
@@ -829,7 +827,7 @@ const PlaceDetailModal = ({
       }
     }
 
-    drawRoute()
+    void drawRoute()
   }, [startPoint, isOpen, activeTab, place])
 
   /* ===================== 출발지 검색 ===================== */
@@ -876,9 +874,12 @@ const PlaceDetailModal = ({
   // ✅ 모달 열릴 때 리뷰 불러오기
   useEffect(() => {
     if (!isOpen || !place?.id) return
-    fetchReviews()
+    void fetchReviews()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, place?.id])
+
+  // Hook을 모두 부른 뒤에 반환한다. 앞에서 반환하면 모달을 열고 닫을 때 Hook 개수가 바뀐다
+  if (!isOpen || !place) return null
 
   /* ===================== UI ===================== */
   return (
@@ -1234,7 +1235,7 @@ const PlaceDetailModal = ({
                       onChange={e => setStartQuery(e.target.value)}
                       placeholder={t('map.searchDeparturePlaceholder')}
                       onKeyDown={e => {
-                        if (e.key === 'Enter') searchStartPlaces()
+                        if (e.key === 'Enter') void searchStartPlaces()
                       }}
                     />
                     <SearchBtn
@@ -1280,6 +1281,7 @@ const PlaceDetailModal = ({
       {/* ✅ 리뷰 이미지 라이트박스 */}
       {lbOpen && (
         <Lightbox
+          key={lbIndex}
           images={lbImages}
           index={lbIndex}
           onClose={closeLightbox}
@@ -1898,12 +1900,6 @@ const Lightbox = ({ images, index, onClose, onPrev, onNext }) => {
   const [dragging, setDragging] = useState(false)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [last, setLast] = useState({ x: 0, y: 0 })
-
-  useEffect(() => {
-    setScale(1)
-    setOffset({ x: 0, y: 0 })
-    setDragging(false)
-  }, [index])
 
   const onWheel = e => {
     e.preventDefault()

@@ -91,16 +91,17 @@ function VerificationConfirmPage() {
 
   const navigate = useNavigate()
 
+  // 토큰이 없으면 잘못된 접근이므로 요청 없이 바로 에러를 보여준다.
+  const hasToken = Boolean(searchParams.get('token'))
+  const currentStatus = hasToken ? status : 'error'
+  const currentMessage = hasToken
+    ? message
+    : '인증 토큰이 없습니다. 이메일의 링크가 올바른지 확인해주세요.'
+
   useEffect(() => {
     // 1. URL에서 'token' 값을 꺼내온다.
     const token = searchParams.get('token')
-
-    // 토큰이 없으면 잘못된 접근이므로 에러 처리
-    if (!token) {
-      setStatus('error')
-      setMessage('인증 토큰이 없습니다. 이메일의 링크가 올바른지 확인해주세요.')
-      return
-    }
+    if (!token) return
 
     // 2. 백엔드에 토큰 검증을 요청하는 함수
     const confirmVerification = async () => {
@@ -141,12 +142,12 @@ function VerificationConfirmPage() {
     }
 
     // 페이지가 로드될 때 검증 함수를 실행
-    confirmVerification()
+    void confirmVerification()
   }, [searchParams, navigate]) // 이 effect는 searchParams가 변경될 때만 다시 실행 (사실상 한번만 실행)
 
   // 3. 현재 상태(status)에 따라 다른 UI를 보여준다.
   const renderContent = () => {
-    switch (status) {
+    switch (currentStatus) {
       case 'success':
         return (
           <>
@@ -155,7 +156,7 @@ function VerificationConfirmPage() {
             </StatusIcon>
             <Title>인증 완료!</Title>
             <Message>
-              {message}
+              {currentMessage}
               <br />
               이제부터 재학생 전용 서비스를 이용할 수 있습니다. 잠시 후
               마이페이지로 이동합니다.
@@ -195,7 +196,7 @@ function VerificationConfirmPage() {
             </StatusIcon>
             <Title>인증 실패</Title>
             <Message>
-              {message}
+              {currentMessage}
               <br />
               이메일의 인증 링크가 만료되었거나 올바르지 않을 수 있습니다.
             </Message>

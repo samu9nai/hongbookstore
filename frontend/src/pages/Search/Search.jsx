@@ -228,12 +228,6 @@ const statusMap = {
 }
 
 const Search = () => {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filters, setFilters] = useState({
-    // TODO: 필터 기능은 백엔드 API에 해당 파라미터가 추가된 후 구현
-    sortBy: 'createdAt,desc' // 기본 정렬: 최신순
-  })
-
   const navigate = useNavigate()
 
   // API 데이터를 저장할 상태
@@ -271,7 +265,7 @@ const Search = () => {
         totalElements: response.data.totalElements,
         currentPage: response.data.number
       })
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false)
     }
@@ -279,7 +273,8 @@ const Search = () => {
 
   // 검색 조건(searchParams)이 바뀔 때마다 API를 다시 호출
   useEffect(() => {
-    fetchPosts(searchParams)
+    // oxlint-disable-next-line react/set-state-in-effect -- 검색 결과를 불러오는 동안 로딩 상태를 먼저 켠다
+    void fetchPosts(searchParams)
   }, [fetchPosts, searchParams])
 
   const handleSearch = e => {
@@ -298,7 +293,7 @@ const Search = () => {
   }
 
   const handleBookClick = postId => {
-    navigate(`/posts/${postId}`)
+    void navigate(`/posts/${postId}`)
   }
 
   // 페이지네이션 버튼들을 동적으로 생성하는 함수

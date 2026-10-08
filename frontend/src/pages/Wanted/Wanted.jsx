@@ -172,7 +172,6 @@ const Wanted = () => {
   const { t } = useTranslation()
   const [wantedPosts, setWantedPosts] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [activeFilter, setActiveFilter] = useState('all')
   const [loading, setLoading] = useState(false)
 
   // 🔹 추가: 서버 필터 파라미터
@@ -220,7 +219,7 @@ const Wanted = () => {
       else if (Array.isArray(payload)) list = payload
 
       setWantedPosts(Array.isArray(list) ? list : [])
-    } catch (e) {
+    } catch {
       setWantedPosts([])
     } finally {
       setLoading(false)
@@ -229,38 +228,38 @@ const Wanted = () => {
 
   // 최초 로드
   useEffect(() => {
-    fetchWanted()
+    void fetchWanted()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 검색 제출 → 서버 쿼리(keyword, category/department/sort)
   const handleSearch = async e => {
     e.preventDefault()
-    fetchWanted({}) // state값 사용
+    void fetchWanted({}) // state값 사용
   }
 
   const handlePostClick = postId => {
     if (!postId) return
-    navigate(`/wanted/${postId}`)
+    void navigate(`/wanted/${postId}`)
   }
 
   const handleWriteClick = () => {
-    navigate('/wanted/write')
+    void navigate('/wanted/write')
   }
 
   const handleSidebarMenu = menu => {
     switch (menu) {
       case 'bookstore/add':
-        navigate('/bookstore/add')
+        void navigate('/bookstore/add')
         break
       case 'wanted':
-        navigate('/wanted')
+        void navigate('/wanted')
         break
       case 'mybookstore':
-        navigate('/bookstore')
+        void navigate('/bookstore')
         break
       case 'chat':
-        navigate('/chat')
+        void navigate('/chat')
         break
       default:
         break

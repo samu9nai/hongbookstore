@@ -68,7 +68,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 
 | ID | 우선 | 상태 | 문제 | 위치 | 출처 |
 |---|---|---|---|---|---|
-| FE-01 | P1 | 대기 | 조기 반환 뒤에 Hook을 호출한다 (eslint `rules-of-hooks` 4건) | `components/PlaceDetailModal/PlaceDetailModal.jsx:522`, `:545`, `:588`, `:671` | H-05 |
+| FE-01 | P1 | 완료 (#37) | 조기 반환 뒤에 Hook을 호출해, 닫힌 장소 상세 모달을 다시 열면 "Rendered more hooks" 오류가 났다. 조기 반환을 Hook 뒤로 옮기고 재현 테스트(`PlaceDetailModal.test.tsx`)를 더했다 | `components/PlaceDetailModal/PlaceDetailModal.jsx` | H-05 |
 | FE-02 | P2 | 대기 | `AuthProvider`가 두 번 감싸져 있다 | `main.jsx:10`, `App.jsx:86` | H-05 |
 | FE-03 | P2 | 대기 | API 접근 방식이 axios 인스턴스·직접 axios·`fetch`로 나뉘고, `localStorage`의 토큰을 52곳에서 직접 읽는다 | `src/main/frontend/src` 전반 | C, H-05 |
 | FE-04 | P1 | 완료 (#23) | 쓰지 않는 의존성: `next-auth`(→`next`), `http-proxy-middleware`, `dotenv`, `zod`, `@tanstack/react-query`, `react-kakao-maps-sdk`. `npm audit`의 critical 2건이 모두 `next-auth` 경로다 | `src/main/frontend/package.json` | C, H-05 |
@@ -77,6 +77,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | FE-07 | P3 | 완료 (#33) | CRA 잔재(`index.js`, `reportWebVitals.js`, `App.test.js`, `setupTests.js`)와 이 파일만 쓰던 `web-vitals` 의존성을 지웠다. 앱 진입점은 `main.jsx`라 빌드 결과물은 바뀌지 않았다 | `frontend/src` | C, H-07 |
 | FE-08 | P3 | 대기 | Vite+(`vp`)로 옮길지 검토한다. 지금 쓰는 Vite·Vitest·oxlint·tsgolint가 Vite+에 들어 있어 `vp migrate`로 옮길 수 있다. oxfmt 1.0과 Vite+ 안정화 이후에 판단한다 | `frontend/` | D-H |
 | FE-09 | P3 | 완료 (#29) | `i18next` 25·`react-i18next` 16의 선택적 peer가 TypeScript `^5`라 TS 7과 맞지 않았다. `i18next` 26.4.2·`react-i18next` 17.0.15로 올려 `pnpm peers check` 결과 0건이다 | `frontend/package.json` | D-H |
+| FE-10 | P2 | 대기 | 열 수 없는 모달이 남아 있다. 구해요 상세의 삭제 모달은 여는 함수(`openDelete`)를 부르는 곳이 없었고, 채팅방의 재전송 모달도 여는 함수(`handleRetryClick`)를 부르는 곳이 없었다. 두 함수는 린트 정리(#37)에서 지웠고 모달 JSX는 남아 있다. 연결할지 지울지 정해야 한다 | `pages/WantedDetail/WantedDetail.jsx`, `pages/Chat/ChatRoom.jsx` | #37 |
 
 ## 백엔드·운영 (BE, OPS)
 

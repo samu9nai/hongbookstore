@@ -125,7 +125,7 @@ export default function AdminReportCard() {
   // ADMIN 여부 확인: 성공만 하면 ADMIN으로 간주
   useEffect(() => {
     let active = true
-    ;(async () => {
+    void (async () => {
       setChecking(true)
       try {
         await api.get('/reports', { params: { page: 0, size: 1 } })
@@ -158,7 +158,8 @@ export default function AdminReportCard() {
   }, [])
 
   useEffect(() => {
-    if (isAdmin) fetchAll()
+    // oxlint-disable-next-line react/set-state-in-effect -- 관리자 확인 뒤 목록을 불러오는 동안 로딩 상태를 먼저 켠다
+    if (isAdmin) void fetchAll()
   }, [isAdmin, fetchAll])
 
   const sorted = useMemo(() => {
@@ -200,7 +201,7 @@ export default function AdminReportCard() {
             <strong>생성일</strong>
             <strong style={{ textAlign: 'right' }}>바로가기</strong>
           </Row>
-          {sorted.map(it => {
+          {sorted.map((it, idx) => {
             const type = it?.type || '-'
             const reason = it?.reason || '-'
             const detail = it?.detail || ''
@@ -214,7 +215,7 @@ export default function AdminReportCard() {
                   ? '/chat'
                   : null
             return (
-              <Row key={it?.id || Math.random()}>
+              <Row key={it?.id || idx}>
                 <div>
                   <Badge>{type}</Badge>
                 </div>

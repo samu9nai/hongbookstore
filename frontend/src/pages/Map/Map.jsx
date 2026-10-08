@@ -43,7 +43,7 @@ const searchPlacesFromBackend = async query => {
       }))
     }
     return []
-  } catch (e) {
+  } catch {
     return []
   }
 }
@@ -53,7 +53,7 @@ const getPlacesFromBackend = async () => {
   try {
     const data = await api.get('/places')
     return Array.isArray(data) ? data : []
-  } catch (e) {
+  } catch {
     alert('저장된 장소를 불러오는 데 실패했습니다.')
     return []
   }
@@ -64,18 +64,8 @@ const savePlaceToBackend = async placeData => {
   try {
     const data = await api.post('/places', placeData)
     return data
-  } catch (e) {
+  } catch {
     alert('장소 저장에 실패했습니다.')
-    return null
-  }
-}
-
-// 좌표 -> 주소 (미사용 보류)
-const getAddressFromCoordinates = async (lat, lng) => {
-  try {
-    const data = await api.get('/places/geocode', { params: { lat, lng } })
-    return data
-  } catch (e) {
     return null
   }
 }
@@ -225,7 +215,7 @@ const MapPage = () => {
   const [searchResults, setSearchResults] = useState([])
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
-  const [isGeocoding, setIsGeocoding] = useState(false)
+  const [isGeocoding] = useState(false)
   const [loadingDB, setLoadingDB] = useState(false)
   const [loadingCats, setLoadingCats] = useState(false)
 
@@ -242,14 +232,14 @@ const MapPage = () => {
       try {
         const cats = await getUserCategories()
         setUserCategories(cats || [])
-      } catch (e) {
+      } catch {
         setUserCategories([])
       } finally {
         setLoadingCats(false)
       }
     }
-    loadPlaces()
-    loadUserCats()
+    void loadPlaces()
+    void loadUserCats()
 
     // 초기 지도 위치(상수역)
     const sangsuStation = { lat: 37.5484, lng: 126.9244 }
@@ -291,7 +281,7 @@ const MapPage = () => {
           const results = await searchPlacesFromBackend(searchQuery)
           setSearchResults(results) // 백엔드가 이미 홍대 근접 순으로 5개 정렬
           setShowSearchResults(true)
-        } catch (e) {
+        } catch {
           setSearchResults([])
           setShowSearchResults(false)
         } finally {
@@ -377,7 +367,7 @@ const MapPage = () => {
     setShowAddPlace(false)
   }
 
-  const handleMapClick = useCallback((lat, lng) => {}, [])
+  const handleMapClick = useCallback(() => {}, [])
 
   // 장소 유형 필터
   const typeFilteredPlaces = places.filter(place => {
@@ -396,7 +386,7 @@ const MapPage = () => {
     try {
       const list = await getPlacesOfUserCategory(categoryId)
       setSelectedCategoryPlaces(list)
-    } catch (e) {
+    } catch {
       setSelectedCategoryPlaces([])
       alert('카테고리에 담긴 장소를 불러오지 못했습니다.')
     } finally {
@@ -425,7 +415,7 @@ const MapPage = () => {
     try {
       const created = await createUserCategory(trimmed)
       setUserCategories(prev => [...prev, created])
-    } catch (e) {
+    } catch {
       alert(t('map.categoryAddFailed'))
     }
   }
@@ -435,7 +425,7 @@ const MapPage = () => {
       await deleteUserCategory(categoryId)
       setUserCategories(prev => prev.filter(cat => cat.id !== categoryId))
       if (selectedUserCategoryId === categoryId) clearSelectedUserCategory()
-    } catch (e) {
+    } catch {
       alert('카테고리 삭제에 실패했습니다.')
     }
   }
@@ -450,7 +440,7 @@ const MapPage = () => {
       )
       if (selectedUserCategoryId === categoryId)
         setSelectedUserCategoryName(updated.name)
-    } catch (e) {
+    } catch {
       alert('카테고리 이름 변경에 실패했습니다.')
     }
   }
@@ -462,7 +452,7 @@ const MapPage = () => {
         // 선택된 카테고리일 경우 즉시 반영
         await handleSelectUserCategory(categoryId, selectedUserCategoryName)
       }
-    } catch (e) {
+    } catch {
       alert('카테고리에 장소를 담는 데 실패했습니다.')
     }
   }
@@ -472,7 +462,7 @@ const MapPage = () => {
     try {
       await removePlaceFromUserCategory(selectedUserCategoryId, placeId)
       setSelectedCategoryPlaces(prev => prev.filter(p => p.id !== placeId))
-    } catch (e) {
+    } catch {
       alert('카테고리에서 장소 제거에 실패했습니다.')
     }
   }
