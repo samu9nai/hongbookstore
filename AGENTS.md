@@ -25,7 +25,7 @@
 | `backend/src/main/java/com/hongik/books` | Spring Boot 백엔드 (Java 21, Boot 3.5) |
 | `backend/src/main/resources/application.yml` | 백엔드 설정. 비밀값은 `backend/.env`(커밋 금지)에서 읽는다 |
 | `backend/src/test` | 백엔드 테스트. `test` 프로필은 H2를 쓴다 |
-| `frontend` | React 19 + Vite 7 프론트엔드. JavaScript/JSX에서 TypeScript로 옮기는 중이다 |
+| `frontend` | React 19 + Vite 8 프론트엔드. JavaScript/JSX에서 TypeScript로 옮기는 중이다 |
 | `package.json`, `pnpm-workspace.yaml` | pnpm 워크스페이스 루트. husky·lint-staged 커밋 훅을 둔다 |
 | `renovate.json` | 의존성 업데이트 설정. 월 1회, 새 버전은 3일 뒤에 제안한다. major는 Dependency Dashboard에서 승인해야 PR이 열리고, 보안 수정은 일정과 대기 없이 바로 열린다 |
 | `deploy/` | Cloud Run·Vercel 배포 스크립트와 가이드 |
