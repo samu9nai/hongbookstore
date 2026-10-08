@@ -1,16 +1,70 @@
-import axios from 'axios'
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type AxiosRequestConfig
+} from 'axios'
+
+/** 백엔드 공통 응답 형식(common/dto/ApiResponse.java) */
+export interface ApiResponse<T = unknown> {
+  success: boolean
+  message: string
+  data: T
+}
+
+/** 400 응답의 data에 모더레이션 결과가 들어 있을 때 인터셉터가 붙이는 필드 */
+export interface ModerationError extends AxiosError {
+  isModeration?: boolean
+  field?: string
+  predictionLevel?: string
+  malicious?: unknown
+  clean?: unknown
+  reason?: string
+}
+
+interface ModerationDetail {
+  field?: string
+  predictionLevel?: string
+  malicious?: unknown
+  clean?: unknown
+  reason?: string
+}
+
+type DataRequest = <T = unknown>(
+  url: string,
+  config?: AxiosRequestConfig
+) => Promise<T>
+type DataBodyRequest = <T = unknown>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig
+) => Promise<T>
+
+/**
+ * 응답 인터셉터가 response.data를 돌려주므로 요청 메서드는 AxiosResponse가 아니라
+ * 응답 본문을 돌려준다. 실행 코드는 axios 인스턴스 그대로이고 타입만 이를 나타낸다.
+ */
+export interface ApiClient extends Omit<
+  AxiosInstance,
+  'get' | 'delete' | 'post' | 'put' | 'patch'
+> {
+  get: DataRequest
+  delete: DataRequest
+  post: DataBodyRequest
+  put: DataBodyRequest
+  patch: DataBodyRequest
+}
 
 // 1. axios 인스턴스 생성 및 기본 URL 설정
 // - 프로덕션(Vercel): '/api'로 서버리스 프록시를 타게 됩니다.
 // - 로컬 개발: 필요시 VITE_API_BASE를 'http://localhost:8080/api'로 지정하세요.
 const apiBase = import.meta.env?.VITE_API_BASE ?? '/api'
 
-const api = axios.create({
+const instance = axios.create({
   baseURL: apiBase
 })
 
 // 2. 요청(Request) 인터셉터
-api.interceptors.request.use(
+instance.interceptors.request.use(
   config => {
     // 요청을 보내기 전에 로컬 스토리지에서 토큰을 가져옵니다.
     const token = localStorage.getItem('accessToken')
@@ -27,12 +81,12 @@ api.interceptors.request.use(
 )
 
 // 3. 응답(Response) 인터셉터
-api.interceptors.response.use(
+instance.interceptors.response.use(
   response => {
     // 정상 응답이 왔을 때, response.data만 반환하여 사용하기 편하게 합니다.
     return response.data
   },
-  async error => {
+  async (error: ModerationError) => {
     // 에러 응답이 왔을 때의 처리
     const { response } = error
 
@@ -49,13 +103,15 @@ api.interceptors.response.use(
 
     // 400 + 모더레이션 에러 표준 처리
     try {
+      const body = response?.data as
+        Partial<ApiResponse<ModerationDetail | null>> | undefined
       if (
         response &&
         response.status === 400 &&
-        response.data &&
-        response.data.success === false
+        body &&
+        body.success === false
       ) {
-        const d = response.data.data
+        const d = body.data
         if (d && d.field) {
           // 호출부에서 특정 필드 에러로 쉽게 처리할 수 있도록 힌트 제공
           error.isModeration = true
@@ -64,15 +120,16 @@ api.interceptors.response.use(
           error.malicious = d.malicious
           error.clean = d.clean
           error.reason = d.reason
-          error.message =
-            response.data.message || '부적절한 표현이 감지되었습니다.'
+          error.message = body.message || '부적절한 표현이 감지되었습니다.'
         }
       }
-    } catch (_) {}
+    } catch {}
 
     // 그 외 다른 에러들은 그대로 reject하여, 호출한 쪽에서 catch로 처리할 수 있게 합니다.
     return Promise.reject(error)
   }
 )
+
+const api = instance as unknown as ApiClient
 
 export default api

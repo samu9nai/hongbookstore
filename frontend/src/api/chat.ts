@@ -4,7 +4,7 @@ import api from '../lib/api'
 export const getChatRooms = () => api.get('/chat/rooms')
 
 // 특정 책에 대한 채팅방 조회 또는 생성
-export const getOrCreateChatRoom = bookId => {
+export const getOrCreateChatRoom = (bookId: number | string) => {
   // 임시로 모의 응답 반환 (실제 API가 구현되면 주석 처리)
   return Promise.resolve({
     ok: true,
@@ -22,12 +22,13 @@ export const getOrCreateChatRoom = bookId => {
 }
 
 // 채팅방 메시지 조회
-export const getChatMessages = chatId =>
+export const getChatMessages = (chatId: number | string) =>
   api.get(`/chat/rooms/${chatId}/messages`)
 
 // 메시지 전송
-export const sendMessage = (chatId, message) =>
+export const sendMessage = (chatId: number | string, message: string) =>
   api.post(`/chat/rooms/${chatId}/messages`, { content: message })
 
 // 채팅방 정보 조회
-export const getChatRoomInfo = chatId => api.get(`/chat/rooms/${chatId}`)
+export const getChatRoomInfo = (chatId: number | string) =>
+  api.get(`/chat/rooms/${chatId}`)

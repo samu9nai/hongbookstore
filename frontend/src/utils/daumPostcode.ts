@@ -1,12 +1,12 @@
-let daumPostcodeLoading = null
+let daumPostcodeLoading: Promise<void> | null = null
 
 const DAUM_POSTCODE_SRC =
   'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
 
-function loadDaumPostcode() {
+function loadDaumPostcode(): Promise<void> {
   if (window.daum && window.daum.Postcode) return Promise.resolve()
   if (daumPostcodeLoading) return daumPostcodeLoading
-  daumPostcodeLoading = new Promise((resolve, reject) => {
+  daumPostcodeLoading = new Promise<void>((resolve, reject) => {
     const script = document.createElement('script')
     script.src = DAUM_POSTCODE_SRC
     script.async = true
@@ -17,10 +17,11 @@ function loadDaumPostcode() {
   return daumPostcodeLoading
 }
 
-export async function openDaumPostcode() {
+export async function openDaumPostcode(): Promise<DaumPostcodeData> {
   await loadDaumPostcode()
   return new Promise(resolve => {
-    new window.daum.Postcode({
+    // 스크립트 onload 뒤에는 window.daum이 있다
+    new window.daum!.Postcode({
       oncomplete: data => {
         resolve(data)
       }
