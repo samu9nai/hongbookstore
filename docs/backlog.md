@@ -81,6 +81,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | FE-11 | P2 | 진행 (#44, #46) | 프론트엔드 소스가 JavaScript다(JS·JSX 60개, TS는 테스트 2개). 단계별로 TypeScript로 옮긴다: ① `utils`·`lib`·`api` ② `contexts`·`styles`·`components/ui` ③ 나머지 `components` ④ `pages`(영역별) ⑤ `App`·`main`·`i18n`, `allowJs` 끄기. 기본값은 decisions.md의 "확인이 필요한 제안". ① 완료(#45): 9개 모듈과 `env.d.ts`, `strict` 명시. ② 완료(#47): 14개 모듈 | `frontend/src` | D-N |
 | FE-12 | P3 | 대기 | `api/chat`의 `getOrCreateChatRoom`이 실제 API 대신 가짜 응답(`chat_<bookId>_<시각>`)을 돌려준다. `ChatList`의 `?bookId=` 처리가 이 값으로 존재하지 않는 채팅방으로 이동한다. 지금은 이 주소를 만드는 링크가 없다 | `api/chat.ts`, `pages/Chat/ChatList.jsx:600` | #44 |
 | FE-13 | P3 | 대기 | 쓰이지 않는 모듈이 있다: `api/reservations.ts`(ChatRoom은 자체 함수를 쓴다), `utils/daumPostcode.ts`(#37에서 마지막 사용처가 사라졌다), `api/auth`의 `deleteAccount`, `api/chat`의 `getOrCreateChatRoom` 외 함수 4개. TS 전환 1단계에서 동작 변경과 섞지 않으려고 그대로 옮겼다. `components/ui`도 같다: `Button`·`Input`과 `Form`·`CommonCard`·`Layout`의 export 대부분을 쓰는 곳이 없다(2단계, #46). `ui/index`는 `Card`를 `Card.tsx`에서 내보내므로 `CommonCard`의 `Card`·`CardHeader`는 index로 가져올 수 없다. `Search`·`Wanted`는 index의 `Card`와 `CommonCard`의 `CardTitle`을 함께 쓴다 | `frontend/src/api`, `frontend/src/utils`, `frontend/src/components/ui` | #44, #46 |
+| FE-14 | P3 | 진행 (#48) | 브라우저 탭의 Vite 아이콘과 manifest의 Create React App 이름·아이콘을 교체한다. 사용자가 7안을 확정했다(D-O). 정본에서 favicon·홈 화면 아이콘을 생성하고 HTML·manifest에 연결했다. 다른 시안은 폐기했다. PR 대기 | `frontend/index.html`, `frontend/public/manifest.json`, `frontend/public/`, `frontend/src/assets/brand/hongbookstore-master.png` | #48 |
 
 ## 백엔드·운영 (BE, OPS)
 
