@@ -322,22 +322,6 @@ const StatusIcon = styled.span`
   font-size: 0.8rem;
 `
 
-const RetryButton = styled.button`
-  background: none;
-  border: none;
-  color: #f44336;
-  cursor: pointer;
-  padding: 2px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  &:hover {
-    background: rgba(244, 67, 54, 0.1);
-  }
-`
-
 const ProfanityWarning = styled.div`
   background: #fff3cd;
   border: 1px solid #ffeaa7;
@@ -553,62 +537,6 @@ const ReportRadio = styled.label`
 const RadioInput = styled.input`
   margin: 0;
   cursor: pointer;
-`
-
-const RetryModalOverlay = styled(ModalOverlay)``
-
-const RetryModalBox = styled.div`
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  min-width: 320px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  text-align: center;
-`
-
-const RetryModalTitle = styled.div`
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-`
-
-const RetryModalMessage = styled.div`
-  font-size: 0.95rem;
-  color: #666;
-  line-height: 1.4;
-`
-
-const RetryModalActions = styled.div`
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 8px;
-`
-
-const RetryModalButton = styled.button`
-  padding: 8px 20px;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-  &.cancel {
-    background: #f1f3f4;
-    color: #333;
-    &:hover {
-      background: #e8eaed;
-    }
-  }
-  &.confirm {
-    background: #007bff;
-    color: white;
-    &:hover {
-      background: #0056b3;
-    }
-  }
 `
 
 const ReserveModalBox = styled(ModalBox)`
@@ -1765,7 +1693,6 @@ const ChatRoom = () => {
   const [profanityWarning, setProfanityWarning] = useState('')
   const [profanityBaseMessage, setProfanityBaseMessage] = useState('')
   const [profanityReasonMessage, setProfanityReasonMessage] = useState('')
-  const [showRetryModal, setShowRetryModal] = useState(false)
   const [blockedMessage, setBlockedMessage] = useState('')
   const [serverFlaggedSegments, setServerFlaggedSegments] = useState([])
   const [moderationStats, setModerationStats] = useState(null)
@@ -3563,7 +3490,6 @@ const ChatRoom = () => {
                       <MessageStatusIndicator
                         status={message.status}
                         isOwn={true}
-                        onRetry={() => setShowRetryModal(true)}
                       />
                     )}
                   </>
@@ -3649,32 +3575,11 @@ const ChatRoom = () => {
           </QuickActions>
         </ChatInput>
       </ChatContainer>
-
-      {showRetryModal && (
-        <RetryModalOverlay onClick={() => setShowRetryModal(false)}>
-          <RetryModalBox onClick={e => e.stopPropagation()}>
-            <RetryModalTitle>{t('chat.retryTitle')}</RetryModalTitle>
-            <RetryModalMessage>{t('chat.retryMessage')}</RetryModalMessage>
-            <RetryModalActions>
-              <RetryModalButton
-                className="cancel"
-                onClick={() => setShowRetryModal(false)}>
-                {t('common.cancel')}
-              </RetryModalButton>
-              <RetryModalButton
-                className="confirm"
-                onClick={() => setShowRetryModal(false)}>
-                {t('chat.retry')}
-              </RetryModalButton>
-            </RetryModalActions>
-          </RetryModalBox>
-        </RetryModalOverlay>
-      )}
     </>
   )
 }
 
-const MessageStatusIndicator = ({ status, isOwn, onRetry }) => {
+const MessageStatusIndicator = ({ status, isOwn }) => {
   const { t } = useTranslation()
   const getStatusText = () => {
     switch (status) {
@@ -3704,13 +3609,6 @@ const MessageStatusIndicator = ({ status, isOwn, onRetry }) => {
     <MessageStatus isOwn={isOwn}>
       <StatusIcon $status={status}>{getStatusIcon()}</StatusIcon>
       <span>{getStatusText()}</span>
-      {status === 'failed' && onRetry && (
-        <RetryButton
-          onClick={onRetry}
-          title={t('chat.retry')}>
-          ↻
-        </RetryButton>
-      )}
     </MessageStatus>
   )
 }

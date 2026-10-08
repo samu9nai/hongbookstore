@@ -77,7 +77,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | FE-07 | P3 | 완료 (#33) | CRA 잔재(`index.js`, `reportWebVitals.js`, `App.test.js`, `setupTests.js`)와 이 파일만 쓰던 `web-vitals` 의존성을 지웠다. 앱 진입점은 `main.jsx`라 빌드 결과물은 바뀌지 않았다 | `frontend/src` | C, H-07 |
 | FE-08 | P3 | 대기 | Vite+(`vp`)로 옮길지 검토한다. 지금 쓰는 Vite·Vitest·oxlint·tsgolint가 Vite+에 들어 있어 `vp migrate`로 옮길 수 있다. oxfmt 1.0과 Vite+ 안정화 이후에 판단한다 | `frontend/` | D-H |
 | FE-09 | P3 | 완료 (#29) | `i18next` 25·`react-i18next` 16의 선택적 peer가 TypeScript `^5`라 TS 7과 맞지 않았다. `i18next` 26.4.2·`react-i18next` 17.0.15로 올려 `pnpm peers check` 결과 0건이다 | `frontend/package.json` | D-H |
-| FE-10 | P2 | 대기 | 구해요 상세의 삭제 버튼이 확인 모달 없이 바로 삭제한다. 확인 모달(`showDeleteModal`)은 남아 있지만 여는 코드가 없다. 채팅방의 재전송 모달은 실패한 메시지의 재전송 버튼이 열지만, 메시지를 `failed` 상태로 만드는 코드가 없어 버튼이 나타나지 않는다. #37 커밋 메시지의 "재전송 모달은 열리지 않았다"는 틀린 설명이다. 처리 방향은 D-M | `pages/WantedDetail/WantedDetail.jsx`, `pages/Chat/ChatRoom.jsx` | #37 |
+| FE-10 | P2 | 완료 (#43) | 구해요 상세의 삭제 버튼이 확인 모달 없이 바로 삭제했다. 버튼이 확인 모달을 열고 확인해야 삭제하도록 고치고 재현 테스트(`WantedDetail.test.tsx`)를 더했다. 채팅방의 재전송 버튼·모달은 `failed` 상태를 만드는 코드가 없어 나타나지 않았으므로 지웠다(D-M). #37 커밋 메시지의 "재전송 모달은 열리지 않았다"는 틀린 설명이다 | `pages/WantedDetail/WantedDetail.jsx`, `pages/Chat/ChatRoom.jsx` | #37 |
 | FE-11 | P2 | 대기 | 프론트엔드 소스가 JavaScript다(JS·JSX 60개, TS는 테스트 2개). 단계별로 TypeScript로 옮긴다: ① `utils`·`lib`·`api` ② `contexts`·`styles`·`components/ui` ③ 나머지 `components` ④ `pages`(영역별) ⑤ `App`·`main`·`i18n`, `allowJs` 끄기. 기본값은 decisions.md의 "확인이 필요한 제안" | `frontend/src` | D-N |
 
 ## 백엔드·운영 (BE, OPS)
