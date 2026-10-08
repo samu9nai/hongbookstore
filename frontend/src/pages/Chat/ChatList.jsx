@@ -14,7 +14,6 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { getOrCreateChatRoom } from '../../api/chat'
 import { AuthCtx } from '../../contexts/AuthContext'
 import { createPeerReview } from '../../api/peerReviews'
-import axios from 'axios'
 import { useTranslation } from 'react-i18next'
 
 /* ---------------------------- styled components ---------------------------- */
@@ -603,17 +602,18 @@ const ChatListPage = () => {
     const urlParams = new URLSearchParams(location.search)
     const bookId = urlParams.get('bookId')
     if (!bookId) return
-    ;(async () => {
+    void (async () => {
       try {
         const res = await getOrCreateChatRoom(bookId)
         const room = await res.json()
         const rid = room?.id ?? room?.roomId
         if (!rid) throw new Error(t('chat.noChatRoomId'))
-        navigate(`/chat/${rid}`, { replace: true })
-      } catch (e) {
-        navigate('/chat', { replace: true })
+        void navigate(`/chat/${rid}`, { replace: true })
+      } catch {
+        void navigate('/chat', { replace: true })
       }
     })()
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- t를 넣으면 언어를 바꿀 때 채팅방 생성·진입을 다시 한다
   }, [location.search, navigate])
 
   // 내 채팅방 목록
@@ -636,7 +636,8 @@ const ChatListPage = () => {
         setLoading(false)
       }
     }
-    fetchChatRooms()
+    void fetchChatRooms()
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- t는 오류 메시지에만 쓴다. 넣으면 언어를 바꿀 때 목록을 다시 불러온다
   }, [])
 
   // 각 방의 예약상태를 보강(REQUESTED/CONFIRMED/COMPLETED/CANCELLED)
@@ -658,7 +659,7 @@ const ChatListPage = () => {
     let cursor = 0
     const nextBatch = () => need.slice(cursor, cursor + maxConcurrency)
 
-    ;(async () => {
+    void (async () => {
       const collected = {}
       while (cursor < need.length) {
         const batch = nextBatch()
@@ -735,22 +736,22 @@ const ChatListPage = () => {
 
   const handleChatClick = chatId => {
     if (!chatId) return
-    navigate(`/chat/${chatId}`)
+    void navigate(`/chat/${chatId}`)
   }
 
   const handleSidebarMenu = menu => {
     switch (menu) {
       case 'bookstore/add':
-        navigate('/bookstore/add')
+        void navigate('/bookstore/add')
         break
       case 'wanted':
-        navigate('/wanted')
+        void navigate('/wanted')
         break
       case 'mybookstore':
-        navigate('/bookstore')
+        void navigate('/bookstore')
         break
       case 'chat':
-        navigate('/chat')
+        void navigate('/chat')
         break
       default:
         break
@@ -768,23 +769,6 @@ const ChatListPage = () => {
       case 'in_progress':
       default:
         return t('chat.statusInProgress')
-    }
-  }
-
-  // (유지) 추후 쓸 수 있는 API 헬퍼
-  const getAuthHeader = () => {
-    const token = localStorage.getItem('accessToken')
-    return token ? { Authorization: `Bearer ${token}` } : {}
-  }
-  const patchPostStatus = async (postId, status, buyerId) => {
-    try {
-      const payload = buyerId ? { status, buyerId } : { status }
-      await axios.patch(`/api/posts/${postId}/status`, payload, {
-        headers: getAuthHeader()
-      })
-      alert(t('chat.statusChangeSuccess'))
-    } catch (e) {
-      alert(e.response?.data?.message || t('chat.statusChangeError'))
     }
   }
 

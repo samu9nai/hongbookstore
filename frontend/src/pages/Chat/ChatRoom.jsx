@@ -1673,7 +1673,7 @@ const ChatRoom = () => {
   const { t } = useTranslation()
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading] = useState(false)
   const messagesEndRef = useRef(null)
   const navigate = useNavigate()
   const { chatId } = useParams()
@@ -1767,7 +1767,6 @@ const ChatRoom = () => {
   const [profanityBaseMessage, setProfanityBaseMessage] = useState('')
   const [profanityReasonMessage, setProfanityReasonMessage] = useState('')
   const [showRetryModal, setShowRetryModal] = useState(false)
-  const [retryMessageId, setRetryMessageId] = useState(null)
   const [blockedMessage, setBlockedMessage] = useState('')
   const [serverFlaggedSegments, setServerFlaggedSegments] = useState([])
   const [moderationStats, setModerationStats] = useState(null)
@@ -1947,11 +1946,11 @@ const ChatRoom = () => {
             )
           }
         }
-      } catch (err) {
+      } catch {
         // ignore
       }
     }
-    loadRoomInfo()
+    void loadRoomInfo()
   }, [roomId, t])
 
   useEffect(() => {
@@ -1966,17 +1965,17 @@ const ChatRoom = () => {
         if (!res.ok) throw new Error(t('chat.chatListError'))
         const data = await res.json()
         setMessages(data)
-      } catch (err) {
+      } catch {
         // ignore
       }
     }
-    loadPreviousMessages()
+    void loadPreviousMessages()
   }, [roomId, t])
 
   /* ------------------------------ 예약 상태 로드 ------------------------------ */
   useEffect(() => {
     if (!roomId) return
-    ;(async () => {
+    void (async () => {
       try {
         const r = await apiGetReservation(roomId, t)
         if (!r) {
@@ -2018,6 +2017,9 @@ const ChatRoom = () => {
         // ignore
       }
     })()
+    // 예약 상태는 방이 바뀔 때만 불러온다. injectReservationBanner는 렌더링마다 새로 만들어
+    // 넣으면 렌더링마다 다시 요청하고, t를 넣으면 언어를 바꿀 때 다시 요청한다
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- roomId로 실행 시점을 정한다
   }, [roomId])
 
   /* -------------------------------- STOMP -------------------------------- */
@@ -2195,11 +2197,13 @@ const ChatRoom = () => {
       /* no-op, 자동 재연결 */
     }
 
-    const es = startNotificationStream(handleNotify, handleError)
+    startNotificationStream(handleNotify, handleError)
 
     return () => {
       stopNotificationStream()
     }
+    // buildReservationText는 렌더링마다 새로 만들어 넣으면 렌더링마다 SSE를 다시 구독한다
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- roomId·t가 바뀔 때만 다시 구독한다
   }, [roomId, t])
 
   const handleSendMessage = () => {
@@ -2248,21 +2252,6 @@ const ChatRoom = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
-
-  const handleRetryClick = messageId => {
-    setRetryMessageId(messageId)
-    setShowRetryModal(true)
-  }
-  const handleRetryConfirm = async () => {
-    if (retryMessageId) {
-      setShowRetryModal(false)
-      setRetryMessageId(null)
-    }
-  }
-  const handleRetryCancel = () => {
-    setShowRetryModal(false)
-    setRetryMessageId(null)
-  }
 
   const handleMessageChange = e => {
     const text = e.target.value
@@ -2314,6 +2303,7 @@ const ChatRoom = () => {
   }
 
   const getToday = () => {
+    // oxlint-disable-next-line react/purity -- 화면에 오늘 날짜를 보여 준다. 렌더링마다 다시 계산해도 된다
     const d = new Date()
     return d.toLocaleDateString('ko-KR', {
       year: 'numeric',
@@ -2439,7 +2429,7 @@ const ChatRoom = () => {
           await patchPostStatus(salePostId, 'reserved', buyerId, t)
           setPostStatus('reserved')
         }
-      } catch (e) {}
+      } catch {}
 
       setMessages(prev => [
         ...prev,
@@ -2450,7 +2440,7 @@ const ChatRoom = () => {
           sentAt: new Date().toISOString()
         }
       ])
-    } catch (e) {}
+    } catch {}
   }
 
   const handleDeclineReservation = async () => {
@@ -2546,7 +2536,7 @@ const ChatRoom = () => {
         if (!buyerId) throw new Error('buyerId 없음(거래 상대 사용자 ID)')
         await patchPostStatus(salePostId, 'sold_out', buyerId, t)
         setPostStatus('sold_out')
-      } catch (e) {
+      } catch {
         alert(t('chat.completeTransactionButPostUpdateFailed'))
       }
 
@@ -2559,15 +2549,9 @@ const ChatRoom = () => {
           sentAt: new Date().toISOString()
         }
       ])
-    } catch (e) {
+    } catch {
       alert(t('chat.transactionCompleteFailed'))
     }
-  }
-
-  const handleReport = () => {
-    setShowReportModal(true)
-    setReportReason('')
-    setReportEtcText('')
   }
 
   const handleReportSubmit = async e => {
@@ -2659,13 +2643,6 @@ const ChatRoom = () => {
     }
   }
 
-  const handleReportExit = () => {
-    setShowReportExitModal(false)
-    navigate('/chat')
-  }
-  const handleBack = () => {
-    navigate('/chat')
-  }
   const formatTime = timestamp => {
     const date = new Date(timestamp)
     return date.toLocaleTimeString('ko-KR', {
@@ -2702,7 +2679,7 @@ const ChatRoom = () => {
 
   useEffect(() => {
     if (!showReserveModal) return
-    ;(async () => {
+    void (async () => {
       try {
         setWeatherLoading(true)
         const { lat, lng } = await getCoords()
@@ -2715,6 +2692,8 @@ const ChatRoom = () => {
         setWeatherLoading(false)
       }
     })()
+    // fetchWeeklyWeather는 렌더링마다 새로 만들어 넣으면 렌더링마다 날씨를 다시 요청한다
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- 예약 창을 열 때 불러온다
   }, [showReserveModal, t])
 
   const dateOptions = (weeklyWeather?.days || []).map(d => {
@@ -2924,7 +2903,8 @@ const ChatRoom = () => {
 
             <ExitButton
               onClick={() => {
-                if (window.confirm(t('chat.confirmExit'))) navigate('/chat')
+                if (window.confirm(t('chat.confirmExit')))
+                  void navigate('/chat')
               }}
               title={t('chat.exitChatRoom')}>
               <FaSignOutAlt /> {width > 600 && t('chat.exit')}
@@ -3070,7 +3050,7 @@ const ChatRoom = () => {
                 <ModalButton
                   onClick={() => {
                     setShowReportExitModal(false)
-                    navigate('/chat')
+                    void navigate('/chat')
                   }}>
                   {t('common.yes')}
                 </ModalButton>
@@ -3171,7 +3151,7 @@ const ChatRoom = () => {
                       color: '#0b63d1'
                     }}>
                     <FaSubway />
-                    {`${getLineByStation(sellerDefault.offcampusStationCode) || ''} · ${sellerDefault.offcampusStationCode}`}
+                    {`${getLineByStation(sellerDefault.offcampusStationCode) || ''} · ${String(sellerDefault.offcampusStationCode)}`}
                   </span>
                 ) : (
                   <span style={{ color: '#64748b' }}>
