@@ -2,14 +2,14 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import {
-  FaArrowLeft,
-  FaBook,
-  FaTag,
-  FaUser,
-  FaClock,
-  FaEye,
-  FaExclamationTriangle
-} from 'react-icons/fa'
+  LucideArrowLeft,
+  LucideBook,
+  LucideClock,
+  LucideEye,
+  LucideTag,
+  LucideTriangleAlert,
+  LucideUser
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import SidebarMenu, {
@@ -672,7 +672,7 @@ export default function WantedDetail() {
         <Container>
           <TopBar>
             <BackButton onClick={() => navigate('/wanted')}>
-              <FaArrowLeft /> {t('wantedDetail.back')}
+              <LucideArrowLeft /> {t('wantedDetail.back')}
             </BackButton>
             <Actions>
               <Button onClick={() => navigate('/wanted')}>
@@ -703,7 +703,7 @@ export default function WantedDetail() {
                 <ReportTitleButton
                   title={t('wantedDetail.report')}
                   onClick={openReport}>
-                  <FaExclamationTriangle />
+                  <LucideTriangleAlert />
                   {t('wantedDetail.report')}
                 </ReportTitleButton>
               )}
@@ -711,7 +711,7 @@ export default function WantedDetail() {
 
             <MetaRow>
               <Chip>
-                <FaUser />{' '}
+                <LucideUser />{' '}
                 {nameForDisplay(
                   data?.requesterNickname ??
                     data?.requesterName ??
@@ -723,10 +723,10 @@ export default function WantedDetail() {
                 )}
               </Chip>
               <ConditionChip $condition={data.condition}>
-                <FaTag /> {t('wantedDetail.status')}: {t(conditionKor)}
+                <LucideTag /> {t('wantedDetail.status')}: {t(conditionKor)}
               </ConditionChip>
               <PriceChip>
-                <FaTag /> {t('wantedDetail.desiredPrice')}:{' '}
+                <LucideTag /> {t('wantedDetail.desiredPrice')}:{' '}
                 {Number(data.price || 0).toLocaleString()}
                 {t('wanted.currency')}
               </PriceChip>
@@ -734,18 +734,18 @@ export default function WantedDetail() {
             <SubMeta>
               {displayCategory && (
                 <span>
-                  <FaBook /> {displayCategory}
+                  <LucideBook /> {displayCategory}
                 </span>
               )}
               {createdAt && (
                 <span>
-                  <FaClock /> {t('wantedDetail.createdDate')}:{' '}
+                  <LucideClock /> {t('wantedDetail.createdDate')}:{' '}
                   {createdAt.toLocaleString('ko-KR')}
                 </span>
               )}
               {views !== null && (
                 <span>
-                  <FaEye /> {t('wantedDetail.viewCount')}:{' '}
+                  <LucideEye /> {t('wantedDetail.viewCount')}:{' '}
                   {views.toLocaleString()}
                 </span>
               )}
@@ -757,7 +757,7 @@ export default function WantedDetail() {
             <div>
               <Card>
                 <SectionTitle>
-                  <FaBook /> {t('wantedDetail.requestContent')}
+                  <LucideBook /> {t('wantedDetail.requestContent')}
                 </SectionTitle>
                 {data.contentToxic && (
                   <div
@@ -798,7 +798,7 @@ export default function WantedDetail() {
 
             <Card>
               <SectionTitle>
-                <FaTag /> {t('wantedDetail.requestSummary')}
+                <LucideTag /> {t('wantedDetail.requestSummary')}
               </SectionTitle>
               <InfoGrid>
                 <InfoItem>

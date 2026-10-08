@@ -4,21 +4,21 @@ import styled from 'styled-components'
 import { useTranslation } from 'react-i18next'
 import { AuthCtx } from '../../contexts/AuthContext.jsx'
 import {
-  FaStar,
-  FaThumbsUp,
-  FaThumbsDown,
-  FaClock,
-  FaMapMarkerAlt,
-  FaTimes,
-  FaPlus,
-  FaUpload,
-  FaTrash,
-  FaInfoCircle,
-  FaChevronLeft,
-  FaChevronRight,
-  FaSearchPlus,
-  FaSearchMinus
-} from 'react-icons/fa'
+  LucideChevronLeft,
+  LucideChevronRight,
+  LucideClock,
+  LucideInfo,
+  LucideMapPin,
+  LucidePlus,
+  LucideStar,
+  LucideThumbsDown,
+  LucideThumbsUp,
+  LucideTrash,
+  LucideUpload,
+  LucideX,
+  LucideZoomIn,
+  LucideZoomOut
+} from 'lucide-react'
 import { displayMaskedName } from '../../utils/nameMask'
 
 const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_MAP_CLIENT_ID
@@ -905,7 +905,7 @@ const PlaceDetailModal = ({
                     <Star
                       key={star}
                       $isFilled={star <= Number(averageRating)}>
-                      <FaStar />
+                      <LucideStar fill="currentColor" />
                     </Star>
                   ))}
                 </Stars>
@@ -920,7 +920,7 @@ const PlaceDetailModal = ({
             </PlaceDetails>
           </PlaceInfo>
           <CloseButton onClick={onClose}>
-            <FaTimes />
+            <LucideX />
           </CloseButton>
         </ModalHeader>
 
@@ -947,17 +947,17 @@ const PlaceDetailModal = ({
             <InfoTab>
               <InfoSection>
                 <InfoTitle>
-                  <FaMapMarkerAlt /> {t('map.address')}
+                  <LucideMapPin /> {t('map.address')}
                 </InfoTitle>
                 <InfoContent>
-                  <FaMapMarkerAlt /> {place.address}
+                  <LucideMapPin /> {place.address}
                 </InfoContent>
               </InfoSection>
 
               {place.description && (
                 <InfoSection>
                   <InfoTitle>
-                    <FaInfoCircle /> {t('map.description')}
+                    <LucideInfo /> {t('map.description')}
                   </InfoTitle>
                   <InfoContent>{place.description}</InfoContent>
                 </InfoSection>
@@ -965,7 +965,7 @@ const PlaceDetailModal = ({
 
               <InfoSection>
                 <InfoTitle>
-                  <FaPlus /> {t('map.addToMyCategory')}
+                  <LucidePlus /> {t('map.addToMyCategory')}
                 </InfoTitle>
                 <CategorySelectContainer>
                   <CategorySelect
@@ -988,7 +988,7 @@ const PlaceDetailModal = ({
                         showToast('카테고리에 추가했습니다.')
                       }
                     }}>
-                    <FaPlus />
+                    <LucidePlus />
                   </AddToCategoryButton>
                 </CategorySelectContainer>
               </InfoSection>
@@ -1007,7 +1007,7 @@ const PlaceDetailModal = ({
                       onClick={() =>
                         setNewReview({ ...newReview, rating: star })
                       }>
-                      <FaStar />
+                      <LucideStar fill="currentColor" />
                     </StarButton>
                   ))}
                 </RatingContainer>
@@ -1033,7 +1033,7 @@ const PlaceDetailModal = ({
                   <PhotoUploadTitle>{t('map.addPhoto')}</PhotoUploadTitle>
                   <PhotoUploadArea
                     onClick={() => fileInputRef.current?.click()}>
-                    <FaUpload />
+                    <LucideUpload />
                     <span>{t('map.uploadPhotoText')}</span>
                   </PhotoUploadArea>
                   <input
@@ -1098,7 +1098,7 @@ const PlaceDetailModal = ({
                               <Star
                                 key={i}
                                 $isFilled={i < review.rating}>
-                                <FaStar />
+                                <LucideStar fill="currentColor" />
                               </Star>
                             ))}
                           </ReviewRating>
@@ -1112,7 +1112,7 @@ const PlaceDetailModal = ({
                             }
                             $type="like"
                             onClick={() => handleLikeReview(review.id)}>
-                            <FaThumbsUp /> {review.likes || 0}
+                            <LucideThumbsUp /> {review.likes || 0}
                           </ActionButton>
                           <ActionButton
                             $isActive={
@@ -1121,14 +1121,14 @@ const PlaceDetailModal = ({
                             }
                             $type="dislike"
                             onClick={() => handleDislikeReview(review.id)}>
-                            <FaThumbsDown /> {review.dislikes || 0}
+                            <LucideThumbsDown /> {review.dislikes || 0}
                           </ActionButton>
 
                           {currentUserId && review.userId === currentUserId && (
                             <DeleteBtn
                               title="내 리뷰 삭제"
                               onClick={() => handleDeleteReview(review.id)}>
-                              <FaTrash />
+                              <LucideTrash />
                             </DeleteBtn>
                           )}
                         </ReviewActions>
@@ -1181,20 +1181,20 @@ const PlaceDetailModal = ({
                 <RouteTitle>{t('map.routeGuidance')}</RouteTitle>
                 <RouteDetails>
                   <RouteItem>
-                    <FaMapMarkerAlt />
+                    <LucideMapPin />
                     <span>
                       {t('map.departure')}:{' '}
                       {startLabel || t('map.notSetSearchBelow')}
                     </span>
                   </RouteItem>
                   <RouteItem>
-                    <FaMapMarkerAlt />
+                    <LucideMapPin />
                     <span>
                       {t('map.destination')}: {place.name}
                     </span>
                   </RouteItem>
                   <RouteItem>
-                    <FaClock />
+                    <LucideClock />
                     <span>
                       {t('map.status')}:{' '}
                       {(() => {
@@ -1972,12 +1972,12 @@ const Lightbox = ({ images, index, onClose, onPrev, onNext }) => {
           <LBButton
             onClick={onPrev}
             aria-label={t('common.previous')}>
-            <FaChevronLeft />
+            <LucideChevronLeft />
           </LBButton>
           <LBButton
             onClick={zoomOut}
             aria-label={t('common.zoomOut')}>
-            <FaSearchMinus />
+            <LucideZoomOut />
           </LBButton>
           <LBButton
             onClick={reset}
@@ -1987,17 +1987,17 @@ const Lightbox = ({ images, index, onClose, onPrev, onNext }) => {
           <LBButton
             onClick={zoomIn}
             aria-label={t('common.zoomIn')}>
-            <FaSearchPlus />
+            <LucideZoomIn />
           </LBButton>
           <LBButton
             onClick={onNext}
             aria-label={t('common.next')}>
-            <FaChevronRight />
+            <LucideChevronRight />
           </LBButton>
           <LBClose
             onClick={onClose}
             aria-label={t('common.close')}>
-            <FaTimes />
+            <LucideX />
           </LBClose>
         </LBControls>
 

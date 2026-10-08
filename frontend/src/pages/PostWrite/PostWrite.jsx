@@ -1,21 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import styled from 'styled-components'
 import {
-  FaBook,
-  FaCamera,
-  FaSave,
-  FaArrowLeft,
-  FaImage,
-  FaTimes,
-  FaCheck,
-  FaSearch,
-  FaMoneyBillWave,
-  FaInfoCircle,
-  FaHeart,
-  FaClock,
-  FaUser,
-  FaMapMarkerAlt
-} from 'react-icons/fa'
+  LucideArrowLeft,
+  LucideBook,
+  LucideCamera,
+  LucideImage,
+  LucideInfo,
+  LucideMapPin,
+  LucideSave,
+  LucideSearch,
+  LucideX
+} from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
@@ -2295,7 +2290,7 @@ const PostWrite = () => {
               setPendingNavigation('/marketplace')
               setShowWarningModal(true)
             }}>
-            <FaArrowLeft /> {t('postWrite.backButton')}
+            <LucideArrowLeft /> {t('postWrite.backButton')}
           </BackButton>
           <WriteTitle>
             {isEdit ? t('postWrite.editTitle') : t('postWrite.title')}
@@ -2306,7 +2301,7 @@ const PostWrite = () => {
           {!isEdit && (
             <FormSection>
               <SectionTitle>
-                <FaBook /> {t('postWrite.registrationMethod')}
+                <LucideBook /> {t('postWrite.registrationMethod')}
               </SectionTitle>
               <InputTypeButtons>
                 <InputTypeButton
@@ -2342,7 +2337,7 @@ const PostWrite = () => {
                     <BookSearchButton
                       type="button"
                       onClick={() => setShowBookSearch(true)}>
-                      <FaSearch /> {t('postWrite.bookSearchButton')}
+                      <LucideSearch /> {t('postWrite.bookSearchButton')}
                     </BookSearchButton>
                   </FormGroup>
                 )}
@@ -2401,7 +2396,7 @@ const PostWrite = () => {
 
           <FormSection>
             <SectionTitle>
-              <FaCamera /> {t('postWrite.photoRegistration')} (
+              <LucideCamera /> {t('postWrite.photoRegistration')} (
               {t('postWrite.maxPhotos')})
             </SectionTitle>
             <input
@@ -2419,7 +2414,7 @@ const PostWrite = () => {
                   imageInputRef.current && imageInputRef.current.click()
                 }>
                 <ImageUploadIcon>
-                  <FaImage />
+                  <LucideImage />
                 </ImageUploadIcon>
                 <ImageUploadText>
                   {t('postWrite.clickToUpload')}
@@ -2437,7 +2432,7 @@ const PostWrite = () => {
                     />
                     <RemoveImageButton
                       onClick={() => handleRemoveImage(image.id)}>
-                      <FaTimes />
+                      <LucideX />
                     </RemoveImageButton>
                   </ImagePreviewItem>
                 ))}
@@ -2758,7 +2753,7 @@ const PostWrite = () => {
                     type="button"
                     onClick={() => setShowInfoModal(true)}
                     title={t('postWrite.priceInfo')}>
-                    <FaInfoCircle />
+                    <LucideInfo />
                   </InfoButton>
                 </DiscountInfo>
               )}
@@ -2779,7 +2774,7 @@ const PostWrite = () => {
           {/* ✅ 거래 기준 위치(필수) 섹션 */}
           <FormSection>
             <SectionTitle>
-              <FaMapMarkerAlt /> {t('postWrite.tradeLocation')}{' '}
+              <LucideMapPin /> {t('postWrite.tradeLocation')}{' '}
               <Required>*</Required>
             </SectionTitle>
 
@@ -2872,7 +2867,7 @@ const PostWrite = () => {
                 <SaveDraftButton
                   type="button"
                   onClick={handleSaveDraftAndExit}>
-                  <FaSave /> {t('postWrite.saveDraft')}
+                  <LucideSave /> {t('postWrite.saveDraft')}
                 </SaveDraftButton>
               )}
 
@@ -2933,7 +2928,7 @@ const PostWrite = () => {
               type="button"
               onClick={handleBookSearch}
               disabled={searchLoading}>
-              <FaSearch />{' '}
+              <LucideSearch />{' '}
               {searchLoading
                 ? t('postWrite.searching')
                 : t('postWrite.searchButton')}

@@ -1,7 +1,7 @@
 // src/pages/Wanted/WantedWrite.jsx
 import React, { useState, useEffect } from 'react'
 import styled from 'styled-components'
-import { FaBook, FaArrowLeft, FaSearch } from 'react-icons/fa'
+import { LucideArrowLeft, LucideBook, LucideSearch } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
@@ -899,7 +899,7 @@ export default function WantedWrite() {
       <WriteContainer>
         <WriteHeader>
           <BackButton onClick={handleCancel}>
-            <FaArrowLeft /> {t('wantedWrite.back')}
+            <LucideArrowLeft /> {t('wantedWrite.back')}
           </BackButton>
           <WriteTitle>{t('wantedWrite.title')}</WriteTitle>
         </WriteHeader>
@@ -907,7 +907,7 @@ export default function WantedWrite() {
         <WriteForm onSubmit={handleSubmit}>
           <FormSection>
             <SectionTitle>
-              <FaBook /> {t('wantedWrite.basicInfo')}
+              <LucideBook /> {t('wantedWrite.basicInfo')}
             </SectionTitle>
 
             <InputTypeSelector>
@@ -982,7 +982,7 @@ export default function WantedWrite() {
                       alignItems: 'center',
                       gap: '8px'
                     }}>
-                    <FaSearch /> {t('wantedWrite.search.button')}
+                    <LucideSearch /> {t('wantedWrite.search.button')}
                   </button>
                 </FormGroup>
 
@@ -1234,7 +1234,7 @@ export default function WantedWrite() {
                 alignItems: 'center',
                 gap: '8px'
               }}>
-              <FaSearch />{' '}
+              <LucideSearch />{' '}
               {searchLoading
                 ? t('wantedWrite.button.searching')
                 : t('wantedWrite.button.search')}

@@ -1,7 +1,12 @@
 import React, { useState } from 'react'
 import styled from 'styled-components'
-import { FaPlus, FaTrash, FaEdit, FaCheck, FaTimes } from 'react-icons/fa'
-import { IoMdClose } from 'react-icons/io'
+import {
+  LucideCheck,
+  LucidePlus,
+  LucideSquarePen,
+  LucideTrash,
+  LucideX
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 const UserCategory = ({
@@ -57,7 +62,7 @@ const UserCategory = ({
       <CategoryHeader>
         <h3>{t('map.myCategories')}</h3>
         <AddCategoryButton onClick={openAddModal}>
-          <FaPlus /> {t('map.addCategory')}
+          <LucidePlus /> {t('map.addCategory')}
         </AddCategoryButton>
       </CategoryHeader>
 
@@ -73,10 +78,10 @@ const UserCategory = ({
                   onKeyPress={e => e.key === 'Enter' && handleSaveEdit()}
                 />
                 <EditButton onClick={handleSaveEdit}>
-                  <FaCheck />
+                  <LucideCheck />
                 </EditButton>
                 <CancelButton onClick={handleCancelEdit}>
-                  <FaTimes />
+                  <LucideX />
                 </CancelButton>
               </EditForm>
             ) : (
@@ -84,10 +89,10 @@ const UserCategory = ({
                 <CategoryName>{category.name}</CategoryName>
                 <CategoryActions>
                   <EditButton onClick={() => handleStartEdit(category)}>
-                    <FaEdit />
+                    <LucideSquarePen />
                   </EditButton>
                   <DeleteButton onClick={() => onDeleteCategory(category.id)}>
-                    <FaTrash />
+                    <LucideTrash />
                   </DeleteButton>
                 </CategoryActions>
               </>
@@ -103,7 +108,7 @@ const UserCategory = ({
             <ModalHeader>
               <h3>{t('map.addNewCategory')}</h3>
               <CloseButton onClick={closeAddModal}>
-                <IoMdClose />
+                <LucideX />
               </CloseButton>
             </ModalHeader>
             <ModalBody>

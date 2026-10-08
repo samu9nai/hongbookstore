@@ -1,22 +1,21 @@
 import React, { useState, useEffect, useRef, useContext, useMemo } from 'react'
 import styled from 'styled-components'
 import {
-  FaPaperPlane,
-  FaUser,
-  FaBook,
-  FaArrowLeft,
-  FaSignOutAlt,
-  FaCalendarAlt,
-  FaRegClock,
-  FaCheckCircle,
-  FaEye,
-  FaExclamationCircle,
-  FaMapMarkerAlt,
-  FaRoute,
-  FaUniversity,
-  FaSubway,
-  FaTrophy
-} from 'react-icons/fa'
+  LucideArrowLeft,
+  LucideBook,
+  LucideCalendar,
+  LucideCircleAlert,
+  LucideCircleCheck,
+  LucideClock,
+  LucideEye,
+  LucideLogOut,
+  LucideMapPin,
+  LucideSend,
+  LucideTrainFront,
+  LucideTrophy,
+  LucideUniversity,
+  LucideUser
+} from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Stomp from 'stompjs'
 import { AuthCtx } from '../../contexts/AuthContext'
@@ -2759,11 +2758,11 @@ const ChatRoom = () => {
         <ChatHeader>
           <HeaderLeft>
             <BackButton onClick={() => navigate('/chat')}>
-              <FaArrowLeft />
+              <LucideArrowLeft />
             </BackButton>
             <ChatInfo>
               <UserAvatar>
-                <FaUser />
+                <LucideUser />
               </UserAvatar>
               <UserInfo>
                 <UserName>
@@ -2772,7 +2771,7 @@ const ChatRoom = () => {
                     : '학생'}
                 </UserName>
                 <BookTitle>
-                  <FaBook size={12} />
+                  <LucideBook size={12} />
                   {messages.length > 0 && messages[0].message
                     ? messages[0].message.split(' - ')[0]
                     : ''}
@@ -2808,7 +2807,7 @@ const ChatRoom = () => {
                   title={t('chat.getLabel.acceptLong')}
                   onMouseEnter={() => setHovered('accept')}
                   onMouseLeave={() => setHovered('')}>
-                  <FaCheckCircle
+                  <LucideCircleCheck
                     style={{
                       fontSize: '1.1em',
                       color: iconColor('#1976d2', false, hovered === 'accept')
@@ -2823,7 +2822,7 @@ const ChatRoom = () => {
                   title={t('chat.getLabel.declineLong')}
                   onMouseEnter={() => setHovered('decline')}
                   onMouseLeave={() => setHovered('')}>
-                  <FaExclamationCircle
+                  <LucideCircleAlert
                     style={{
                       fontSize: '1.1em',
                       color: iconColor('#ef4444', false, hovered === 'decline')
@@ -2842,7 +2841,7 @@ const ChatRoom = () => {
                     disabled={isCompleted}
                     onMouseEnter={() => setHovered('reserve-cancel')}
                     onMouseLeave={() => setHovered('')}>
-                    <FaRegClock
+                    <LucideClock
                       style={{
                         color: iconColor(
                           '#bfa100',
@@ -2866,7 +2865,7 @@ const ChatRoom = () => {
                     }
                     onMouseEnter={() => setHovered('reserve')}
                     onMouseLeave={() => setHovered('')}>
-                    <FaRegClock
+                    <LucideClock
                       style={{
                         color: iconColor(
                           '#bfa100',
@@ -2887,7 +2886,7 @@ const ChatRoom = () => {
                 disabled={!isReserved || isCompleted}
                 onMouseEnter={() => setHovered('complete')}
                 onMouseLeave={() => setHovered('')}>
-                <FaCheckCircle
+                <LucideCircleCheck
                   style={{
                     color: iconColor(
                       '#1976d2',
@@ -2907,7 +2906,7 @@ const ChatRoom = () => {
                   void navigate('/chat')
               }}
               title={t('chat.exitChatRoom')}>
-              <FaSignOutAlt /> {width > 600 && t('chat.exit')}
+              <LucideLogOut /> {width > 600 && t('chat.exit')}
             </ExitButton>
           </HeaderRight>
         </ChatHeader>
@@ -2923,7 +2922,7 @@ const ChatRoom = () => {
             color: '#666',
             gap: 8
           }}>
-          <FaCalendarAlt style={{ opacity: 0.7 }} />
+          <LucideCalendar style={{ opacity: 0.7 }} />
           <span>{getToday()}</span>
         </div>
 
@@ -3083,7 +3082,7 @@ const ChatRoom = () => {
                     fontWeight: 800,
                     color: meetType === 'on' ? '#0b63d1' : '#334155'
                   }}>
-                  <FaUniversity /> {t('chat.onCampus')}
+                  <LucideUniversity /> {t('chat.onCampus')}
                 </button>
                 <button
                   type="button"
@@ -3098,7 +3097,7 @@ const ChatRoom = () => {
                     fontWeight: 800,
                     color: meetType === 'off' ? '#0b63d1' : '#334155'
                   }}>
-                  <FaSubway /> {t('chat.offCampus')}
+                  <LucideTrainFront /> {t('chat.offCampus')}
                 </button>
               </div>
 
@@ -3128,7 +3127,7 @@ const ChatRoom = () => {
                         fontWeight: 800,
                         color: '#0b63d1'
                       }}>
-                      <FaUniversity />
+                      <LucideUniversity />
                       {ONCAMPUS_LABELS[sellerDefault.oncampusPlaceCode] ||
                         sellerDefault.oncampusPlaceCode}
                     </span>
@@ -3150,7 +3149,7 @@ const ChatRoom = () => {
                       fontWeight: 800,
                       color: '#0b63d1'
                     }}>
-                    <FaSubway />
+                    <LucideTrainFront />
                     {`${getLineByStation(sellerDefault.offcampusStationCode) || ''} · ${String(sellerDefault.offcampusStationCode)}`}
                   </span>
                 ) : (
@@ -3219,7 +3218,7 @@ const ChatRoom = () => {
                         fontWeight: 800,
                         color: '#0b63d1'
                       }}>
-                      <FaTrophy /> {t('chat.recommendMidpoint')}
+                      <LucideTrophy /> {t('chat.recommendMidpoint')}
                     </button>
                   </div>
 
@@ -3267,7 +3266,7 @@ const ChatRoom = () => {
                           color: '#fff',
                           fontWeight: 800
                         }}>
-                        <FaMapMarkerAlt /> {t('chat.useThisLocation')}
+                        <LucideMapPin /> {t('chat.useThisLocation')}
                       </button>
                     </div>
                   )}
@@ -3359,7 +3358,7 @@ const ChatRoom = () => {
                         fontWeight: 800,
                         color: '#0b63d1'
                       }}>
-                      <FaTrophy /> {t('chat.recommendMidpointStation')}
+                      <LucideTrophy /> {t('chat.recommendMidpointStation')}
                     </button>
                   </div>
 
@@ -3407,7 +3406,7 @@ const ChatRoom = () => {
                           color: '#fff',
                           fontWeight: 800
                         }}>
-                        <FaMapMarkerAlt /> {t('chat.useThisLocation')}
+                        <LucideMapPin /> {t('chat.useThisLocation')}
                       </button>
                     </div>
                   )}
@@ -3424,7 +3423,7 @@ const ChatRoom = () => {
                   borderRadius: 10
                 }}>
                 <div style={{ fontWeight: 800, color: '#0f172a' }}>
-                  <FaMapMarkerAlt /> {t('chat.selectedLocation')}
+                  <LucideMapPin /> {t('chat.selectedLocation')}
                 </div>
                 <div style={{ marginTop: 6, color: '#334155' }}>
                   {selectedPlace || t('chat.notSelectedYet')}
@@ -3518,7 +3517,7 @@ const ChatRoom = () => {
                   alignItems: 'center'
                 }}>
                 <ModalButton onClick={handleReserveConfirm}>
-                  <FaCheckCircle /> {t('chat.sendReservationRequest')}
+                  <LucideCircleCheck /> {t('chat.sendReservationRequest')}
                 </ModalButton>
                 <ModalButton
                   data-variant="cancel"
@@ -3580,7 +3579,7 @@ const ChatRoom = () => {
         <ChatInput>
           {profanityNoticeActive && (
             <ProfanityWarning>
-              <FaExclamationCircle />
+              <LucideCircleAlert />
               <ProfanityWarningBody>
                 {profanityBaseMessage && <span>{profanityBaseMessage}</span>}
                 {profanityWarning && <span>{profanityWarning}</span>}
@@ -3633,7 +3632,7 @@ const ChatRoom = () => {
               disabled={
                 !newMessage.trim() || loading || hasProfanity || !roomId
               }>
-              <FaPaperPlane />
+              <LucideSend />
             </SendButton>
           </InputContainer>
           <QuickActions>
@@ -3694,9 +3693,9 @@ const MessageStatusIndicator = ({ status, isOwn, onRetry }) => {
       case 'sending':
         return '⏳'
       case 'read':
-        return <FaEye size={10} />
+        return <LucideEye size={10} />
       case 'failed':
-        return <FaExclamationCircle size={10} />
+        return <LucideCircleAlert size={10} />
       default:
         return ''
     }

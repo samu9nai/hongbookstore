@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import styled from 'styled-components'
-import {
-  FaSearch,
-  FaFilter,
-  FaBook,
-  FaUser,
-  FaGraduationCap
-} from 'react-icons/fa'
+import { LucideBook, LucideSearch, LucideUser } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import {
@@ -334,7 +328,7 @@ const Search = () => {
             onChange={e => setSearchInput(e.target.value)}
           />
           <SearchButton type="submit">
-            <FaSearch />
+            <LucideSearch />
           </SearchButton>
         </SearchForm>
 
@@ -366,17 +360,17 @@ const Search = () => {
                         alt={post.postTitle}
                       />
                     ) : (
-                      <FaBook size={40} />
+                      <LucideBook size={40} />
                     )}
                   </Card.Image>
                   <CardTitle>{post.postTitle}</CardTitle>
                   <CardMeta>
                     <MetaLabel>
-                      <FaUser size={12} />
+                      <LucideUser size={12} />
                       {post.author}
                     </MetaLabel>
                     <MetaValue>
-                      <FaUser size={12} />
+                      <LucideUser size={12} />
                       판매자: {post.sellerNickname}
                     </MetaValue>
                   </CardMeta>
@@ -389,7 +383,7 @@ const Search = () => {
             </Grid>
           ) : (
             <NoResults>
-              <FaBook
+              <LucideBook
                 size={60}
                 style={{ marginBottom: '20px', opacity: 0.5 }}
               />
