@@ -35,6 +35,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.1.2",
     "autoprefixer": "^10.4.24",
+    "jsdom": "^30.1.2",
     "oxlint": "^1.86.0",
     "oxlint-tsgolint": "^7.0.2003",
     "postcss": "^8.5.6",
