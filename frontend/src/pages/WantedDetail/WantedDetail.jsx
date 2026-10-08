@@ -447,16 +447,16 @@ export default function WantedDetail() {
   const handleSidebarMenu = menu => {
     switch (menu) {
       case 'bookstore/add':
-        navigate('/bookstore/add')
+        void navigate('/bookstore/add')
         break
       case 'wanted':
-        navigate('/wanted')
+        void navigate('/wanted')
         break
       case 'mybookstore':
-        navigate('/bookstore')
+        void navigate('/bookstore')
         break
       case 'chat':
-        navigate('/chat')
+        void navigate('/chat')
         break
       case 'comments': {
         const el = document.querySelector('[data-section="comments"]')
@@ -474,7 +474,7 @@ export default function WantedDetail() {
   // 상세 조회
   useEffect(() => {
     let alive = true
-    ;(async () => {
+    void (async () => {
       setLoading(true)
       try {
         const res = await fetch(`/api/wanted/${id}`)
@@ -507,7 +507,7 @@ export default function WantedDetail() {
             /* ignore */
           }
         }
-      } catch (e) {
+      } catch {
         if (alive) setData(null)
       } finally {
         if (alive) setLoading(false)
@@ -518,22 +518,7 @@ export default function WantedDetail() {
     }
   }, [id])
 
-  // 작성자 표시 이름 (탈퇴자면 "탈퇴된 회원")
-  const displayAuthor = nameForDisplay(
-    data?.requesterNickname ??
-      data?.requesterName ??
-      data?.authorName ??
-      data?.nickname ??
-      '',
-    isDeactivatedFromDetail(data),
-    t
-  )
-
   /* ------------------------------ 삭제 ------------------------------ */
-  const openDelete = () => {
-    setShowDeleteModal(true)
-  }
-
   const onDelete = async () => {
     stopWriting()
     setUnsavedChanges(false)
@@ -558,7 +543,7 @@ export default function WantedDetail() {
       })
       if (res.status === 204) {
         setShowDeleteModal(false)
-        navigate('/wanted')
+        void navigate('/wanted')
         return
       }
       let message = `삭제 실패 (${res.status})`
@@ -577,7 +562,7 @@ export default function WantedDetail() {
         alert('삭제 권한이 없습니다. 본인이 작성한 글만 삭제할 수 있습니다.')
       } else if (msg.includes('401')) {
         alert('로그인이 필요합니다. 다시 로그인해 주세요.')
-        navigate('/login')
+        void navigate('/login')
       } else {
         alert(msg || '삭제 중 오류가 발생했습니다.')
       }
@@ -622,7 +607,7 @@ export default function WantedDetail() {
 
   const handleReportExit = () => {
     setShowReportExitModal(false)
-    navigate('/wanted')
+    void navigate('/wanted')
   }
 
   /* ------------------------------ 렌더링 가드 ------------------------------ */

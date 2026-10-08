@@ -5,7 +5,6 @@ import { FaBook, FaArrowLeft, FaSearch } from 'react-icons/fa'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
-import api from '../../lib/api'
 import WarningModal from '../../components/WarningModal/WarningModal'
 import { useWriting } from '../../contexts/WritingContext'
 
@@ -114,15 +113,6 @@ const clampInt = (val, min, max) => {
   if (n > max) n = max
   return String(n)
 }
-
-// 카테고리 트리: 서버에서 동적으로 로드 (폴백은 기존 상수)
-const mapServerTree = nodes =>
-  Array.isArray(nodes)
-    ? nodes.map(n => ({
-        name: n.name,
-        children: mapServerTree(n.children || [])
-      }))
-    : []
 
 /* -------------------- styled -------------------- */
 const WriteContainer = styled.div`
@@ -515,6 +505,8 @@ export default function WantedWrite() {
     const hasChanges = Object.values(formData).some(
       v => v && v.toString().trim() !== ''
     )
+    // 제출 성공 뒤 false로 되돌리는 경로가 있어 파생값으로 바꾸지 않는다
+    // oxlint-disable-next-line react/set-state-in-effect -- 폼 내용이 바뀔 때 미저장 상태를 맞춘다
     setHasUnsavedChanges(hasChanges)
     setUnsavedChanges(hasChanges)
   }, [formData, setUnsavedChanges])
@@ -545,7 +537,7 @@ export default function WantedWrite() {
   // 수정 모드: 기존 데이터 가져오기(필요 시)
   useEffect(() => {
     if (!isEdit) return
-    ;(async () => {
+    void (async () => {
       try {
         const res = await fetch(`/api/wanted/${id}`)
         if (!res.ok) throw new Error(t('wantedWrite.error.loadDetail'))
@@ -601,10 +593,12 @@ export default function WantedWrite() {
 
         // 수정 진입 시 입력 방식은 수동으로(선택 사항)
         setInputType('title')
-      } catch (e) {
+      } catch {
         alert(t('wantedWrite.error.loadDetail'))
       }
     })()
+    // 언어가 바뀔 때 다시 불러오면 입력 중인 내용을 덮어쓴다. CATEGORIES는 렌더링마다 새로 만든다
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- 수정할 글은 id가 바뀔 때만 불러온다
   }, [isEdit, id])
 
   const handleInputChange = e => {
@@ -672,7 +666,7 @@ export default function WantedWrite() {
       const results = toBookArray(res?.data).map(normalizeBook)
       setSearchResults(results)
       if (results.length === 0) alert(t('wantedWrite.search.noResults'))
-    } catch (err) {
+    } catch {
       alert(t('wantedWrite.search.error'))
       setSearchResults([])
     } finally {
@@ -841,7 +835,7 @@ export default function WantedWrite() {
           // 그 외 JSON 에러 메시지
           throw new Error(message || t('wantedWrite.error.requestFailed'))
         } else {
-          const txt = await res.text()
+          await res.text()
           throw new Error(t('wantedWrite.error.requestFailed'))
         }
       }
@@ -858,8 +852,8 @@ export default function WantedWrite() {
           ? t('wantedWrite.success.update')
           : t('wantedWrite.success.create')
       )
-      navigate(isEdit ? `/wanted/${id}` : '/wanted', { replace: false })
-    } catch (err) {
+      void navigate(isEdit ? `/wanted/${id}` : '/wanted', { replace: false })
+    } catch {
       // 이미 필드 에러로 처리된 경우(alert 생략) → errors에 메시지가 들어감
       if (!Object.values(errors).some(Boolean)) {
         alert(
@@ -879,16 +873,16 @@ export default function WantedWrite() {
       setPendingNavigation(path)
       setShowWarningModal(true)
     } else {
-      navigate(path)
+      void navigate(path)
     }
   }
   const handleConfirmExit = () => {
     setShowWarningModal(false)
     if (pendingNavigation) {
-      navigate(pendingNavigation)
+      void navigate(pendingNavigation)
       setPendingNavigation(null)
     } else {
-      navigate('/wanted')
+      void navigate('/wanted')
     }
   }
   const handleCancelExit = () => {
