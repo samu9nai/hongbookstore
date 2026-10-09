@@ -42,13 +42,48 @@ Spring Boot 백엔드 (Cloud Run, 최대 인스턴스 1개)
 
 ## 프론트엔드
 
-루트는 `frontend/src`다.
+루트는 `frontend/src`다. 소스는 `app`·`features`·`shared` 세 층으로 나뉜다(D-P).
 
-- 라우팅은 `App.jsx` 한 파일에 있다. 주요 화면은 `pages/` 아래 화면별 폴더에 있다.
-- API 호출은 `lib/api.js`의 axios 인스턴스, `api/` 폴더의 함수, 화면 안의 직접 `fetch`가 섞여 있다.
-- 인증 상태는 `contexts/AuthContext.jsx`가 관리한다. 토큰은 `localStorage`의 `accessToken`, `refreshToken`에 있다.
-- 다국어 문구는 `locales/{ko,en,ja,zh}/translation.json`에 있다.
+| 층 | 내용 |
+|---|---|
+| `app/` | 진입점(`main.jsx`), 라우팅(`App.jsx`), 전역 스타일, `RequireAuth`, i18n 설정과 `locales/` |
+| `features/<기능>/` | 기능별 화면과 그 기능만 쓰는 컴포넌트·컨텍스트. API 모듈은 `api/`에 둔다 |
+| `shared/` | 둘 이상의 기능이 쓰는 코드. `ui`(공통 UI), `layout`(Header·Footer·SidebarMenu·WarningModal), `contexts`(인증·작성 중 상태), `api`(axios 인스턴스 `client.ts`와 공통 API), `lib`(유틸) |
+
+기능 폴더는 `home`, `auth`, `account`, `marketplace`, `wanted`, `chat`, `map`, `chatbot` 8개다.
+
+- 의존 방향은 `app → features → shared`다. `shared`는 `features`·`app`을, 기능끼리는 서로를 import하지 않는다.
+- 같은 층(`app`, 같은 기능, `shared`) 안은 상대 경로로, 층을 넘으면 `@/` 별칭(`@/shared/ui`)으로 import한다.
+- 둘 이상의 기능이 쓰게 된 코드는 `shared`로 옮긴다.
+- API 호출은 `shared/api/client.ts`의 axios 인스턴스, `api/` 폴더의 함수, 화면 안의 직접 `fetch`가 섞여 있다.
+- 인증 상태는 `shared/contexts/AuthContext.tsx`가 관리한다. 토큰은 `localStorage`의 `accessToken`, `refreshToken`에 있다.
+- 다국어 문구는 `app/locales/{ko,en,ja,zh}/translation.json`에 있다.
 - 스타일은 styled-components를 쓴다.
+
+#54 이전 경로는 아래처럼 바뀌었다. 백로그의 위치 열에 남은 옛 경로는 이 표로 찾는다.
+
+| 옛 경로 | 새 경로 |
+|---|---|
+| `App.jsx`, `main.jsx`, `i18n.js`, `locales/`, `styles/GlobalStyles`, `components/RequireAuth` | `app/` |
+| `components/ui` | `shared/ui` (`FloatingChatBot`만 `features/chatbot`) |
+| `components/{Header,Footer,SidebarMenu,WarningModal}` | `shared/layout` |
+| `contexts/{AuthContext,WritingContext}` | `shared/contexts` |
+| `contexts/LocationContext` | `features/map` |
+| `lib/api` | `shared/api/client` |
+| `api/{auth,notifications,peerReviews}` | `shared/api` |
+| `api/users` | `features/account/api` |
+| `api/{chat,reservations}` | `features/chat/api` |
+| `utils/` | `shared/lib` |
+| `components/Hero` | `features/home` |
+| `components/{NaverMap,PlaceDetailModal,UserCategory,PlaceTypeFilter}` | `features/map` |
+| `components/Comments/WantedComments` | `features/wanted` |
+| `components/ChatBotModal` | `features/chatbot` |
+| `pages/{Login,Register,VerificationConfirmPage}` | `features/auth` |
+| `pages/{MyPage,UserProfile,AccountDeactivate}` | `features/account` |
+| `pages/{Marketplace,PostDetail,PostWrite,Search,MyBookstore}` | `features/marketplace` |
+| `pages/{Wanted,WantedDetail,WantedWrite}` | `features/wanted` |
+| `pages/Chat` | `features/chat` |
+| `pages/Map` | `features/map` |
 
 ## 주요 흐름
 
