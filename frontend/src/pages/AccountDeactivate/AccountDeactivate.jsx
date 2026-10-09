@@ -60,11 +60,11 @@ export default function AccountDeactivate() {
       return
     try {
       await deactivateAccount(reason.trim() || undefined)
-    } catch (e) {
+    } catch {
       // 서버 실패해도 프런트는 반드시 로그아웃 진행
     } finally {
       await logout()
-      navigate('/')
+      void navigate('/')
     }
   }
 

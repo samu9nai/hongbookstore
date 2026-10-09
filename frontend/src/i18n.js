@@ -20,7 +20,7 @@ const getInitialLanguage = () => {
 
 // i18n 초기화를 즉시 실행
 const initI18n = () => {
-  i18n.use(initReactI18next).init({
+  void i18n.use(initReactI18next).init({
     resources: {
       ko: { translation: ko },
       en: { translation: en },

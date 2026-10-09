@@ -32,7 +32,8 @@ const getAllKeys = (obj, prefix = '') => {
       keys.push(fullKey)
     }
   }
-  return keys.sort()
+  // 기본 정렬과 같은 UTF-16 코드 단위 순서다
+  return keys.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
 }
 
 const allKeys = {}

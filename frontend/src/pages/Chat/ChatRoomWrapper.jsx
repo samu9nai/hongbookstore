@@ -13,7 +13,7 @@ const ChatRoomWrapper = () => {
     try {
       const userObj = JSON.parse(userJson)
       username = userObj.username || '익명'
-    } catch (e) {}
+    } catch {}
   }
 
   return (

@@ -229,10 +229,11 @@ const UserProfile = () => {
   // 최초 로드: state 이름 먼저 보여주고, 비동기 보강
   useEffect(() => {
     if (!userId) return
+    // oxlint-disable-next-line react/set-state-in-effect -- 이름을 불러오기 전에 이전 화면이 넘긴 이름을 먼저 보여 준다
     if (nameFromState && !userName) setUserName(nameFromState)
-    fetchUserName(userId)
-    fetchSummary(userId)
-    fetchList(userId, role, 0, size)
+    void fetchUserName(userId)
+    void fetchSummary(userId)
+    void fetchList(userId, role, 0, size)
   }, [
     userId,
     role,
@@ -247,7 +248,8 @@ const UserProfile = () => {
   // 탭 전환 시 목록만 새로고침
   useEffect(() => {
     if (!userId) return
-    fetchList(userId, role, 0, size)
+    // oxlint-disable-next-line react/set-state-in-effect -- 탭이 바뀌면 그 탭의 목록을 불러온다
+    void fetchList(userId, role, 0, size)
   }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

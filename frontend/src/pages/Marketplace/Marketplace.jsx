@@ -675,33 +675,6 @@ const PopularSectionTitle = styled.h2`
   margin: 0;
 `
 
-// 할인율에 따른 책 상태 반환 함수
-// 현재는 할인율을 기준으로 책 상태를 자동 판단:
-// - 할인율 20% 이하: 상 (좋은 상태)
-// - 할인율 21-40%: 중 (보통 상태)
-// - 할인율 41% 이상: 하 (낮은 상태)
-//
-// TODO: 실제 구현 시에는 사용자가 직접 책 상태를 평가할 수 있도록 별도의 상태 입력 필드를 제공
-const getBookCondition = (discountRate, t) => {
-  if (discountRate <= 30)
-    return {
-      text: t('marketplace.bookCondition.excellent'),
-      color: '#28a745',
-      bgColor: '#d4edda'
-    }
-  if (discountRate <= 50)
-    return {
-      text: t('marketplace.bookCondition.good'),
-      color: '#ffc107',
-      bgColor: '#fff3cd'
-    }
-  return {
-    text: t('marketplace.bookCondition.fair'),
-    color: '#dc3545',
-    bgColor: '#f8d7da'
-  }
-}
-
 // 에러 메시지 컴포넌트
 const ErrorMessage = styled.div`
   text-align: center;
@@ -995,6 +968,7 @@ const BookImageWithFallback = ({ src, alt, t }) => {
   // 부모 컴포넌트에서 src prop이 변경될 때마다 에러 상태를 초기화
   useEffect(() => {
     if (src) {
+      // oxlint-disable-next-line react/set-state-in-effect -- 이미지 주소가 바뀌면 이전 이미지의 실패 상태를 지운다
       setHasError(false)
     }
   }, [src])
@@ -1025,26 +999,6 @@ const BookImageWithFallback = ({ src, alt, t }) => {
 const Marketplace = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-
-  // 사이드바 메뉴 핸들러
-  const handleSidebarMenu = menu => {
-    switch (menu) {
-      case 'bookstore/add':
-        navigate('/bookstore/add')
-        break
-      case 'wanted':
-        navigate('/wanted')
-        break
-      case 'mybookstore':
-        navigate('/bookstore')
-        break
-      case 'chat':
-        navigate('/chat')
-        break
-      default:
-        break
-    }
-  }
 
   // API 데이터 상태
   const [posts, setPosts] = useState([]) // API로부터 받아온 게시글 목록
@@ -1086,7 +1040,7 @@ const Marketplace = () => {
       })
       const likedIds = new Set(response.data.map(post => post.postId))
       setLikedPostIds(likedIds)
-    } catch (error) {}
+    } catch {}
   }, [])
 
   // API 호출 로직
@@ -1154,15 +1108,17 @@ const Marketplace = () => {
 
   // 검색 조건이 바뀔 때마다, 데이터를 초기화하고 첫 페이지부터 다시 로드
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- 검색 조건이 바뀌면 목록을 비우고 첫 페이지부터 다시 불러온다
     setPosts([]) // 기존 목록 비우기
     setPage(0) // 페이지 번호 0으로 초기화
     setHasMore(true) // 더 불러올 데이터가 있다고 가정
-    fetchPosts(searchParams, 0) // 새 검색으로 API 호출
+    void fetchPosts(searchParams, 0) // 새 검색으로 API 호출
   }, [searchParams, fetchPosts])
 
   // 컴포넌트가 처음 마운트될 때 찜 목록도 함께 불러옴
   useEffect(() => {
-    fetchMyLikes()
+    // oxlint-disable-next-line react/set-state-in-effect -- 처음 화면을 열 때 찜 목록을 불러온다
+    void fetchMyLikes()
   }, [fetchMyLikes])
 
   // 무한 스크롤을 위한 Intersection Observer 설정
@@ -1173,7 +1129,7 @@ const Marketplace = () => {
       entries => {
         // 타겟 요소가 화면에 보이고, 더 불러올 데이터가 있으며, 로딩 중이 아닐 때 다음 페이지 로드
         if (entries[0].isIntersecting && hasMore && !isLoading) {
-          fetchPosts(searchParams, page) // 현재 page 사용
+          void fetchPosts(searchParams, page) // 현재 page 사용
         }
       },
       { threshold: 0.5 } // 타겟이 50% 보였을 때 실행
@@ -1192,7 +1148,7 @@ const Marketplace = () => {
     e.stopPropagation() // 카드 클릭 이벤트 전파 방지
     if (!localStorage.getItem('accessToken')) {
       alert('로그인이 필요한 기능이에요! 😊')
-      navigate('/login')
+      void navigate('/login')
       return
     }
 
@@ -1235,7 +1191,7 @@ const Marketplace = () => {
           timeout: 5000
         })
       }
-    } catch (error) {
+    } catch {
       // API 실패 시 UI 원상 복구
       setLikedPostIds(prev => {
         const newSet = new Set(prev)
@@ -1488,7 +1444,7 @@ const Marketplace = () => {
               <button
                 onClick={() => {
                   setError('')
-                  fetchPosts(searchParams, 0)
+                  void fetchPosts(searchParams, 0)
                 }}
                 style={{
                   marginTop: '1rem',

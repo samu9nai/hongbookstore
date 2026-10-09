@@ -55,9 +55,9 @@ function OAuth2RedirectHandler() {
 
       // 모든 처리가 끝나면 사용자를 홈페이지로
       // history에 현재 페이지를 남기지 않기 위해 replace: true 옵션을 사용.
-      navigate('/', { replace: true })
+      void navigate('/', { replace: true })
     } else {
-      navigate('/login?error=token_missing', { replace: true })
+      void navigate('/login?error=token_missing', { replace: true })
     }
     // useEffect의 의존성 배열을 명확하게 설정
   }, [navigate, login, searchParams])
