@@ -85,6 +85,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | FE-15 | P3 | 대기 | 사이드 메뉴가 현재 메뉴를 강조하지 않는다. `SubMenuButton`의 배경·글자색·테두리는 `active`를 읽지만 `SidebarMenu`는 `$active`만 넘겨서 그림자만 바뀐다 | `components/SidebarMenu/SidebarMenu.tsx` | #52 (소스 확인) |
 | FE-16 | P3 | 대기 | 장소 상세에서 카테고리에 장소를 담아도 선택한 카테고리 목록이 바로 갱신되지 않는다. `PlaceDetailModal`은 선택 상자 값(문자열)을 넘기고 `Map`의 `selectedUserCategoryId`는 숫자라 `handleAddPlaceToCategory`의 비교가 항상 거짓이다. | `pages/Map/Map.jsx:448`, `components/PlaceDetailModal/PlaceDetailModal.tsx` | #52 (소스 확인) |
 | FE-17 | P3 | 대기 | 장소 상세의 길찾기 탭이 `naver.maps.LatLngBounds`를 인자 없이 만든 뒤 `extend`한다. `@types/navermaps`는 두 꼭짓점을 요구해서 `@ts-expect-error`로 두었다. 실제 지도에서 출발지·도착지에 맞게 화면이 잡히는지 확인해야 한다. 인자 없는 생성이 실패하면 경로 그리기는 `catch`가 삼키고, 위치 맞춤은 `setTimeout` 안이라 잡히지 않은 오류가 난다 | `components/PlaceDetailModal/PlaceDetailModal.tsx` | #52 (위험 추론) |
+| FE-18 | P3 | 완료 (#53) | #53에서 추가한 `MapPlace`의 `category`·`description`은 `string` 또는 생략만 허용했지만, 백엔드 `Place`는 null을 허용하고 `PlaceDto.Response`가 값을 그대로 전달한다. null 응답 모양을 넣은 임시 타입 검사에서 TS2322 2건을 확인했다. 두 필드와 이를 받는 헬퍼(`getCategoryIcon`, `getTypeName`)의 인자에 null을 더했다. 실제 API·DB 왕복은 미검증이다 | `components/NaverMap/Navermap.tsx:23`, `domain/place/domain/Place.java:32`, `domain/place/dto/PlaceDto.java:49` | [PR #53 리뷰](reviews/2026-10-09-codex-pr51-pr53.md) (소스·타입 검사 확인) |
 
 ## 백엔드·운영 (BE, OPS)
 
