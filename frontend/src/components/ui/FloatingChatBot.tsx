@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import styled, { keyframes } from 'styled-components'
-import ChatBotContent from '../ChatBotModal/ChatBotContent'
+import ChatBotContent, {
+  type ChatBotMessage
+} from '../ChatBotModal/ChatBotContent'
 import { useTranslation } from 'react-i18next'
 
 const slideInFromRight = keyframes`
@@ -137,7 +139,7 @@ const SideModalBody = styled.div`
 const FloatingChatBot = () => {
   const { t, i18n } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<ChatBotMessage[]>([
     { sender: 'bot', text: t('chatbot.welcome') }
   ])
   const [chatKey, setChatKey] = useState(0) // ChatBotContent의 상태를 관리하기 위한 key

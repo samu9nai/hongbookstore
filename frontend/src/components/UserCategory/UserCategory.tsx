@@ -9,14 +9,27 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+/** 사용자가 만든 장소 카테고리. 백엔드 UserCategoryDto.Response와 같다 */
+export interface UserCategoryItem {
+  id: number
+  name: string
+}
+
+export interface UserCategoryProps {
+  categories: UserCategoryItem[]
+  onAddCategory: (name: string) => void
+  onDeleteCategory: (id: number) => void
+  onUpdateCategory: (id: number, name: string) => void
+}
+
 const UserCategory = ({
   categories,
   onAddCategory,
   onDeleteCategory,
   onUpdateCategory
-}) => {
+}: UserCategoryProps) => {
   const { t } = useTranslation()
-  const [editingId, setEditingId] = useState(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [editName, setEditName] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -29,13 +42,13 @@ const UserCategory = ({
     }
   }
 
-  const handleStartEdit = category => {
+  const handleStartEdit = (category: UserCategoryItem) => {
     setEditingId(category.id)
     setEditName(category.name)
   }
 
   const handleSaveEdit = () => {
-    if (editName.trim()) {
+    if (editingId !== null && editName.trim()) {
       onUpdateCategory(editingId, editName.trim())
       setEditingId(null)
       setEditName('')

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { AuthCtx } from '../../contexts/AuthContext'
 import { Loading } from '../ui'
@@ -8,7 +8,7 @@ import { Loading } from '../ui'
  * - 로딩 중이면 로딩 표시
  * - 비로그인이면 /login으로 리다이렉트 (이동 전 페이지는 state.from으로 보관)
  */
-export default function RequireAuth({ children }) {
+export default function RequireAuth({ children }: { children: ReactNode }) {
   const { isLoggedIn, isLoading } = useContext(AuthCtx)
   const location = useLocation()
 

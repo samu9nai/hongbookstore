@@ -30,7 +30,8 @@ const SubMenuContainer = styled.div`
   animation: ${fadeIn} 0.6s ease-out 0.3s backwards;
 `
 
-const SubMenuButton = styled.button`
+// active는 SidebarMenu가 넘기지 않아 항상 undefined다. 동작을 바꾸지 않으려고 그대로 둔다(FE-15).
+const SubMenuButton = styled.button<{ active?: boolean; $active?: boolean }>`
   background: ${props => (props.active ? 'var(--primary)' : 'transparent')};
   color: ${props => (props.active ? 'white' : 'var(--text)')};
   border: 2px solid ${props => (props.active ? 'transparent' : 'var(--border)')};
@@ -91,11 +92,25 @@ const SubMenuButton = styled.button`
   }
 `
 
-const SidebarMenu = ({ active, onMenuClick }) => {
+export type SidebarMenuKey = 'bookstore/add' | 'wanted' | 'mybookstore' | 'chat'
+
+export interface SidebarMenuProps {
+  active: SidebarMenuKey
+  onMenuClick: (menu: SidebarMenuKey) => void
+}
+
+interface SidebarMenuItem {
+  key: SidebarMenuKey
+  label: string
+  disabled?: boolean
+  title?: string
+}
+
+const SidebarMenu = ({ active, onMenuClick }: SidebarMenuProps) => {
   const { t } = useTranslation()
   const { user } = useContext(AuthCtx)
 
-  const menus = [
+  const menus: SidebarMenuItem[] = [
     {
       key: 'bookstore/add',
       label: t('sidebar.sellBook'),

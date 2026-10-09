@@ -95,7 +95,7 @@ const FooterContent = styled.div`
   }
 `
 
-const FooterSection = styled.div`
+const FooterSection = styled.div<{ $delay?: string }>`
   animation: ${fadeInUp} 0.6s ease-out ${props => props.$delay || '0s'}
     backwards;
 

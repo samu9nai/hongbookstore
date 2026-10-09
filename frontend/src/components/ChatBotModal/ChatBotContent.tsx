@@ -1,6 +1,46 @@
-import React, { useState, useEffect } from 'react'
+import React, {
+  useState,
+  useEffect,
+  type Dispatch,
+  type SetStateAction
+} from 'react'
 import styled, { keyframes } from 'styled-components'
 import { useTranslation } from 'react-i18next'
+
+export type ChatBotSender = 'bot' | 'user'
+
+/** 챗봇 대화의 메시지 하나. image·image2는 안내 이미지 주소다 */
+export interface ChatBotMessage {
+  sender: ChatBotSender
+  text: string
+  image?: string
+  image2?: string
+}
+
+/** 질문 버튼 하나. subOptions가 있으면 누를 때 하위 질문으로 바뀐다 */
+interface ChatBotOption {
+  label: string
+  answer: string
+  image?: string
+  image2?: string
+  subOptions?: ChatBotOption[]
+}
+
+/** 하위 질문으로 들어가기 전의 질문 목록. 뒤로 가기에 쓴다 */
+interface OptionHistoryEntry {
+  options: ChatBotOption[]
+  message: string
+  hasSubOptions: boolean
+  messageCount: number
+}
+
+export interface ChatBotContentProps {
+  /** 지금은 부르지 않는다 */
+  onClose: () => void
+  messages: ChatBotMessage[]
+  setMessages: Dispatch<SetStateAction<ChatBotMessage[]>>
+  onReset: () => void
+}
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
@@ -52,13 +92,13 @@ const ChatArea = styled.div`
   }
 `
 
-const MessageContainer = styled.div`
+const MessageContainer = styled.div<{ sender: ChatBotSender }>`
   margin: 1rem 0;
   animation: ${props => (props.sender === 'bot' ? slideIn : slideInRight)} 0.4s
     ease-out;
 `
 
-const Message = styled.div`
+const Message = styled.div<{ sender: ChatBotSender; isAsianLanguage: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: ${props => (props.sender === 'bot' ? 'flex-start' : 'flex-end')};
@@ -66,7 +106,10 @@ const Message = styled.div`
   margin: ${props => (props.sender === 'bot' ? '0 0 0 0' : '0 0 0 auto')};
 `
 
-const MessageBubble = styled.div`
+const MessageBubble = styled.div<{
+  sender: ChatBotSender
+  isAsianLanguage: boolean
+}>`
   background: ${props => (props.sender === 'bot' ? 'var(--surface)' : 'linear-gradient(135deg, var(--primary), var(--secondary))')};
   color: ${props => (props.sender === 'bot' ? 'var(--text-primary)' : 'white')};
   padding: 1rem 1.5rem;
@@ -88,7 +131,7 @@ const MessageBubble = styled.div`
   }
 `
 
-const MessageSender = styled.span`
+const MessageSender = styled.span<{ sender: ChatBotSender }>`
   font-weight: 600;
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
@@ -292,17 +335,21 @@ const BackButton = styled.button`
   }
 `
 
-const ChatBotContent = ({ onClose, messages, setMessages, onReset }) => {
+const ChatBotContent = ({
+  messages,
+  setMessages,
+  onReset
+}: ChatBotContentProps) => {
   const { t, i18n } = useTranslation()
-  const [currentOptions, setCurrentOptions] = useState([])
-  const [optionHistory, setOptionHistory] = useState([])
-  const [selectedImage, setSelectedImage] = useState(null)
+  const [currentOptions, setCurrentOptions] = useState<ChatBotOption[]>([])
+  const [optionHistory, setOptionHistory] = useState<OptionHistoryEntry[]>([])
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   // 현재 언어가 일본어 또는 중국어인지 확인
   const isAsianLanguage = i18n.language === 'ja' || i18n.language === 'zh'
 
   // 번역된 옵션들을 생성하는 함수
-  const getTranslatedOptions = () => [
+  const getTranslatedOptions = (): ChatBotOption[] => [
     {
       label: t('chatbot.questions.sellBook'),
       answer: t('chatbot.answers.sellBook')
@@ -366,11 +413,13 @@ const ChatBotContent = ({ onClose, messages, setMessages, onReset }) => {
 
   // 언어 변경 시 옵션 업데이트 및 히스토리 초기화
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- 언어가 바뀌면 질문 목록을 새 언어로 바꾼다
     setCurrentOptions(getTranslatedOptions())
     setOptionHistory([]) // 언어 변경 시 옵션 히스토리 초기화
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- getTranslatedOptions는 렌더마다 새로 만들어지므로 t가 바뀔 때만 실행한다
   }, [t])
 
-  const handleImageClick = imageSrc => {
+  const handleImageClick = (imageSrc: string) => {
     setSelectedImage(imageSrc)
   }
 
@@ -378,7 +427,7 @@ const ChatBotContent = ({ onClose, messages, setMessages, onReset }) => {
     setSelectedImage(null)
   }
 
-  const handleOptionClick = option => {
+  const handleOptionClick = (option: ChatBotOption) => {
     if (option.subOptions) {
       // 서브 옵션이 있는 경우
       setMessages(prev => [
@@ -421,10 +470,6 @@ const ChatBotContent = ({ onClose, messages, setMessages, onReset }) => {
     }
   }
 
-  const handleClose = () => {
-    onClose()
-  }
-
   return (
     <>
       <ChatArea>
@@ -454,7 +499,7 @@ const ChatBotContent = ({ onClose, messages, setMessages, onReset }) => {
                   <StyledImage
                     src={msg.image}
                     alt="안내 이미지"
-                    onClick={() => handleImageClick(msg.image)}
+                    onClick={() => handleImageClick(msg.image!)}
                   />
                 </ImageContainer>
               )}
@@ -463,7 +508,7 @@ const ChatBotContent = ({ onClose, messages, setMessages, onReset }) => {
                   <StyledImage
                     src={msg.image2}
                     alt="안내 이미지 2"
-                    onClick={() => handleImageClick(msg.image2)}
+                    onClick={() => handleImageClick(msg.image2!)}
                   />
                 </ImageContainer>
               )}
