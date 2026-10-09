@@ -98,7 +98,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | OPS-06 | P3 | 대기 | Vercel `rewrite`와 서버리스 프록시가 함께 있고, 프록시가 보내는 `x-edge-key`를 백엔드가 검증하지 않는다. Cloud Run 주소가 하드코딩돼 있다 | `src/main/frontend/vercel.json`, `src/main/frontend/api/[...path].js`, `application.yml:201` | C |
 | OPS-07 | P3 | 대기 | 코드 위생: `DepartmentNormalizer` 중복, `weather/utill` 오타, `catch (Exception …)` 44곳, 작업 지시용 주석 | 여러 곳 | C |
 | OPS-08 | P2 | 대기 | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다 | `backend/build.gradle.kts` | |
-| OPS-09 | P2 | 진행 (#50) | Husky의 `core.hooksPath=.husky/_`가 `.git/hooks/pre-push`의 Git LFS 업로드 훅을 대신하지만 `.husky/pre-push`가 없다. 새 LFS 이미지 7개를 포함한 push가 GH008로 거절됐다. `git lfs push origin feature/#48-brand-icons`로 이미지를 올린 뒤 재시도해 해결했다. `.husky/pre-push`에서 `git lfs pre-push`를 실행한다 | `.husky/`, `.gitattributes` | #48, PR #49 (실행 확인) |
+| OPS-09 | P2 | 완료 (#51) | Husky의 `core.hooksPath=.husky/_`가 `.git/hooks/pre-push`의 Git LFS 업로드 훅을 대신하지만 `.husky/pre-push`가 없다. 새 LFS 이미지 7개를 포함한 push가 GH008로 거절됐다. `git lfs push origin feature/#48-brand-icons`로 이미지를 올린 뒤 재시도해 해결했다. `.husky/pre-push`에서 `git lfs pre-push`를 실행한다 | `.husky/`, `.gitattributes` | #48, PR #49 (실행 확인) |
 
 ## 문서 (DOC)
 
