@@ -81,7 +81,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | FE-11 | P2 | 진행 (#44, #46) | 프론트엔드 소스가 JavaScript다(JS·JSX 60개, TS는 테스트 2개). 단계별로 TypeScript로 옮긴다: ① `utils`·`lib`·`api` ② `contexts`·`styles`·`components/ui` ③ 나머지 `components` ④ `pages`(영역별) ⑤ `App`·`main`·`i18n`, `allowJs` 끄기. 기본값은 decisions.md의 "확인이 필요한 제안". ① 완료(#45): 9개 모듈과 `env.d.ts`, `strict` 명시. ② 완료(#47): 14개 모듈 | `frontend/src` | D-N |
 | FE-12 | P3 | 대기 | `api/chat`의 `getOrCreateChatRoom`이 실제 API 대신 가짜 응답(`chat_<bookId>_<시각>`)을 돌려준다. `ChatList`의 `?bookId=` 처리가 이 값으로 존재하지 않는 채팅방으로 이동한다. 지금은 이 주소를 만드는 링크가 없다 | `api/chat.ts`, `pages/Chat/ChatList.jsx:600` | #44 |
 | FE-13 | P3 | 대기 | 쓰이지 않는 모듈이 있다: `api/reservations.ts`(ChatRoom은 자체 함수를 쓴다), `utils/daumPostcode.ts`(#37에서 마지막 사용처가 사라졌다), `api/auth`의 `deleteAccount`, `api/chat`의 `getOrCreateChatRoom` 외 함수 4개. TS 전환 1단계에서 동작 변경과 섞지 않으려고 그대로 옮겼다. `components/ui`도 같다: `Button`·`Input`과 `Form`·`CommonCard`·`Layout`의 export 대부분을 쓰는 곳이 없다(2단계, #46). `ui/index`는 `Card`를 `Card.tsx`에서 내보내므로 `CommonCard`의 `Card`·`CardHeader`는 index로 가져올 수 없다. `Search`·`Wanted`는 index의 `Card`와 `CommonCard`의 `CardTitle`을 함께 쓴다 | `frontend/src/api`, `frontend/src/utils`, `frontend/src/components/ui` | #44, #46 |
-| FE-14 | P3 | 진행 (#48, PR #49) | 브라우저 탭의 Vite 아이콘과 manifest의 Create React App 이름·아이콘을 교체한다. 사용자가 7안을 확정했다(D-O). 정본에서 favicon·홈 화면 아이콘을 생성하고 HTML·manifest에 연결했다. 다른 시안은 폐기했다. PR #49 리뷰 대기 | `frontend/index.html`, `frontend/public/manifest.json`, `frontend/public/`, `frontend/src/assets/brand/hongbookstore-master.png` | #48 |
+| FE-14 | P3 | 완료 (#49) | 브라우저 탭의 Vite 아이콘과 manifest의 Create React App 이름·아이콘을 교체한다. 사용자가 7안을 확정했다(D-O). 정본에서 favicon·홈 화면 아이콘을 생성하고 HTML·manifest에 연결했다. 다른 시안은 폐기했다 | `frontend/index.html`, `frontend/public/manifest.json`, `frontend/public/`, `frontend/src/assets/brand/hongbookstore-master.png` | #48 |
 
 ## 백엔드·운영 (BE, OPS)
 
@@ -98,7 +98,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | OPS-06 | P3 | 대기 | Vercel `rewrite`와 서버리스 프록시가 함께 있고, 프록시가 보내는 `x-edge-key`를 백엔드가 검증하지 않는다. Cloud Run 주소가 하드코딩돼 있다 | `src/main/frontend/vercel.json`, `src/main/frontend/api/[...path].js`, `application.yml:201` | C |
 | OPS-07 | P3 | 대기 | 코드 위생: `DepartmentNormalizer` 중복, `weather/utill` 오타, `catch (Exception …)` 44곳, 작업 지시용 주석 | 여러 곳 | C |
 | OPS-08 | P2 | 대기 | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다 | `backend/build.gradle.kts` | |
-| OPS-09 | P2 | 대기 | Husky의 `core.hooksPath=.husky/_`가 `.git/hooks/pre-push`의 Git LFS 업로드 훅을 대신하지만 `.husky/pre-push`가 없다. 새 LFS 이미지 7개를 포함한 push가 GH008로 거절됐다. `git lfs push origin feature/#48-brand-icons`로 이미지를 올린 뒤 재시도해 해결했다. Husky에 LFS pre-push 연결이 필요하다 | `.husky/`, `.gitattributes` | #48, PR #49 (실행 확인) |
+| OPS-09 | P2 | 완료 (#51) | Husky의 `core.hooksPath=.husky/_`가 `.git/hooks/pre-push`의 Git LFS 업로드 훅을 대신하지만 `.husky/pre-push`가 없다. 새 LFS 이미지 7개를 포함한 push가 GH008로 거절됐다. `git lfs push origin feature/#48-brand-icons`로 이미지를 올린 뒤 재시도해 해결했다. `.husky/pre-push`에서 `git lfs pre-push`를 실행한다 | `.husky/`, `.gitattributes` | #48, PR #49 (실행 확인) |
 
 ## 문서 (DOC)
 

@@ -85,6 +85,7 @@ docs: 프론트엔드 개발 규칙 정리 (#31)
 - 민감정보, 빌드 산출물, 개인 IDE 설정을 커밋하지 않는다.
 
 커밋하면 pre-commit 훅이 스테이징한 프론트엔드 파일에 oxlint와 Prettier를 실행한다. 오류가 남으면 커밋이 막힌다.
+push하면 pre-push 훅이 `git lfs pre-push`로 이미지 같은 LFS 파일을 먼저 올린다. `git-lfs`가 없으면 push가 막힌다.
 
 ## 5. PR 작성
 

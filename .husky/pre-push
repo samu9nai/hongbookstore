@@ -1,0 +1,8 @@
+# Husky가 core.hooksPath를 .husky/_로 바꾸므로 git lfs install이 만든 .git/hooks/pre-push는 실행되지 않는다.
+# LFS 객체를 먼저 올리지 않으면 GitHub가 push를 거절한다(GH008). 같은 명령을 여기서 실행한다.
+if ! command -v git-lfs >/dev/null 2>&1; then
+  echo "git-lfs를 찾을 수 없습니다. Git LFS를 설치하고 git lfs install을 실행해 주세요."
+  exit 2
+fi
+
+git lfs pre-push "$@"
