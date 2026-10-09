@@ -30,6 +30,8 @@ interface Window {
       open: () => void
     }
   }
+  /** 네이버 지도 스크립트가 로드되면 생긴다. 타입은 @types/navermaps에 있다 */
+  naver?: typeof naver
   /** ChatRoom이 웹소켓 주소에서 뽑아 둔 백엔드 호스트 */
   __HBS_BACKEND_HOST__?: string
 }
