@@ -801,7 +801,7 @@ const PlaceDetailModal = ({
   }
 
   const getTypeName = useMemo(
-    () => (type?: string) =>
+    () => (type?: string | null) =>
       (
         ({
           restaurant: t('map.restaurant'),

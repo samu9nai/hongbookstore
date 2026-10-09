@@ -20,8 +20,8 @@ export interface MapPlace {
   address?: string
   lat: number
   lng: number
-  category?: string
-  description?: string
+  category?: string | null
+  description?: string | null
 }
 
 /** 장소 유형. 마커 색을 정한다 */
@@ -69,7 +69,7 @@ const NaverMapComponent = forwardRef<NaverMapHandle, NaverMapProps>(
       onMapClickRef.current = onMapClick
     }, [onMapClick])
 
-    const getCategoryIcon = (categoryId?: string) => {
+    const getCategoryIcon = (categoryId?: string | null) => {
       switch (categoryId) {
         case 'restaurant':
           return '🍽️'
