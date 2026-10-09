@@ -1,7 +1,8 @@
-// src/components/Comments/WantedComments.jsx
+// src/components/Comments/WantedComments.tsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { LucideClock, LucideReply, LucideTrash, LucideUser } from 'lucide-react'
 import { displayMaskedName } from '../../utils/nameMask'
 
@@ -40,7 +41,7 @@ const Textarea = styled.textarea`
   }
 `
 
-const Button = styled.button`
+const Button = styled.button<{ $variant?: 'primary' | 'danger' }>`
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid ${p => (p.$variant === 'danger' ? '#dc3545' : '#e5e7eb')};
@@ -91,7 +92,7 @@ const Meta = styled.div`
   margin-bottom: 6px;
 `
 
-const Content = styled.div`
+const Content = styled.div<{ $deleted?: boolean }>`
   white-space: pre-wrap;
   color: ${p => (p.$deleted ? '#9aa0a6' : '#222')};
 `
@@ -107,9 +108,98 @@ const ReplyBox = styled.div`
   margin-left: 26px;
 `
 
+/* ------------------------------ types ------------------------------ */
+/** 작성자 객체에서 이름과 탈퇴 여부를 판단할 때 읽는 필드 */
+interface CommentActor {
+  nickname?: string
+  name?: string
+  status?: string
+  accountStatus?: string
+  userStatus?: string
+  authorStatus?: string
+  deactivated?: boolean
+  isDeactivated?: boolean
+  withdrawn?: boolean
+  isWithdrawn?: boolean
+  isDeleted?: boolean
+  deletedUser?: boolean
+  userDeleted?: boolean
+  deleted?: boolean
+  deactivatedAt?: string
+  withdrawnAt?: string
+  deletedAt?: string
+}
+
+/**
+ * 서버가 보내는 댓글. 백엔드 WantedCommentDto의 필드에 더해, 다른 응답 모양을
+ * 방어하려고 읽는 필드를 모두 선택 필드로 둔다
+ */
+interface RawComment {
+  id?: number
+  commentId?: number
+  cid?: number
+  parentId?: number | null
+  parentCommentId?: number | null
+  content?: string
+  deleted?: boolean
+  contentToxic?: boolean
+  createdAt?: string
+  userId?: number | string
+  authorId?: number | string
+  writerId?: number | string
+  commenterId?: number | string
+  createdById?: number | string
+  ownerId?: number | string
+  commentUserId?: number | string
+  createdBy?: number | string
+  isMine?: boolean
+  mine?: boolean
+  canDelete?: boolean
+  role?: string
+  author?: CommentActor
+  writer?: CommentActor
+  commenter?: CommentActor
+  authorStatus?: string
+  authorDeactivated?: boolean
+  authorDeletedAt?: string
+  authorNickname?: string
+  nickname?: string
+  username?: string
+  authorName?: string
+  userName?: string
+  displayName?: string
+}
+
+/** 댓글 id. 응답에 id 후보가 하나도 없으면 undefined다 */
+type CommentKey = number | undefined
+
+interface CommentNode extends Omit<RawComment, 'id'> {
+  id: CommentKey
+  children: CommentNode[]
+}
+
+/** 목록 응답. 배열이거나 data·comments 안에 배열이 있다 */
+type CommentListJson =
+  | RawComment[]
+  | {
+      data?: RawComment[] | { comments?: RawComment[] }
+      comments?: RawComment[]
+    }
+
+/** 작성 응답. 유해 표현이 감지되면 400과 함께 data에 판정 결과를 담는다 */
+interface CommentWriteJson {
+  success?: boolean
+  message?: string
+  data?: {
+    field?: string
+    predictionLevel?: string
+    malicious?: number
+  }
+}
+
 /* ----------------------------- helpers ----------------------------- */
 // 토큰 정규화
-function normalizeBearer(raw) {
+function normalizeBearer(raw: string) {
   if (!raw) return ''
   let t = String(raw).trim()
   if (t.startsWith('"') && t.endsWith('"')) t = t.slice(1, -1) // JSON 저장 흔적 제거
@@ -121,18 +211,18 @@ function getXsrfTokenFromCookie() {
   const m = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)
   return m ? m[1] : null
 }
-function xsrfHeader() {
+function xsrfHeader(): Record<string, string> {
   const v = getXsrfTokenFromCookie()
   return v ? { 'X-XSRF-TOKEN': v } : {}
 }
 
 // GET: 최소 헤더 + 쿠키 포함(세션 로그인 지원)
-function publicInit() {
+function publicInit(): RequestInit {
   return { headers: { Accept: 'application/json' }, credentials: 'include' }
 }
 
 // POST/DELETE: ASCII 헤더 + 쿠키 포함
-function authInit(bodyObj) {
+function authInit(bodyObj?: { content: string }) {
   const tokenRaw = localStorage.getItem('accessToken') || ''
   const token = normalizeBearer(tokenRaw)
   const uidRaw = localStorage.getItem('userId') || ''
@@ -145,7 +235,7 @@ function authInit(bodyObj) {
     ...xsrfHeader()
   }
 
-  const init = {
+  const init: RequestInit = {
     method: bodyObj ? 'POST' : 'DELETE',
     headers,
     credentials: 'include' // ✅ 세션 쿠키 동봉
@@ -154,14 +244,14 @@ function authInit(bodyObj) {
   return init
 }
 
-function toJsonSafely(res) {
+function toJsonSafely<T>(res: Response): Promise<T | null> {
   const ct = res.headers.get('content-type') || ''
   if (ct.includes('application/json')) return res.json()
   return Promise.resolve(null)
 }
 
 // 다양한 응답 모양 방어
-function normalizeApiData(json) {
+function normalizeApiData(json: CommentListJson | null): RawComment[] {
   if (!json) return []
   if (Array.isArray(json)) return json
   if (Array.isArray(json.data)) return json.data
@@ -170,16 +260,16 @@ function normalizeApiData(json) {
   return []
 }
 
-function buildTree(list) {
-  const byId = new Map()
+function buildTree(list: RawComment[]) {
+  const byId = new Map<CommentKey, CommentNode>()
   list.forEach(c => {
     const id = c.id ?? c.commentId ?? c.cid
     byId.set(id, { ...c, id, children: [] })
   })
-  const roots = []
+  const roots: CommentNode[] = []
   list.forEach(c => {
     const id = c.id ?? c.commentId ?? c.cid
-    const node = byId.get(id)
+    const node = byId.get(id)!
     const pid = c.parentId ?? c.parentCommentId ?? null
     if (pid) {
       const p = byId.get(pid)
@@ -193,7 +283,7 @@ function buildTree(list) {
 }
 
 /** 작성자 id를 '엄격한' 후보에서만 추출 */
-function extractAuthorIdStrict(c) {
+function extractAuthorIdStrict(c: CommentNode) {
   const candidates = [
     c.userId,
     c.authorId,
@@ -213,7 +303,7 @@ function extractAuthorIdStrict(c) {
 }
 
 /** 서버가 명시 boolean을 주면 우선 사용 */
-function computeMine(c, myId) {
+function computeMine(c: CommentNode, myId: number | null) {
   if (c.isMine === true || c.mine === true) return true
   if (c.canDelete === true && c.role !== 'ADMIN') return true
   const aid = extractAuthorIdStrict(c)
@@ -221,8 +311,8 @@ function computeMine(c, myId) {
 }
 
 /* 작성자(배우) 객체의 탈퇴 여부만 본다. */
-function isDeactivatedFromComment(c) {
-  const U = v => (v ?? '').toString().toUpperCase()
+function isDeactivatedFromComment(c: CommentNode) {
+  const U = (v: string | undefined) => (v ?? '').toString().toUpperCase()
   const actors = [c?.author, c?.writer, c?.commenter] // user는 제외(모호)
   for (const a of actors) {
     if (!a || typeof a !== 'object') continue
@@ -250,11 +340,11 @@ function isDeactivatedFromComment(c) {
   return false
 }
 
-function looksAnonymousName(name, t) {
+function looksAnonymousName(name: string, t: TFunction) {
   const n = (name ?? '').toString().trim()
   if (!n) return false
   const anonKo = (t?.('common.anonymous') || '익명').toString()
-  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const reKo = /^익명\s*\d*$/i
   const reI18n = new RegExp(`^${esc(anonKo)}\\s*\\d*$`, 'i')
   const reEn = /^anonymous\s*\d*$/i
@@ -262,7 +352,7 @@ function looksAnonymousName(name, t) {
 }
 
 /* 표시용 이름 */
-function nameForComment(c, t) {
+function nameForComment(c: CommentNode, t: TFunction) {
   if (isDeactivatedFromComment(c)) return '탈퇴된 회원'
   const raw =
     c?.authorNickname ??
@@ -282,13 +372,17 @@ function nameForComment(c, t) {
 }
 
 /* ----------------------------- component ----------------------------- */
-export default function WantedComments({ wantedId }) {
+export interface WantedCommentsProps {
+  wantedId: string | number
+}
+
+export default function WantedComments({ wantedId }: WantedCommentsProps) {
   const { t } = useTranslation()
-  const [list, setList] = useState([])
+  const [list, setList] = useState<RawComment[]>([])
   const [loading, setLoading] = useState(false)
   const [text, setText] = useState('')
   const [textError, setTextError] = useState('')
-  const [replyFor, setReplyFor] = useState(null)
+  const [replyFor, setReplyFor] = useState<CommentKey | null>(null)
   const [replyText, setReplyText] = useState('')
   const [replyError, setReplyError] = useState('')
 
@@ -306,7 +400,7 @@ export default function WantedComments({ wantedId }) {
       // ✅ GET도 쿠키 포함(세션 로그인이면 목록에 권한 플래그 내려올 수 있음)
       const res = await fetch(`/api/wanted/${wantedId}/comments`, publicInit())
       if (!res.ok) throw new Error(`목록 실패 (${res.status})`)
-      const json = await toJsonSafely(res)
+      const json = await toJsonSafely<CommentListJson>(res)
       setList(normalizeApiData(json))
     } catch (e) {
       console.error('[comments:list]', e)
@@ -330,7 +424,7 @@ export default function WantedComments({ wantedId }) {
         `/api/wanted/${wantedId}/comments`,
         authInit(body)
       )
-      const json = await toJsonSafely(res)
+      const json = await toJsonSafely<CommentWriteJson>(res)
       if (!res.ok) {
         if (
           res.status === 400 &&
@@ -354,11 +448,11 @@ export default function WantedComments({ wantedId }) {
       setText('')
       await fetchList()
     } catch (e) {
-      alert(e.message || t('wantedComments.error.createFailed'))
+      alert((e as Error).message || t('wantedComments.error.createFailed'))
     }
   }
 
-  async function submitReply(parentId) {
+  async function submitReply(parentId: CommentKey) {
     const body = { content: replyText.trim() }
     if (!body.content) return
     try {
@@ -367,7 +461,7 @@ export default function WantedComments({ wantedId }) {
         `/api/wanted/${wantedId}/comments/${parentId}/replies`,
         authInit(body)
       )
-      const json = await toJsonSafely(res)
+      const json = await toJsonSafely<CommentWriteJson>(res)
       if (!res.ok) {
         if (
           res.status === 400 &&
@@ -392,11 +486,11 @@ export default function WantedComments({ wantedId }) {
       setReplyText('')
       await fetchList()
     } catch (e) {
-      alert(e.message || t('wantedComments.error.replyFailed'))
+      alert((e as Error).message || t('wantedComments.error.replyFailed'))
     }
   }
 
-  async function remove(commentId) {
+  async function remove(commentId: CommentKey) {
     if (!window.confirm(t('wantedComments.confirmDelete'))) return
     try {
       const res = await fetch(
@@ -404,7 +498,7 @@ export default function WantedComments({ wantedId }) {
         authInit()
       )
       if (!res.ok && res.status !== 204) {
-        const json = await toJsonSafely(res)
+        const json = await toJsonSafely<CommentWriteJson>(res)
         throw new Error(
           json?.message ||
             t('wantedComments.error.deleteFailed', { status: res.status })
@@ -413,11 +507,11 @@ export default function WantedComments({ wantedId }) {
       await fetchList()
     } catch (e) {
       console.error(e)
-      alert(e.message || t('wantedComments.error.deleteFailed'))
+      alert((e as Error).message || t('wantedComments.error.deleteFailed'))
     }
   }
 
-  const renderItem = c => {
+  const renderItem = (c: CommentNode) => {
     const created = c.createdAt ? new Date(c.createdAt) : null
     const mine = computeMine(c, myId)
     const displayName = nameForComment(c, t)

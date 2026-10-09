@@ -2,8 +2,9 @@ import React from 'react'
 import styled from 'styled-components'
 import { LucideTriangleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { WritingType } from '../../contexts/WritingContext'
 
-const ModalOverlay = styled.div`
+const ModalOverlay = styled.div<{ isOpen: boolean }>`
   display: ${props => (props.isOpen ? 'flex' : 'none')};
   position: fixed;
   top: 0;
@@ -98,6 +99,21 @@ const Button = styled.button`
   }
 `
 
+export interface WarningModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  onCancel: () => void
+  onSaveDraft?: () => void
+  /** 'wanted'가 아니면(null 포함) 판매글 문구를 쓴다 */
+  type?: WritingType | null
+  title?: string
+  message?: string
+  confirmText?: string
+  cancelText?: string
+  showSaveDraft?: boolean
+}
+
 const WarningModal = ({
   isOpen,
   onClose,
@@ -110,7 +126,7 @@ const WarningModal = ({
   confirmText = '',
   cancelText = '',
   showSaveDraft = false
-}) => {
+}: WarningModalProps) => {
   const { t } = useTranslation()
 
   if (!isOpen) return null

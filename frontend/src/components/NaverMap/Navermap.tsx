@@ -5,33 +5,63 @@ import React, {
   forwardRef,
   memo
 } from 'react'
-import styled from 'styled-components'
+import type { UserLocation } from '../../contexts/LocationContext'
 
 // 스크립트가 중복 로드되는 것을 방지하기 위한 전역 플래그
 let isNaverMapScriptLoaded = false
 
-const NaverMapComponent = forwardRef(
-  (
-    {
-      places = [],
-      categories = [],
-      onMapClick,
-      onPlaceClick,
-      userLocation = null,
-      routePath = null,
-      showMyLocation = false
-    },
-    ref
-  ) => {
-    const mapElementRef = useRef(null) // 지도를 담을 div 엘리먼트에 대한 ref
-    const mapInstanceRef = useRef(null) // 생성된 네이버 지도 인스턴스에 대한 ref
-    const markersRef = useRef([])
-    const infoWindowsRef = useRef([])
-    const userMarkerRef = useRef(null)
-    const routeLineRef = useRef(null)
-    const routeMarkersRef = useRef([])
-    const selectionMarkerRef = useRef(null)
-    const clickListenerRef = useRef(null)
+/**
+ * 지도에 표시하는 장소. 저장한 장소는 백엔드 PlaceDto.Response와 같고,
+ * 검색 결과는 id가 문자열이다
+ */
+export interface MapPlace {
+  id: number | string
+  name: string
+  address?: string
+  lat: number
+  lng: number
+  category?: string | null
+  description?: string | null
+}
+
+/** 장소 유형. 마커 색을 정한다 */
+export interface MapCategory {
+  id: string
+  name: string
+  icon: string
+  color: string
+}
+
+/** ref로 부르는 지도 조작 함수 */
+export interface NaverMapHandle {
+  moveToLocation: (lat: number, lng: number, zoom?: number) => void
+  zoomIn: () => void
+  zoomOut: () => void
+  setZoom: (zoom: number) => void
+  getMap: () => naver.maps.Map | null
+}
+
+export interface NaverMapProps {
+  places?: MapPlace[]
+  categories?: MapCategory[]
+  onMapClick?: (lat: number, lng: number) => void
+  onPlaceClick?: (place: MapPlace) => void
+  /** 지금은 읽지 않는다 */
+  userLocation?: UserLocation | null
+  /** 지금은 읽지 않는다 */
+  routePath?: unknown
+  /** 지금은 읽지 않는다 */
+  showMyLocation?: boolean
+}
+
+const NaverMapComponent = forwardRef<NaverMapHandle, NaverMapProps>(
+  ({ places = [], categories = [], onMapClick, onPlaceClick }, ref) => {
+    const mapElementRef = useRef<HTMLDivElement>(null) // 지도를 담을 div 엘리먼트에 대한 ref
+    const mapInstanceRef = useRef<naver.maps.Map | null>(null) // 생성된 네이버 지도 인스턴스에 대한 ref
+    const markersRef = useRef<naver.maps.Marker[]>([])
+    const infoWindowsRef = useRef<naver.maps.InfoWindow[]>([])
+    const selectionMarkerRef = useRef<naver.maps.Marker | null>(null)
+    const clickListenerRef = useRef<naver.maps.MapEventListener | null>(null)
     const onMapClickRef = useRef(onMapClick)
 
     // 최신 onMapClick 콜백을 보관해 비동기 로딩 후에도 참조되도록 함
@@ -39,7 +69,7 @@ const NaverMapComponent = forwardRef(
       onMapClickRef.current = onMapClick
     }, [onMapClick])
 
-    const getCategoryIcon = categoryId => {
+    const getCategoryIcon = (categoryId?: string | null) => {
       switch (categoryId) {
         case 'restaurant':
           return '🍽️'
@@ -57,7 +87,7 @@ const NaverMapComponent = forwardRef(
     }
 
     useImperativeHandle(ref, () => ({
-      moveToLocation: (lat, lng, zoom = 16) => {
+      moveToLocation: (lat: number, lng: number, zoom = 16) => {
         if (mapInstanceRef.current && window.naver && window.naver.maps) {
           mapInstanceRef.current.setCenter(
             new window.naver.maps.LatLng(lat, lng)
@@ -75,7 +105,7 @@ const NaverMapComponent = forwardRef(
           mapInstanceRef.current.setZoom(mapInstanceRef.current.getZoom() - 1)
         }
       },
-      setZoom: zoom => {
+      setZoom: (zoom: number) => {
         if (mapInstanceRef.current) {
           mapInstanceRef.current.setZoom(zoom)
         }
@@ -94,7 +124,11 @@ const NaverMapComponent = forwardRef(
           center: new window.naver.maps.LatLng(37.5665, 126.978),
           zoom: 15
         }
-        const map = new window.naver.maps.Map(mapElementRef.current, mapOptions)
+        // effect 시작에서 엘리먼트를 확인했다
+        const map = new window.naver.maps.Map(
+          mapElementRef.current!,
+          mapOptions
+        )
         mapInstanceRef.current = map
 
         // 지도가 준비되면 클릭 리스너 바로 연결 (스크립트 지연 로딩 대비)
@@ -106,7 +140,7 @@ const NaverMapComponent = forwardRef(
           clickListenerRef.current = window.naver.maps.Event.addListener(
             map,
             'click',
-            e => {
+            (e: { coord: naver.maps.LatLng }) => {
               const lat = e.coord.lat()
               const lng = e.coord.lng()
               if (!selectionMarkerRef.current) {
@@ -127,7 +161,7 @@ const NaverMapComponent = forwardRef(
               if (onMapClickRef.current) onMapClickRef.current(lat, lng)
             }
           )
-        } catch (_) {}
+        } catch {}
       }
 
       if (window.naver && window.naver.maps) {
@@ -142,7 +176,7 @@ const NaverMapComponent = forwardRef(
           const script = document.createElement('script')
           script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}&submodules=geocoder`
           script.async = true
-          script.onerror = error => {
+          script.onerror = () => {
             isNaverMapScriptLoaded = false
           }
           script.onload = () => initMap()
@@ -165,7 +199,7 @@ const NaverMapComponent = forwardRef(
             window.naver.maps.Event.removeListener(clickListenerRef.current)
             clickListenerRef.current = null
           }
-        } catch (_) {}
+        } catch {}
       }
     }, [])
 
@@ -195,7 +229,8 @@ const NaverMapComponent = forwardRef(
 
         const marker = new window.naver.maps.Marker({
           position: new window.naver.maps.LatLng(place.lat, place.lng),
-          map: mapInstanceRef.current,
+          // effect 시작에서 지도 인스턴스를 확인했다
+          map: mapInstanceRef.current!,
           icon: {
             content: `<div style="background-color:${markerColor};width:24px;height:24px;border-radius:50%;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;">${getCategoryIcon(place.category)}</div>`,
             anchor: new window.naver.maps.Point(12, 12)

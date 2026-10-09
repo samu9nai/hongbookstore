@@ -1,8 +1,12 @@
-// src/components/PlaceDetailModal/PlaceDetailModal.jsx
+// src/components/PlaceDetailModal/PlaceDetailModal.tsx
 import React, { useState, useRef, useEffect, useContext, useMemo } from 'react'
 import styled from 'styled-components'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { AuthCtx } from '../../contexts/AuthContext'
+import type { UserLocation } from '../../contexts/LocationContext'
+import type { MapPlace } from '../NaverMap/Navermap'
+import type { UserCategoryItem } from '../UserCategory/UserCategory'
 import {
   LucideChevronLeft,
   LucideChevronRight,
@@ -26,13 +30,129 @@ const DIRECTIONS_ENDPOINT = '/api/directions/driving'
 const SEARCH_ENDPOINT = '/api/places/search'
 
 // ✅ 리뷰 API 엔드포인트
-const REVIEW_LIST = id => `/api/places/${id}/reviews`
-const REVIEW_REACT = reviewId => `/api/places/reviews/${reviewId}/reactions`
-const REVIEW_DELETE = (placeId, reviewId) => `/api/places/reviews/${reviewId}`
+const REVIEW_LIST = (id: MapPlace['id']) => `/api/places/${id}/reviews`
+const REVIEW_REACT = (reviewId: number) =>
+  `/api/places/reviews/${reviewId}/reactions`
+const REVIEW_DELETE = (placeId: MapPlace['id'], reviewId: number) =>
+  `/api/places/reviews/${reviewId}`
 const REVIEW_UPLOAD = '/api/reviews/images'
 
+/* ===================== 타입 ===================== */
+type ReviewReaction = 'LIKE' | 'DISLIKE'
+
+/** 리뷰 작성자 객체에서 이름과 탈퇴 여부를 판단할 때 읽는 필드 */
+interface ReviewActor {
+  id?: number
+  name?: string
+  userName?: string
+  username?: string
+  nickname?: string
+  displayName?: string
+  status?: string
+  userStatus?: string
+  deactivated?: boolean
+  deleted?: boolean
+  deactivatedAt?: string
+  deletedAt?: string
+}
+
+/**
+ * 서버가 보내는 리뷰. 백엔드 ReviewDtos.ReviewRes의 필드에 더해, 다른 응답 모양을
+ * 방어하려고 읽는 필드를 선택 필드로 둔다
+ */
+interface RawReview {
+  id: number
+  userId?: number | null
+  user_id?: number | null
+  userName?: string
+  username?: string
+  nickname?: string
+  authorName?: string
+  displayName?: string
+  memberName?: string
+  accountName?: string
+  user?: ReviewActor
+  writer?: ReviewActor
+  author?: ReviewActor
+  userStatus?: string
+  status?: string
+  user_status?: string
+  userDeactivated?: boolean
+  deactivated?: boolean
+  isDeactivated?: boolean
+  userDeleted?: boolean
+  deleted?: boolean
+  userDeactivatedAt?: string
+  deactivatedAt?: string
+  deletedAt?: string
+  userDeletedAt?: string
+  rating: number
+  content: string
+  likes?: number
+  dislikes?: number
+  photos?: { url: string }[]
+  userReaction?: ReviewReaction | null
+}
+
+/** 리뷰 목록 응답. 백엔드 ReviewDtos.ListRes와 같다 */
+interface ReviewListRes {
+  averageRating?: number
+  reviewCount?: number
+  reviews?: RawReview[]
+}
+
+/** 화면에 그리는 리뷰 */
+interface PlaceReview {
+  id: number
+  userId: number | null
+  userName: string
+  reviewerDeactivated: boolean
+  rating: number
+  content: string
+  likes?: number
+  dislikes?: number
+  photos: string[]
+  userReaction: ReviewReaction | null
+}
+
+/** 출발지 검색 결과. 네이버 지역 검색 item이거나 다른 모양의 좌표를 담는다 */
+interface StartSearchItem {
+  id?: string | number
+  title?: string
+  name?: string
+  roadAddress?: string
+  address?: string
+  addr?: string
+  lat?: number | string
+  lng?: number | string
+  mapx?: number | string
+  mapX?: number | string
+  mapy?: number | string
+  mapY?: number | string
+  x?: number | string
+  y?: number | string
+}
+
+interface LatLngValue {
+  lat: number
+  lng: number
+}
+
+/** 길찾기 응답 중 읽는 필드. path는 [경도, 위도] 배열이다 */
+interface DirectionsResponse {
+  route?: {
+    traoptimal?: {
+      path?: [number, number][]
+      summary?: { distance: number; duration: number }
+    }[]
+  }
+}
+
+/** 네이버 지도 스크립트를 불러온 뒤의 window */
+type LoadedWindow = Window & { naver: NonNullable<Window['naver']> }
+
 /* ===================== 공통 토스트 ===================== */
-function showToast(message) {
+function showToast(message: string) {
   const el = document.createElement('div')
   el.textContent = message
   el.style.cssText = `
@@ -43,10 +163,10 @@ function showToast(message) {
   `
   document.body.appendChild(el)
   requestAnimationFrame(() => {
-    el.style.opacity = 1
+    el.style.opacity = '1'
   })
   setTimeout(() => {
-    el.style.opacity = 0
+    el.style.opacity = '0'
     setTimeout(() => el.remove(), 250)
   }, 2400)
 }
@@ -59,9 +179,9 @@ const STATUS_KEY_RE = /(status|user_status|state)/i
 const DEACTIVATED_STRINGS = ['DEACTIVATED', 'DELETED', 'WITHDRAWN', 'WITHDRAW']
 
 // 중첩 객체/배열을 전부 훑어서, 특정 키 이름(정규식)에 매칭되는 "문자열 값"을 찾는다.
-function deepFindFirstStringByKey(root, keyRegex) {
-  const seen = new Set()
-  const stack = [root]
+function deepFindFirstStringByKey(root: unknown, keyRegex: RegExp) {
+  const seen = new Set<object>()
+  const stack: unknown[] = [root]
   while (stack.length) {
     const cur = stack.pop()
     if (!cur || typeof cur !== 'object' || seen.has(cur)) continue
@@ -76,9 +196,9 @@ function deepFindFirstStringByKey(root, keyRegex) {
 }
 
 // 중첩 객체/배열을 전부 훑어서, 특정 키 이름(정규식)에 매칭되는 "불리언/문자열 값"을 찾는다.
-function deepFindAnyByKey(root, keyRegex) {
-  const seen = new Set()
-  const stack = [root]
+function deepFindAnyByKey(root: unknown, keyRegex: RegExp) {
+  const seen = new Set<object>()
+  const stack: unknown[] = [root]
   while (stack.length) {
     const cur = stack.pop()
     if (!cur || typeof cur !== 'object' || seen.has(cur)) continue
@@ -93,7 +213,7 @@ function deepFindAnyByKey(root, keyRegex) {
 }
 
 // 이름 추출(알려진 경로 + 딥서치)
-function getReviewerName(r) {
+function getReviewerName(r: RawReview) {
   const cand =
     r?.userName ??
     r?.username ??
@@ -117,19 +237,20 @@ function getReviewerName(r) {
 }
 
 // 아주 단순 로컬 마스킹 (첫 글자만 노출)
-function simpleMaskName(name) {
+function simpleMaskName(name: string) {
   const n = (name || '').trim()
   if (!n) return ''
   const low = n.toLowerCase()
   if (n === '사용자' || n === '익명' || low === 'user' || low === 'anonymous')
     return ''
+  // oxlint-disable-next-line typescript/no-misused-spread -- 코드 포인트 단위로 자른다. 바꾸면 마스킹 결과가 달라진다
   const arr = [...n]
   if (arr.length <= 2) return arr[0] + '＊'
   return arr[0] + '＊'.repeat(arr.length - 1)
 }
 
 // 탈퇴 감지(딥서치 + 이름에 '탈퇴' 포함)
-function isReviewerDeactivated(r) {
+function isReviewerDeactivated(r: RawReview) {
   const statusText = String(
     r?.userStatus ??
       r?.status ??
@@ -165,7 +286,7 @@ function isReviewerDeactivated(r) {
 }
 
 // 최종 표시 이름
-function maskReviewerName(rawName, deactivated, t) {
+function maskReviewerName(rawName: string, deactivated: boolean, t: TFunction) {
   if (deactivated) return '탈퇴된 회원'
   const base = (rawName ?? '').toString().trim()
   if (!base) return t('map.anonymous') || '익명'
@@ -185,8 +306,9 @@ function maskReviewerName(rawName, deactivated, t) {
 
 /* ===================== 기타 유틸 ===================== */
 // 네이버 로컬검색 item에서 위경도 추출 (mapx/mapy는 1e7 스케일된 WGS84)
-function extractLatLngFromNaverItem(item) {
-  const toNum = v => (v == null ? NaN : Number(v))
+function extractLatLngFromNaverItem(item: StartSearchItem): LatLngValue | null {
+  const toNum = (v: number | string | undefined) =>
+    v == null ? NaN : Number(v)
   let lat = toNum(item.lat),
     lng = toNum(item.lng)
   if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng }
@@ -215,6 +337,18 @@ function extractLatLngFromNaverItem(item) {
 }
 
 /* ===================== 컴포넌트 ===================== */
+export interface PlaceDetailModalProps {
+  place: MapPlace | null
+  isOpen: boolean
+  onClose: () => void
+  userCategories: UserCategoryItem[]
+  /** categoryId는 선택 상자의 값이라 문자열이다 */
+  onAddToCategory: (placeId: MapPlace['id'], categoryId: string) => void
+  userLocation: UserLocation | null
+}
+
+type DetailTab = 'info' | 'reviews' | 'route'
+
 const PlaceDetailModal = ({
   place,
   isOpen,
@@ -222,23 +356,27 @@ const PlaceDetailModal = ({
   userCategories,
   onAddToCategory,
   userLocation
-}) => {
+}: PlaceDetailModalProps) => {
   const { t } = useTranslation()
   const { user } = useContext(AuthCtx)
-  const currentUserId =
+  const currentUserId: number | null =
     (user && user.id) ||
     JSON.parse(localStorage.getItem('user') || '{}').id ||
     null
 
-  const [activeTab, setActiveTab] = useState('info')
+  const [activeTab, setActiveTab] = useState<DetailTab>('info')
 
   // ✅ 리뷰 상태
-  const [reviews, setReviews] = useState([])
-  const [avgRating, setAvgRating] = useState(null)
+  const [reviews, setReviews] = useState<PlaceReview[]>([])
+  const [avgRating, setAvgRating] = useState<number | null>(null)
   const [reviewCount, setReviewCount] = useState(0)
   const [showAllReviews, setShowAllReviews] = useState(false)
-  const [expandedReview, setExpandedReview] = useState(null)
-  const [newReview, setNewReview] = useState({
+  const [expandedReview, setExpandedReview] = useState<number | null>(null)
+  const [newReview, setNewReview] = useState<{
+    rating: number
+    content: string
+    photos: string[]
+  }>({
     rating: 5,
     content: '',
     photos: []
@@ -246,37 +384,42 @@ const PlaceDetailModal = ({
   const [reviewError, setReviewError] = useState('')
 
   // ✅ 업로드할 실제 파일 상태(누적 관리, 최대 3개)
-  const [newReviewFiles, setNewReviewFiles] = useState([])
+  const [newReviewFiles, setNewReviewFiles] = useState<File[]>([])
 
   // 카테고리
   const [selectedCategory, setSelectedCategory] = useState('')
 
   // 경로
-  const [routeSummary, setRouteSummary] = useState(null)
-  const fileInputRef = useRef(null)
+  const [routeSummary, setRouteSummary] = useState<{
+    distance: number
+    duration: number
+  } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 지도 refs
-  const mapRef = useRef(null)
-  const mapInstanceRef = useRef(null)
-  const markersRef = useRef([])
-  const polylineRef = useRef(null)
+  const mapRef = useRef<HTMLDivElement>(null)
+  const mapInstanceRef = useRef<naver.maps.Map | null>(null)
+  const markersRef = useRef<naver.maps.Marker[]>([])
+  const polylineRef = useRef<naver.maps.Polyline | null>(null)
 
   // 출발지 검색
-  const [startPoint, setStartPoint] = useState(null)
+  const [startPoint, setStartPoint] = useState<LatLngValue | null>(null)
   const [startQuery, setStartQuery] = useState('')
-  const [startResults, setStartResults] = useState([])
+  const [startResults, setStartResults] = useState<StartSearchItem[]>([])
   const [searching, setSearching] = useState(false)
   const [startLabel, setStartLabel] = useState('')
 
   // ✅ 라이트박스
   const [lbOpen, setLbOpen] = useState(false)
-  const [lbImages, setLbImages] = useState([])
+  const [lbImages, setLbImages] = useState<string[]>([])
   const [lbIndex, setLbIndex] = useState(0)
 
   // ✅ 리뷰 반응 상태 관리
-  const [userReactions, setUserReactions] = useState({})
+  const [userReactions, setUserReactions] = useState<
+    Record<number, ReviewReaction | null>
+  >({})
 
-  const openLightbox = (images, startIndex = 0) => {
+  const openLightbox = (images: string[], startIndex = 0) => {
     if (!images || images.length === 0) return
     setLbImages(images)
     setLbIndex(Math.min(Math.max(0, startIndex), images.length - 1))
@@ -303,8 +446,9 @@ const PlaceDetailModal = ({
     typeof reviewCount === 'number' ? reviewCount : reviews.length
 
   /* ===================== API ===================== */
-  const fetchReviewsRaw = async () => {
-    const res = await fetch(REVIEW_LIST(place.id), {
+  const fetchReviewsRaw = async (): Promise<ReviewListRes> => {
+    // 호출하는 곳에서 place를 확인했다
+    const res = await fetch(REVIEW_LIST(place!.id), {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`
       }
@@ -324,7 +468,7 @@ const PlaceDetailModal = ({
         typeof data.reviewCount === 'number' ? data.reviewCount : 0
       )
 
-      const mapped = (data.reviews || []).map(r => {
+      const mapped = (data.reviews || []).map((r): PlaceReview => {
         const deactivated = isReviewerDeactivated(r)
         return {
           id: r.id,
@@ -354,7 +498,7 @@ const PlaceDetailModal = ({
         return newReviews
       })
 
-      const newUserReactions = {}
+      const newUserReactions: Record<number, ReviewReaction> = {}
       mapped.forEach(r => {
         if (r.userReaction) newUserReactions[r.id] = r.userReaction
       })
@@ -367,7 +511,7 @@ const PlaceDetailModal = ({
   }
 
   // ❗️중복 판별
-  const detectDuplicateOnError = async res => {
+  const detectDuplicateOnError = async (res: Response) => {
     try {
       const clone = res.clone()
       const ct = clone.headers.get('content-type') || ''
@@ -395,7 +539,7 @@ const PlaceDetailModal = ({
   }
 
   // 사진 업로드(없으면 무시)
-  async function uploadReviewPhotos(files) {
+  async function uploadReviewPhotos(files: File[]): Promise<string[]> {
     if (!files || files.length === 0) return []
     try {
       const form = new FormData()
@@ -438,7 +582,7 @@ const PlaceDetailModal = ({
 
       const photoUrls = await uploadReviewPhotos(newReviewFiles)
 
-      const res = await fetch(REVIEW_LIST(place.id), {
+      const res = await fetch(REVIEW_LIST(place!.id), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -513,12 +657,12 @@ const PlaceDetailModal = ({
   }
 
   // ✅ 리뷰 삭제
-  const handleDeleteReview = async reviewId => {
+  const handleDeleteReview = async (reviewId: number) => {
     if (!currentUserId) return showToast('로그인이 필요합니다.')
     if (!confirm(t('map.confirmDeleteReview'))) return
 
     try {
-      const res = await fetch(REVIEW_DELETE(place.id, reviewId), {
+      const res = await fetch(REVIEW_DELETE(place!.id, reviewId), {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`
@@ -544,7 +688,7 @@ const PlaceDetailModal = ({
   }
 
   /* ===================== 프론트 미리보기 + 파일 제한(3개) ===================== */
-  const handlePhotoUpload = e => {
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(e.target.files || [])
     if (picked.length === 0) return
 
@@ -569,18 +713,19 @@ const PlaceDetailModal = ({
     }
   }
 
-  const handleRemovePhoto = idx => {
+  const handleRemovePhoto = (idx: number) => {
     setNewReview(p => ({ ...p, photos: p.photos.filter((_, i) => i !== idx) }))
     setNewReviewFiles(prev => prev.filter((_, i) => i !== idx))
   }
 
   /* ===================== 좋아요/싫어요 ===================== */
-  const handleLikeReview = async reviewId => {
+  const handleLikeReview = async (reviewId: number) => {
     try {
       const currentReaction =
         userReactions[reviewId] ||
         reviews.find(r => r.id === reviewId)?.userReaction
-      const newReaction = currentReaction === 'LIKE' ? null : 'LIKE'
+      const newReaction: ReviewReaction | null =
+        currentReaction === 'LIKE' ? null : 'LIKE'
 
       setUserReactions(prev => ({ ...prev, [reviewId]: newReaction }))
       setReviews(prev =>
@@ -614,12 +759,13 @@ const PlaceDetailModal = ({
     }
   }
 
-  const handleDislikeReview = async reviewId => {
+  const handleDislikeReview = async (reviewId: number) => {
     try {
       const currentReaction =
         userReactions[reviewId] ||
         reviews.find(r => r.id === reviewId)?.userReaction
-      const newReaction = currentReaction === 'DISLIKE' ? null : 'DISLIKE'
+      const newReaction: ReviewReaction | null =
+        currentReaction === 'DISLIKE' ? null : 'DISLIKE'
 
       setUserReactions(prev => ({ ...prev, [reviewId]: newReaction }))
       setReviews(prev =>
@@ -655,22 +801,27 @@ const PlaceDetailModal = ({
   }
 
   const getTypeName = useMemo(
-    () => type =>
-      ({
-        restaurant: t('map.restaurant'),
-        cafe: t('map.cafe'),
-        partner: t('map.partner'),
-        convenience: t('map.convenience'),
-        other: t('map.other')
-      })[type] || t('map.other'),
+    () => (type?: string | null) =>
+      (
+        ({
+          restaurant: t('map.restaurant'),
+          cafe: t('map.cafe'),
+          partner: t('map.partner'),
+          convenience: t('map.convenience'),
+          other: t('map.other')
+        }) as Partial<Record<string, string>>
+      )[type as string] || t('map.other'),
     [t]
   )
 
   /* ===================== 네이버 지도 로더 ===================== */
   const loadNaverMapScript = () =>
-    new Promise((resolve, reject) => {
-      if (window.naver?.maps) return resolve()
-      let s = document.getElementById('naver-map-script')
+    new Promise<unknown>((resolve, reject) => {
+      if (window.naver?.maps) return resolve(undefined)
+      // 이 id는 아래에서 만드는 script 요소에만 붙인다
+      let s = document.getElementById(
+        'naver-map-script'
+      ) as HTMLScriptElement | null
       if (s) {
         s.addEventListener('load', resolve, { once: true })
         s.addEventListener('error', reject, { once: true })
@@ -691,7 +842,7 @@ const PlaceDetailModal = ({
       try {
         await loadNaverMapScript()
         if (!mapRef.current || !place) return
-        const { naver } = window
+        const { naver } = window as LoadedWindow
 
         const center = new naver.maps.LatLng(
           Number(place.lat),
@@ -711,7 +862,8 @@ const PlaceDetailModal = ({
             scaleControl: true
           })
         } else {
-          mapInstanceRef.current.setCenter(center)
+          // needRecreate가 false면 지도 인스턴스가 있다
+          mapInstanceRef.current!.setCenter(center)
         }
 
         markersRef.current.forEach(m => m.setMap?.(null))
@@ -723,7 +875,7 @@ const PlaceDetailModal = ({
 
         const destMarker = new naver.maps.Marker({
           position: center,
-          map: mapInstanceRef.current,
+          map: mapInstanceRef.current!,
           title: place.name
         })
         markersRef.current.push(destMarker)
@@ -735,6 +887,7 @@ const PlaceDetailModal = ({
             new naver.maps.Size(el.clientWidth, el.clientHeight)
           )
           if (userLocation?.lat && userLocation?.lng) {
+            // @ts-expect-error -- 타입 정의는 두 꼭짓점을 요구하지만 기존 코드는 빈 경계를 만든 뒤 extend한다
             const b = new naver.maps.LatLngBounds()
             b.extend(center)
             b.extend(
@@ -757,7 +910,7 @@ const PlaceDetailModal = ({
     if (!(isOpen && place && activeTab === 'route')) return
     if (!window.naver?.maps || !mapInstanceRef.current) return
 
-    const { naver } = window
+    const { naver } = window as LoadedWindow
     const map = mapInstanceRef.current
 
     const drawRoute = async () => {
@@ -792,7 +945,7 @@ const PlaceDetailModal = ({
             `${DIRECTIONS_ENDPOINT}?start=${encodeURIComponent(startParam)}&goal=${encodeURIComponent(goalParam)}&option=traoptimal`
           )
           if (!res.ok) throw new Error('경로 조회 실패')
-          const body = await res.json()
+          const body: DirectionsResponse = await res.json()
 
           const track = body?.route?.traoptimal?.[0]
           const naverPath = track?.path || []
@@ -815,6 +968,7 @@ const PlaceDetailModal = ({
               duration: track.summary.duration
             })
 
+          // @ts-expect-error -- 타입 정의는 두 꼭짓점을 요구하지만 기존 코드는 빈 경계를 만든 뒤 extend한다
           const bounds = new naver.maps.LatLngBounds()
           pathLatLngs.forEach(ll => bounds.extend(ll))
           map.fitBounds(bounds)
@@ -843,7 +997,8 @@ const PlaceDetailModal = ({
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         }
       )
-      const data = await res.json()
+      const data: StartSearchItem[] | { items?: StartSearchItem[] } =
+        await res.json()
       const items = Array.isArray(data)
         ? data
         : Array.isArray(data.items)
@@ -857,7 +1012,7 @@ const PlaceDetailModal = ({
     }
   }
 
-  const pickStartFromResult = item => {
+  const pickStartFromResult = (item: StartSearchItem) => {
     const ll = extractLatLngFromNaverItem(item)
     if (!ll) return showToast('이 결과에서 좌표를 읽을 수 없습니다.')
 
@@ -888,13 +1043,15 @@ const PlaceDetailModal = ({
         <ModalHeader>
           <PlaceInfo>
             <PlaceIcon>
-              {{
-                restaurant: '🍽️',
-                cafe: '☕',
-                partner: '🤝',
-                convenience: '🛍️',
-                other: '📍'
-              }[place.category] || '📍'}
+              {(
+                {
+                  restaurant: '🍽️',
+                  cafe: '☕',
+                  partner: '🤝',
+                  convenience: '🛍️',
+                  other: '📍'
+                } as Partial<Record<string, string>>
+              )[place.category as string] || '📍'}
             </PlaceIcon>
             <PlaceDetails>
               <PlaceName>{place.name}</PlaceName>
@@ -1374,7 +1531,7 @@ const Stars = styled.div`
   display: flex;
   gap: 2px;
 `
-const Star = styled.span`
+const Star = styled.span<{ $isFilled: boolean }>`
   color: ${p => (p.$isFilled ? '#ffc107' : '#e0e0e0')};
   font-size: 16px;
 `
@@ -1404,7 +1561,7 @@ const TabContainer = styled.div`
   border-bottom: 1px solid #f0f0f0;
   background: #fafafa;
 `
-const TabButton = styled.button`
+const TabButton = styled.button<{ $isActive: boolean }>`
   flex: 1;
   padding: 16px 20px;
   background: ${p => (p.$isActive ? 'white' : 'transparent')};
@@ -1509,7 +1666,7 @@ const RatingContainer = styled.div`
   gap: 6px;
   margin-bottom: 16px;
 `
-const StarButton = styled.button`
+const StarButton = styled.button<{ $isSelected: boolean }>`
   background: none;
   border: none;
   font-size: 24px;
@@ -1695,7 +1852,10 @@ const ReviewActions = styled.div`
   display: flex;
   gap: 12px;
 `
-const ActionButton = styled.button`
+const ActionButton = styled.button<{
+  $isActive: boolean
+  $type: 'like' | 'dislike'
+}>`
   background: ${props => (props.$isActive ? (props.$type === 'like' ? '#e8f5e8' : '#ffeaea') : 'none')};
   border: 2px solid
     ${props => (props.$isActive ? (props.$type === 'like' ? '#4caf50' : '#f44336') : '#e0e0e0')};
@@ -1894,14 +2054,28 @@ const ResultAddr = styled.div`
 `
 
 /* ===================== Lightbox ===================== */
-const Lightbox = ({ images, index, onClose, onPrev, onNext }) => {
+interface LightboxProps {
+  images: string[]
+  index: number
+  onClose: () => void
+  onPrev: () => void
+  onNext: () => void
+}
+
+const Lightbox = ({
+  images,
+  index,
+  onClose,
+  onPrev,
+  onNext
+}: LightboxProps) => {
   const { t } = useTranslation()
   const [scale, setScale] = useState(1)
   const [dragging, setDragging] = useState(false)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [last, setLast] = useState({ x: 0, y: 0 })
 
-  const onWheel = e => {
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault()
     const delta = -Math.sign(e.deltaY) * 0.15
     setScale(s => {
@@ -1911,13 +2085,13 @@ const Lightbox = ({ images, index, onClose, onPrev, onNext }) => {
     })
   }
 
-  const onMouseDown = e => {
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (scale !== 1) {
       setDragging(true)
       setLast({ x: e.clientX, y: e.clientY })
     }
   }
-  const onMouseMove = e => {
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!dragging) return
     const dx = e.clientX - last.x
     const dy = e.clientY - last.y
@@ -2020,7 +2194,7 @@ const LightboxOverlay = styled.div`
   align-items: center;
   justify-content: center;
 `
-const LBStage = styled.div`
+const LBStage = styled.div<{ $dragging: boolean }>`
   position: relative;
   width: 92vw;
   height: 86vh;

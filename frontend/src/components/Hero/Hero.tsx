@@ -93,7 +93,7 @@ const Bullets = styled.div`
   gap: 8px;
 `
 
-const Bullet = styled.button`
+const Bullet = styled.button<{ $active?: boolean }>`
   width: 8px;
   height: 8px;
   border-radius: 999px;
@@ -255,8 +255,8 @@ const Hero = () => {
     return () => clearInterval(timer)
   }, [slides.length])
 
-  const handleMenuClick = path => {
-    navigate(path)
+  const handleMenuClick = (path: string) => {
+    void navigate(path)
   }
 
   return (

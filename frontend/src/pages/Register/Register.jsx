@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import '../../i18n.js'
 import styled from 'styled-components'
-import Header from '../../components/Header/Header.jsx'
+import Header from '../../components/Header/Header'
 
 const RegisterContainer = styled.div`
   padding: 6rem 2rem 4rem;
@@ -80,7 +80,7 @@ function Register() {
       if (env?.VITE_API_BASE) {
         try {
           return new URL(env.VITE_API_BASE, window.location.origin).origin
-        } catch (_) {
+        } catch {
           return ''
         }
       }
@@ -110,12 +110,13 @@ function Register() {
   const [lang, setLang] = useState(i18n.language || 'ko')
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- 다른 화면에서 바꾼 언어를 선택 상자에 맞춘다
     setLang(i18n.language)
   }, [i18n.language])
 
   const handleLangChange = e => {
     setLang(e.target.value)
-    i18n.changeLanguage(e.target.value)
+    void i18n.changeLanguage(e.target.value)
   }
 
   return (

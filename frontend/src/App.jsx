@@ -6,10 +6,10 @@ import {
   Navigate
 } from 'react-router-dom'
 import GlobalStyles from './styles/GlobalStyles'
-import Header from './components/Header/Header.jsx'
+import Header from './components/Header/Header'
 import i18n from './i18n.js'
-import Hero from './components/Hero/Hero.jsx'
-import Footer from './components/Footer/Footer.jsx'
+import Hero from './components/Hero/Hero'
+import Footer from './components/Footer/Footer'
 import { Loading } from './components/ui'
 
 import Marketplace from './pages/Marketplace/Marketplace.jsx'
@@ -42,7 +42,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { WritingProvider } from './contexts/WritingContext'
 import { LocationProvider } from './contexts/LocationContext'
 
-import RequireAuth from './components/RequireAuth/RequireAuth.jsx'
+import RequireAuth from './components/RequireAuth/RequireAuth'
 
 import AccountDeactivate from './pages/AccountDeactivate/AccountDeactivate.jsx' // ← 추가
 

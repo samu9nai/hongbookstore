@@ -1,7 +1,15 @@
 import React from 'react'
 import styled from 'styled-components'
 
-const PlaceTypeFilter = ({ selectedType, onTypeSelect }) => {
+export interface PlaceTypeFilterProps {
+  selectedType: string
+  onTypeSelect: (type: string) => void
+}
+
+const PlaceTypeFilter = ({
+  selectedType,
+  onTypeSelect
+}: PlaceTypeFilterProps) => {
   const placeTypes = [
     { id: 'all', name: '전체', icon: '📍', color: '#6c757d' },
     { id: 'restaurant', name: '식당', icon: '🍽️', color: '#FF6B6B' },
@@ -56,7 +64,7 @@ const FilterGrid = styled.div`
   max-width: 580px;
 `
 
-const FilterButton = styled.button`
+const FilterButton = styled.button<{ $isSelected: boolean; $color: string }>`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -86,7 +94,7 @@ const FilterButton = styled.button`
   }
 `
 
-const TypeIcon = styled.span`
+const TypeIcon = styled.span<{ $isSelected: boolean }>`
   font-size: 16px;
   margin-bottom: 3px;
   filter: ${props => (props.$isSelected ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' : 'none')};

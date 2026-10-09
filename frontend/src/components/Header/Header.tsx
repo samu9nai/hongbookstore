@@ -1,8 +1,14 @@
-import { useState, useEffect, useContext, useRef } from 'react'
+import {
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+  type ChangeEvent
+} from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import styled, { keyframes } from 'styled-components'
 import { useTranslation } from 'react-i18next'
-import { AuthCtx } from '../../contexts/AuthContext'
+import { AuthCtx, type AuthUser } from '../../contexts/AuthContext'
 import { useWriting } from '../../contexts/WritingContext'
 import WarningModal from '../WarningModal/WarningModal'
 import {
@@ -385,7 +391,7 @@ const UserAvatar = styled.div`
   }
 `
 
-const UserDropdown = styled.div`
+const UserDropdown = styled.div<{ $isOpen: boolean }>`
   position: absolute;
   top: 100%;
   right: 0;
@@ -459,7 +465,7 @@ const MobileMenuButton = styled.button`
   }
 `
 
-const MobileMenu = styled.div`
+const MobileMenu = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
@@ -474,7 +480,7 @@ const MobileMenu = styled.div`
   ${({ $isOpen }) => $isOpen && `opacity: 1; visibility: visible;`}
 `
 
-const MobileMenuContent = styled.div`
+const MobileMenuContent = styled.div<{ $isOpen: boolean }>`
   position: absolute;
   top: 0;
   right: 0;
@@ -691,7 +697,7 @@ const NotificationItem = styled.div`
   }
 `
 
-const NotificationIcon = styled.div`
+const NotificationIcon = styled.div<{ type: HeaderNotificationType }>`
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
@@ -744,13 +750,45 @@ const UnreadDot = styled.div`
   margin-top: var(--space-1);
 `
 
+/** 헤더 알림 목록의 항목. 사용자별로 localStorage에 저장한다 */
+type HeaderNotificationType = 'chat' | 'price' | 'system'
+
+interface HeaderNotification {
+  id: string | number
+  type: HeaderNotificationType
+  text: string
+  time: string
+  unread: boolean
+  link: string | null
+}
+
+/**
+ * SSE로 받는 알림 중 헤더가 읽는 필드. JSON이 아닌 문자열이 오면 모든 필드를
+ * undefined로 읽는다
+ */
+interface NotificationEvent {
+  id?: string | number
+  type?: string
+  title?: string
+  message?: string
+  createdAt?: string
+  link?: string
+}
+
+/** 알림 저장 키를 정할 때 읽는 사용자 id 후보 */
+interface NotificationOwner {
+  id?: number
+  userId?: number | string
+  seq?: number | string
+}
+
 // ====== ✅ 사용자별 localStorage 저장/복원 유틸 ======
-const storageKeyForUser = user => {
+const storageKeyForUser = (user: NotificationOwner) => {
   const id = user?.id ?? user?.userId ?? user?.seq ?? null // 프로젝트의 사용자 키에 맞춰 자동 대응
   return id ? `notif:${id}` : null
 }
 
-const loadSaved = user => {
+const loadSaved = (user: AuthUser): HeaderNotification[] => {
   try {
     const key = storageKeyForUser(user)
     if (!key) return []
@@ -761,7 +799,7 @@ const loadSaved = user => {
   }
 }
 
-const saveSaved = (user, list) => {
+const saveSaved = (user: AuthUser, list: HeaderNotification[]) => {
   try {
     const key = storageKeyForUser(user)
     if (!key) return
@@ -769,7 +807,7 @@ const saveSaved = (user, list) => {
   } catch {}
 }
 
-const clearSaved = user => {
+const clearSaved = (user: AuthUser) => {
   try {
     const key = storageKeyForUser(user)
     if (!key) return
@@ -781,22 +819,27 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [showWarningModal, setShowWarningModal] = useState(false)
-  const [pendingNavigation, setPendingNavigation] = useState(null)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+    null
+  )
   const [showNotifications, setShowNotifications] = useState(false)
-  const [notifications, setNotifications] = useState([])
+  const [notifications, setNotifications] = useState<HeaderNotification[]>([])
 
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const location = useLocation()
   const { isLoggedIn, user, logout } = useContext(AuthCtx)
   const { isWriting, writingType } = useWriting()
-  const userMenuRef = useRef(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
   const isHome = location.pathname === '/'
 
   // 외부 클릭 시 유저 드롭다운 닫기
   useEffect(() => {
-    const handleClickOutside = event => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false)
       }
     }
@@ -806,7 +849,7 @@ const Header = () => {
     }
   }, [])
 
-  const handleLangChange = e => {
+  const handleLangChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const newLang = e.target.value
     void i18n.changeLanguage(newLang)
     localStorage.setItem('lang', newLang)
@@ -825,7 +868,7 @@ const Header = () => {
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen)
 
-  const safeNavigate = path => {
+  const safeNavigate = (path: string) => {
     if (isWriting) {
       setPendingNavigation(path)
       setShowWarningModal(true)
@@ -881,7 +924,7 @@ const Header = () => {
     return 'U'
   }
 
-  const getUserInfo = () => {
+  const getUserInfo = (): AuthUser | null => {
     if (user) return user
     try {
       const localUser = localStorage.getItem('user')
@@ -915,13 +958,13 @@ const Header = () => {
 
   const toggleNotifications = () => setShowNotifications(!showNotifications)
 
-  const markAsRead = notificationId => {
+  const markAsRead = (notificationId: HeaderNotification['id']) => {
     setNotifications(prev =>
       prev.map(n => (n.id === notificationId ? { ...n, unread: false } : n))
     )
   }
 
-  const handleNotificationClick = notification => {
+  const handleNotificationClick = (notification: HeaderNotification) => {
     markAsRead(notification.id)
     setShowNotifications(false)
     if (notification.link) void navigate(notification.link)
@@ -931,10 +974,10 @@ const Header = () => {
 
   // 외부 클릭 시 알림 드롭다운 닫기
   useEffect(() => {
-    const handleClickOutside = event => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         showNotifications &&
-        !event.target.closest('.notification-container')
+        !(event.target as Element).closest('.notification-container')
       ) {
         setShowNotifications(false)
       }
@@ -955,7 +998,8 @@ const Header = () => {
   useEffect(() => {
     if (!isLoggedIn) return
     const es = startNotificationStream(
-      evt => {
+      event => {
+        const evt = event as NotificationEvent | null
         if (!evt || evt.type === 'PING') return
 
         const mappedType = evt.type === 'CHAT' ? 'chat' : 'system'
@@ -967,7 +1011,7 @@ const Header = () => {
         const stableId =
           evt.id || `${evt.type}-${evt.createdAt || ''}-${evt.link || ''}`
 
-        const item = {
+        const item: HeaderNotification = {
           id: stableId,
           type: mappedType,
           text,
@@ -1290,6 +1334,7 @@ const Header = () => {
                   }}>
                   {t('myTransactions')}
                 </MobileNavLink>
+                {/* @ts-expect-error -- as="button"으로 버튼을 그리므로 Link의 to가 필요 없다 */}
                 <MobileNavLink
                   as="button"
                   onClick={handleLogout}>
