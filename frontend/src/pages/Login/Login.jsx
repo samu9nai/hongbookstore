@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import '../../i18n.js'
 import styled from 'styled-components'
 import { useSearchParams } from 'react-router-dom'
-import Header from '../../components/Header/Header.jsx'
+import Header from '../../components/Header/Header'
 
 const LoginContainer = styled.div`
   padding: 8rem 2rem 4rem;
@@ -186,8 +186,10 @@ function Login() {
   useEffect(() => {
     const error = searchParams.get('error')
     if (error) {
+      // oxlint-disable-next-line react/set-state-in-effect -- 소셜 로그인 실패로 돌아오면 오류 문구를 띄운다
       setErrorMsg(t('loginNs.socialLoginFailed'))
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- 주소의 error 값이 바뀔 때만 실행한다
   }, [searchParams])
 
   // 소셜 로그인 버튼 클릭 시, 백엔드의 인증 URL로 이동시키는 함수
@@ -206,7 +208,7 @@ function Login() {
       if (env?.VITE_API_BASE) {
         try {
           return new URL(env.VITE_API_BASE, window.location.origin).origin
-        } catch (_) {
+        } catch {
           return ''
         }
       }
@@ -236,7 +238,7 @@ function Login() {
   // 언어 변경 핸들러
   const handleLangChange = e => {
     setLang(e.target.value)
-    i18n.changeLanguage(e.target.value)
+    void i18n.changeLanguage(e.target.value)
   }
 
   return (
