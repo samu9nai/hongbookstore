@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
 import styled, { keyframes } from 'styled-components'
 import { LucideCircleCheck, LucideCircleX } from 'lucide-react'
+import type { ApiResponse } from '@/shared/api/client'
+
+type VerificationStatus = 'verifying' | 'success' | 'error'
+
+/** 백엔드 LoginResponseDTO */
+interface LoginTokens {
+  accessToken: string
+  refreshToken: string
+}
 
 const PageContainer = styled.div`
   display: flex;
@@ -43,7 +52,7 @@ const Loader = styled.div`
   margin: 0 auto 1.5rem auto;
 `
 
-const StatusIcon = styled.div`
+const StatusIcon = styled.div<{ status: 'success' | 'error' }>`
   font-size: 3rem;
   margin-bottom: 1.5rem;
   color: ${props => (props.status === 'success' ? '#28a745' : '#dc3545')};
@@ -83,7 +92,7 @@ function VerificationConfirmPage() {
   const [searchParams] = useSearchParams()
 
   // 인증 상태를 관리 (verifying: 확인 중, success: 성공, error: 실패)
-  const [status, setStatus] = useState('verifying')
+  const [status, setStatus] = useState<VerificationStatus>('verifying')
 
   // 사용자에게 보여줄 메시지
   const [message, setMessage] = useState(
@@ -108,7 +117,7 @@ function VerificationConfirmPage() {
     const confirmVerification = async () => {
       try {
         // 우리 백엔드 API (GET /api/users/verify-student/confirm) 호출
-        const response = await axios.get(
+        const response = await axios.get<ApiResponse<LoginTokens>>(
           `/api/users/verify-student/confirm?token=${token}`
         )
 
@@ -136,7 +145,7 @@ function VerificationConfirmPage() {
         // 네트워크 오류나 서버 에러(500 등) 발생 시
         setStatus('error')
         const errorMessage =
-          err.response?.data?.message ||
+          (err as AxiosError<ApiResponse>).response?.data?.message ||
           '인증 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
         setMessage(errorMessage)
       }
