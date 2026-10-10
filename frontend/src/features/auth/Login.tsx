@@ -174,12 +174,12 @@ const ErrorMessage = styled.div`
   border: 1px solid rgba(239, 68, 68, 0.2);
 `
 
+type SocialProvider = 'naver' | 'kakao' | 'google'
+
 function Login() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [errorMsg, setErrorMsg] = useState('')
   const [searchParams] = useSearchParams() // URL 파라미터 읽기
-
-  const [lang, setLang] = useState(i18n.language || 'ko')
 
   // 소셜 로그인 실패 시, URL에 담겨온 에러 메시지를 화면에 표시
   useEffect(() => {
@@ -192,7 +192,7 @@ function Login() {
   }, [searchParams])
 
   // 소셜 로그인 버튼 클릭 시, 백엔드의 인증 URL로 이동시키는 함수
-  const handleSocialLogin = provider => {
+  const handleSocialLogin = (provider: SocialProvider) => {
     if (typeof window === 'undefined') return
 
     const env = import.meta.env || {}
@@ -234,18 +234,9 @@ function Login() {
     window.location.href = `/api/oauth2/authorization/${provider}`
   }
 
-  // 언어 변경 핸들러
-  const handleLangChange = e => {
-    setLang(e.target.value)
-    void i18n.changeLanguage(e.target.value)
-  }
-
   return (
     <>
-      <Header
-        lang={lang}
-        onLangChange={handleLangChange}
-      />
+      <Header />
       <LoginContainer>
         <Title>{t('socialLoginTitle')}</Title>
         <Subtitle>{t('socialLoginDesc')}</Subtitle>
