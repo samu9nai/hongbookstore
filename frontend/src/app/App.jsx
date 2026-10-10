@@ -14,7 +14,7 @@ import { Loading } from '@/shared/ui'
 
 import Marketplace from '@/features/marketplace/Marketplace.jsx'
 import MyPage from '@/features/account/MyPage.jsx'
-import Login from '@/features/auth/Login.jsx'
+import Login from '@/features/auth/Login'
 import Search from '@/features/marketplace/Search.jsx'
 
 import Wanted from '@/features/wanted/Wanted.jsx'
@@ -33,8 +33,8 @@ import ChatRoom from '@/features/chat/ChatRoom.jsx'
 import MapPage from '@/features/map/Map.jsx'
 
 import UserProfile from '@/features/account/UserProfile.jsx'
-import VerificationConfirmPage from '@/features/auth/VerificationConfirmPage.jsx'
-import OAuth2RedirectHandler from '@/features/auth/OAuth2RedirectHandler.jsx'
+import VerificationConfirmPage from '@/features/auth/VerificationConfirmPage'
+import OAuth2RedirectHandler from '@/features/auth/OAuth2RedirectHandler'
 
 import FloatingChatBot from '@/features/chatbot/FloatingChatBot'
 
