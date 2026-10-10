@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test'
 
-test('백엔드 없이 홈 화면을 띄운다', async ({ page }) => {
+// 로그인 화면은 i18n 초기화를 app 층에 맡긴다(D-P). 주소로 바로 들어와도
+// 번역 문구가 보이는지 확인한다.
+test('로그인 화면이 번역 문구를 보여 준다', async ({ page }) => {
   const pageErrors: Error[] = []
   page.on('pageerror', error => pageErrors.push(error))
 
-  // '**/api/**'로 쓰면 개발 서버의 src/shared/api/*.ts 같은 모듈 요청까지 가로챈다.
   await page.route(
     url => url.pathname.startsWith('/api/'),
     route =>
@@ -15,9 +16,10 @@ test('백엔드 없이 홈 화면을 띄운다', async ({ page }) => {
       })
   )
 
-  await page.goto('/')
+  await page.goto('/login')
 
-  await expect(page).toHaveTitle('홍책방 - HongBookStore')
-  await expect(page.locator('#root')).not.toBeEmpty()
+  await expect(
+    page.getByRole('heading', { name: 'SNS 계정으로 시작하기' })
+  ).toBeVisible()
   expect(pageErrors).toEqual([])
 })
