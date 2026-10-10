@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import '@/app/i18n.js'
 import styled from 'styled-components'
 import Header from '@/shared/layout/Header'
 

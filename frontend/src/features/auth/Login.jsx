@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import '@/app/i18n.js'
 import styled from 'styled-components'
 import { useSearchParams } from 'react-router-dom'
 import Header from '@/shared/layout/Header'
