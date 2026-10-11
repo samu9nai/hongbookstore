@@ -7,7 +7,7 @@ import {
 } from 'react-router-dom'
 import GlobalStyles from './GlobalStyles'
 import Header from '@/shared/layout/Header'
-import i18n from './i18n.js'
+import i18n from './i18n'
 import Hero from '@/features/home/Hero'
 import Footer from '@/shared/layout/Footer'
 import { Loading } from '@/shared/ui'
