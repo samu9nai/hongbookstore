@@ -30,7 +30,7 @@ import ChatList from '@/features/chat/ChatList.jsx'
 import ChatRoomWrapper from '@/features/chat/ChatRoomWrapper.jsx'
 import ChatRoom from '@/features/chat/ChatRoom.jsx'
 
-import MapPage from '@/features/map/Map.jsx'
+import MapPage from '@/features/map/Map'
 
 import UserProfile from '@/features/account/UserProfile.jsx'
 import VerificationConfirmPage from '@/features/auth/VerificationConfirmPage'
