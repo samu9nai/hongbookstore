@@ -22,10 +22,14 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
+import type { ApiResponse } from '@/shared/api/client'
 import {
   getUserPeerReviews,
-  getUserPeerSummary
+  getUserPeerSummary,
+  type PeerReview,
+  type PeerReviewRole,
+  type PeerReviewSummary
 } from '@/shared/api/peerReviews'
 import { useNavigate as useRouterNavigate } from 'react-router-dom'
 import Modal from '@/shared/ui/Modal'
@@ -33,6 +37,41 @@ import Loading from '@/shared/ui/Loading'
 // 지도 선택 기능 제거로 NaverMap import 불필요
 import { AuthCtx } from '@/shared/contexts/AuthContext'
 import AdminReportCard from './AdminReportCard'
+
+/** 내 프로필. 백엔드 UserResponseDTO와 같다 */
+interface MyProfile {
+  id: number
+  username: string
+  email: string
+  studentVerified: boolean
+  univEmail: string | null
+  profileImageUrl: string | null
+}
+
+/**
+ * 최근 본 게시글. 백엔드 SalePostSummaryResponseDTO에서 화면이 읽는 필드다.
+ * authorDeactivated는 백엔드가 보내지 않지만 기존 코드가 대비한다
+ */
+interface RecentPost {
+  postId: number
+  postTitle: string
+  author: string | null
+  price: number
+  thumbnailUrl: string | null
+  authorDeactivated?: boolean
+}
+
+/** 거래 평점 요약. 백엔드 UserReviewAggregateSummaryDTO와 같다 */
+interface ReviewAggregateSummary {
+  sellerAverage: number
+  sellerCount: number
+  buyerAverage: number
+  buyerCount: number
+  overallAverage: number
+  totalCount: number
+}
+
+type VerificationMessageType = '' | 'success' | 'error' | 'info'
 
 const MyPageContainer = styled.div`
   padding: 2rem 1rem 4rem;
@@ -278,7 +317,7 @@ const RatingSection = styled.div`
   z-index: 1;
 `
 
-const AverageRating = styled.span`
+const AverageRating = styled.span<{ rating: number }>`
   font-weight: 600;
   font-size: 0.875rem;
   color: ${props => {
@@ -332,7 +371,7 @@ const TabList = styled.div`
   justify-content: center;
 `
 
-const TabButton = styled.button`
+const TabButton = styled.button<{ $active: boolean }>`
   padding: 1rem 2rem;
   font-size: 1.125rem;
   font-weight: 600;
@@ -969,7 +1008,10 @@ const getAuthHeader = () => {
 }
 
 // 작성자 표시: 탈퇴회원# 패턴 또는 백엔드 플래그(authorDeactivated) 감지
-const getDisplayAuthor = (author, authorDeactivated) => {
+const getDisplayAuthor = (
+  author: string | null,
+  authorDeactivated: boolean | undefined
+) => {
   const name = String(author ?? '')
   if (authorDeactivated) return '탈퇴한 회원'
   if (name.startsWith('탈퇴회원#')) return '탈퇴한 회원'
@@ -979,26 +1021,34 @@ const getDisplayAuthor = (author, authorDeactivated) => {
 const MyPage = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const fileInputRef = useRef()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { updateUser } = useContext(AuthCtx)
 
-  const [profile, setProfile] = useState(null)
+  const [profile, setProfile] = useState<MyProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
   const [showVerificationForm, setShowVerificationForm] = useState(false)
   const [univEmail, setUnivEmail] = useState('') // 사용자가 입력할 학교 이메일
   // 인증 요청 후 서버 메시지를 담을 상태
-  const [verificationMessage, setVerificationMessage] = useState({
+  const [verificationMessage, setVerificationMessage] = useState<{
+    type: VerificationMessageType
+    text: string
+  }>({
     type: '',
     text: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false) // API 호출 중복 방지
 
-  const [, setProfileImage] = useState(null)
+  const [, setProfileImage] = useState<string | null>(null)
   // 우편번호 전용으로 단순화: 주소 검색 관련 상태 제거
 
   const [, setEditingId] = useState(null)
-  const [, setEditDraft] = useState({
+  const [, setEditDraft] = useState<{
+    name: string
+    address: string
+    lat: number | null
+    lng: number | null
+  }>({
     name: '',
     address: '',
     lat: null,
@@ -1009,10 +1059,10 @@ const MyPage = () => {
   // 지도 선택 제거
 
   const [showPhotoMenu, setShowPhotoMenu] = useState(false)
-  const photoMenuRef = useRef()
+  const photoMenuRef = useRef<HTMLDivElement>(null)
   const [editingName, setEditingName] = useState(false)
   const [profileName, setProfileName] = useState(t('profileName', 'John Doe'))
-  const pendingNameRef = useRef(null)
+  const pendingNameRef = useRef<string | null>(null)
 
   // 닉네임 저장 API 호출
   const saveProfileName = async () => {
@@ -1030,7 +1080,7 @@ const MyPage = () => {
     pendingNameRef.current = next
 
     try {
-      const res = await axios.patch(
+      const res = await axios.patch<ApiResponse<MyProfile>>(
         '/api/my/profile',
         { username: next },
         { headers: getAuthHeader() }
@@ -1056,17 +1106,19 @@ const MyPage = () => {
         setProfileName(current)
       }
     } catch (e) {
-      const msg = e?.response?.data?.message || t('mypage.nicknameChangeError')
+      const msg =
+        (e as AxiosError<ApiResponse> | undefined)?.response?.data?.message ||
+        t('mypage.nicknameChangeError')
       alert(msg)
       setProfileName(current)
     } finally {
       pendingNameRef.current = null
     }
   }
-  const nameInputRef = useRef()
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   // 평점에 따른 색상 계산 함수
-  const getScoreColor = score => {
+  const getScoreColor = (score: number) => {
     if (score <= 25) return '#FEF3C7' // 연노랑
     if (score <= 50) return '#FDE68A' // 노랑
     if (score <= 75) return '#F59E0B' // 주황
@@ -1074,27 +1126,33 @@ const MyPage = () => {
   }
 
   // 거래 평점 요약 상태
-  const [ratingSummary, setRatingSummary] = useState(null)
+  const [ratingSummary, setRatingSummary] =
+    useState<ReviewAggregateSummary | null>(null)
   const [ratingLoading, setRatingLoading] = useState(false)
   const [ratingError, setRatingError] = useState('')
   // 통합 Peer 리뷰 탭 상태
-  const [reviewTab, setReviewTab] = useState('SELLER') // SELLER | BUYER
-  const [roleReviews, setRoleReviews] = useState([])
+  const [reviewTab, setReviewTab] = useState<PeerReviewRole>('SELLER') // SELLER | BUYER
+  const [roleReviews, setRoleReviews] = useState<PeerReview[]>([])
   const [rolePage, setRolePage] = useState(0)
   const [roleSize, setRoleSize] = useState(5)
   const [, setRoleTotal] = useState(0)
   const [roleLast, setRoleLast] = useState(true)
   const [roleLoading, setRoleLoading] = useState(false)
   const [roleError, setRoleError] = useState('')
-  const [roleSummary, setRoleSummary] = useState({ SELLER: null, BUYER: null })
+  const [roleSummary, setRoleSummary] = useState<
+    Record<PeerReviewRole, PeerReviewSummary | null>
+  >({ SELLER: null, BUYER: null })
 
   const fetchProfile = useCallback(async () => {
     // 페이지가 로드될 때마다 항상 최신 정보를 가져오도록 setLoading(true) 추가
     setLoading(true)
     try {
-      const response = await axios.get('/api/my/profile', {
-        headers: getAuthHeader()
-      })
+      const response = await axios.get<ApiResponse<MyProfile>>(
+        '/api/my/profile',
+        {
+          headers: getAuthHeader()
+        }
+      )
       if (response.data.success) {
         const userProfile = response.data.data
         setProfile(userProfile)
@@ -1116,15 +1174,15 @@ const MyPage = () => {
   }, [fetchProfile])
 
   // 최근 본 게시글 목록
-  const [recentPosts, setRecentPosts] = useState([])
+  const [recentPosts, setRecentPosts] = useState<RecentPost[]>([])
   const [recentLoading, setRecentLoading] = useState(true)
   const routerNavigate = useRouterNavigate()
-  const [confirmPost, setConfirmPost] = useState(null)
+  const [confirmPost, setConfirmPost] = useState<RecentPost | null>(null)
 
   const fetchRecent = useCallback(async () => {
     setRecentLoading(true)
     try {
-      const res = await axios.get('/api/posts/recent?limit=10', {
+      const res = await axios.get<RecentPost[]>('/api/posts/recent?limit=10', {
         headers: getAuthHeader()
       })
       setRecentPosts(res.data || [])
@@ -1139,7 +1197,7 @@ const MyPage = () => {
     void fetchRecent()
   }, [fetchRecent])
 
-  const openConfirm = post => setConfirmPost(post)
+  const openConfirm = (post: RecentPost) => setConfirmPost(post)
   const closeConfirm = () => setConfirmPost(null)
   const goToPost = () => {
     if (confirmPost) {
@@ -1151,17 +1209,21 @@ const MyPage = () => {
 
   // 프로필 로드 후 거래 평점 요약 조회
   useEffect(() => {
-    const fetchRating = async uid => {
+    const fetchRating = async (uid: number) => {
       setRatingLoading(true)
       setRatingError('')
       try {
-        const res = await axios.get(`/api/reviews/summary/users/${uid}`, {
-          headers: getAuthHeader()
-        })
+        const res = await axios.get<ReviewAggregateSummary>(
+          `/api/reviews/summary/users/${uid}`,
+          {
+            headers: getAuthHeader()
+          }
+        )
         setRatingSummary(res.data)
       } catch (e) {
         setRatingError(
-          e.response?.data?.message || t('mypage.ratingLoadFailed')
+          (e as AxiosError<ApiResponse>).response?.data?.message ||
+            t('mypage.ratingLoadFailed')
         )
       } finally {
         setRatingLoading(false)
@@ -1175,7 +1237,7 @@ const MyPage = () => {
 
   // 역할별 요약/목록 조회
   const fetchRoleData = useCallback(
-    async (uid, role, page = 0, size = roleSize) => {
+    async (uid: number, role: PeerReviewRole, page = 0, size = roleSize) => {
       if (!uid) return
       setRoleLoading(true)
       setRoleError('')
@@ -1199,7 +1261,8 @@ const MyPage = () => {
         setRoleLast(Boolean(data.last))
       } catch (e) {
         setRoleError(
-          e.response?.data?.message || t('mypage.reviewListLoadFailed')
+          (e as AxiosError<ApiResponse>).response?.data?.message ||
+            t('mypage.reviewListLoadFailed')
         )
         setRoleReviews([])
       } finally {
@@ -1216,10 +1279,10 @@ const MyPage = () => {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    function handleClickOutside(event) {
+    function handleClickOutside(event: MouseEvent) {
       if (
         photoMenuRef.current &&
-        !photoMenuRef.current.contains(event.target)
+        !photoMenuRef.current.contains(event.target as Node)
       ) {
         setShowPhotoMenu(false)
       }
@@ -1239,28 +1302,28 @@ const MyPage = () => {
   const cancelEditNow = () => {
     setEditingId(null)
     setEditDraft({ name: '', address: '', lat: null, lng: null })
-    setEditResults([])
   }
-  const handlePhotoMenuSelect = option => {
+  const handlePhotoMenuSelect = (option: 'default' | 'upload') => {
     setShowPhotoMenu(false)
     if (option === 'default') {
       setProfileImage(null)
     } else if (option === 'upload') {
-      fileInputRef.current.click()
+      fileInputRef.current!.click()
     }
   }
 
-  const handlePhotoChange = async e => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0]
     if (!file) return
     try {
       const form = new FormData()
       form.append('image', file)
-      const res = await axios.post('/api/my/profile-image', form, {
+      const res = await axios.post<string>('/api/my/profile-image', form, {
         headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' }
       })
       const newUrl = res.data // 백엔드가 String URL을 반환
-      setProfile(prev => ({ ...prev, profileImageUrl: newUrl }))
+      // prev가 null이면 기존 코드처럼 profileImageUrl만 있는 객체가 된다
+      setProfile(prev => ({ ...prev, profileImageUrl: newUrl }) as MyProfile)
       setProfileImage(newUrl)
       // 전역 사용자 정보 동기화
       try {
@@ -1279,7 +1342,10 @@ const MyPage = () => {
         )
       } catch {}
     } catch (err) {
-      alert(err?.response?.data?.message || t('mypage.profileImageUploadError'))
+      alert(
+        (err as AxiosError<ApiResponse> | undefined)?.response?.data?.message ||
+          t('mypage.profileImageUploadError')
+      )
     } finally {
       // 같은 파일 재선택 가능하도록 input 리셋
       e.target.value = ''
@@ -1315,7 +1381,8 @@ const MyPage = () => {
       setShowVerificationForm(false) // 성공 시 폼 숨기기
     } catch (error) {
       const message =
-        error.response?.data?.message || t('mypage.verificationEmailError')
+        (error as AxiosError<ApiResponse>).response?.data?.message ||
+        t('mypage.verificationEmailError')
       setVerificationMessage({ type: 'error', text: message })
     } finally {
       setIsSubmitting(false)
@@ -1358,7 +1425,7 @@ const MyPage = () => {
             )}
             <StyledPhotoChangeButton
               type="button"
-              onClick={() => fileInputRef.current.click()}>
+              onClick={() => fileInputRef.current!.click()}>
               <LucideCamera
                 style={{
                   position: 'relative',
@@ -1400,8 +1467,12 @@ const MyPage = () => {
                     transition: 'all 0.2s ease',
                     borderBottom: '1px solid #f1f5f9'
                   }}
-                  onMouseEnter={e => (e.target.style.background = '#f8fafc')}
-                  onMouseLeave={e => (e.target.style.background = 'none')}
+                  onMouseEnter={e =>
+                    ((e.target as HTMLElement).style.background = '#f8fafc')
+                  }
+                  onMouseLeave={e =>
+                    ((e.target as HTMLElement).style.background = 'none')
+                  }
                   onClick={() => handlePhotoMenuSelect('default')}>
                   <LucideUser
                     style={{ color: 'var(--primary)', fontSize: '1rem' }}
@@ -1424,8 +1495,12 @@ const MyPage = () => {
                     gap: '0.75rem',
                     transition: 'all 0.2s ease'
                   }}
-                  onMouseEnter={e => (e.target.style.background = '#f8fafc')}
-                  onMouseLeave={e => (e.target.style.background = 'none')}
+                  onMouseEnter={e =>
+                    ((e.target as HTMLElement).style.background = '#f8fafc')
+                  }
+                  onMouseLeave={e =>
+                    ((e.target as HTMLElement).style.background = 'none')
+                  }
                   onClick={() => handlePhotoMenuSelect('upload')}>
                   <LucideUpload
                     style={{ color: 'var(--primary)', fontSize: '1rem' }}

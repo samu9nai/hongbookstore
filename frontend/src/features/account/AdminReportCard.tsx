@@ -4,6 +4,29 @@ import { LucideFlag } from 'lucide-react'
 import api from '@/shared/api/client'
 import { useNavigate } from 'react-router-dom'
 
+/** 신고 한 건. 백엔드 ReportDtos.SimpleRes와 같다 */
+interface ReportItem {
+  id: number
+  type: string
+  reporterId: number | null
+  reportedUserId: number | null
+  salePostId: number | null
+  wantedId: number | null
+  reason: string | null
+  detail: string | null
+  /** LocalDateTime(오프셋 없는 ISO 문자열) */
+  createdAt: string | null
+}
+
+/** 서버는 Spring Page를 보낸다. 나머지는 예전 코드가 대비하던 모양이다 */
+interface ReportListShape {
+  data?: ReportItem[] | ReportListShape
+  status?: number
+  headers?: unknown
+  content?: ReportItem[]
+  items?: ReportItem[]
+}
+
 const Card = styled.div`
   background: var(--surface);
   border-radius: 1.25rem;
@@ -71,7 +94,7 @@ const Btn = styled.button`
   }
 `
 
-function fmt(dt) {
+function fmt(dt: string | null | undefined) {
   if (!dt) return '-'
   try {
     const d = new Date(
@@ -88,16 +111,20 @@ function fmt(dt) {
   }
 }
 
-const reasonLabel = r =>
-  ({
-    ABUSE: '욕설/비방',
-    FRAUD: '사기/허위매물',
-    SPAM: '스팸/광고',
-    OTHER: '기타'
-  })[r] || r
+const reasonLabel = (r: string) =>
+  (
+    ({
+      ABUSE: '욕설/비방',
+      FRAUD: '사기/허위매물',
+      SPAM: '스팸/광고',
+      OTHER: '기타'
+    }) as Record<string, string>
+  )[r] || r
 
 /** axios 인스턴스가 무엇을 반환하든 안전하게 리스트를 뽑아내기 */
-function normalizeList(input) {
+function normalizeList(
+  input: ReportListShape | null | undefined
+): ReportItem[] {
   const p =
     input &&
     input.data !== undefined &&
@@ -118,9 +145,9 @@ function normalizeList(input) {
 export default function AdminReportCard() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [checking, setChecking] = useState(true)
-  const [list, setList] = useState([])
+  const [list, setList] = useState<ReportItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [order, setOrder] = useState('desc')
+  const [order, setOrder] = useState<'desc' | 'asc'>('desc')
   const navigate = useNavigate()
 
   // ADMIN 여부 확인: 성공만 하면 ADMIN으로 간주
@@ -147,7 +174,9 @@ export default function AdminReportCard() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.get('/reports', { params: { page: 0, size: 100 } })
+      const res = await api.get<ReportListShape>('/reports', {
+        params: { page: 0, size: 100 }
+      })
       // ⬇️ 여기! res가 곧 데이터일 수 있으므로 res 자체를 normalize
       const items = normalizeList(res)
       setList(items || [])
