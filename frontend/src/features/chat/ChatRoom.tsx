@@ -17,13 +17,117 @@ import {
   LucideUser
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import Stomp from 'stompjs'
+import Stomp, { type Client } from 'stompjs'
 import { AuthCtx } from '@/shared/contexts/AuthContext'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import {
   startNotificationStream,
   stopNotificationStream
 } from '@/shared/api/notifications'
+import type { ChatReservation } from './types'
+
+/** 메시지 전송 상태. 지금은 이 값을 채우는 코드가 없다 */
+type MessageSendStatus = 'sending' | 'read' | 'failed'
+
+/**
+ * 채팅 메시지와 화면이 끼워 넣는 시스템 메시지.
+ * 서버 메시지는 백엔드 ChatMessageResponse와 같다
+ */
+interface ChatMessage {
+  messageId?: number
+  id?: number | string
+  salePostId?: number
+  senderId?: number
+  receiverId?: number
+  message: string
+  /** LocalDateTime 또는 ISO 문자열 */
+  sentAt: string
+  type?: 'system'
+  cancel?: boolean
+  meta?: { reservationBanner: boolean; key?: string }
+  status?: MessageSendStatus
+  /** 헤더가 찾지만 서버는 보내지 않는다(FE-29) */
+  sender?: string
+}
+
+/** 예약 안내 문구를 만들 때 읽는 필드. 예약 응답·알림·화면 입력을 모두 받는다 */
+interface ReservationLike {
+  id?: number
+  status?: string
+  reservedDate?: string
+  date?: string
+  reservedAt?: string | null
+  when?: string
+  meetAt?: string
+  scheduledAt?: string
+  time?: string
+  placeLabel?: string | null
+  placeName?: string
+  place?: string
+  locationName?: string
+  location?: string
+  address?: string
+}
+
+/** 예약 조회 응답. ChatReservation에 기존 코드가 찾던 필드를 더한다 */
+type ApiReservation = ChatReservation & ReservationLike
+
+/** 예약 요청 본문. 백엔드 ChatReservationRequest와 같다 */
+interface ReservationPayload {
+  meetType: 'on' | 'off'
+  placeLabel: string
+  reservedAt: string
+  oncampusPlaceCode: string | null
+  offcampusStationCode: string | null
+}
+
+/** SSE 예약 알림. notifications.ts가 이벤트 data를 파싱해 넘긴다 */
+interface ReservationNotification extends ReservationLike {
+  roomId?: number | string
+  type?: string
+  reservationId?: number
+  reason?: string
+}
+
+/** 서버가 차단한 메시지의 구간 */
+interface FlaggedSegment {
+  word?: string
+  sentence?: string
+  start?: number
+}
+
+/** 서버 모더레이션 판정 수치 */
+interface ModerationStats {
+  predictionLevel: string
+  malicious: number | null
+  clean: number | null
+}
+
+/** 예약 날짜 선택지. 주간 날씨에서 만들거나 저장된 예약에서 복원한다 */
+interface SelectedDate {
+  date: string
+  iso: string
+  weather: string | null
+  pop?: number
+  best?: boolean
+  am?: number | null
+  pm?: number | null
+}
+
+/** 주간 강수확률. 백엔드 WeeklyWeatherResponse·DailyPopDto와 같다 */
+interface WeeklyWeather {
+  baseTimeShort?: string
+  baseTimeMid?: string
+  days?: {
+    date: string
+    popAm: number | null
+    popPm: number | null
+    popAvg: number | null
+    best: boolean
+  }[]
+  recommendation?: string
+}
 
 /* ----------------------------- styled components ----------------------------- */
 const ChatContainer = styled.div`
@@ -129,7 +233,7 @@ const HeaderRight = styled.div`
   }
 `
 
-const ChatMenuButton = styled.button`
+const ChatMenuButton = styled.button<{ active?: boolean }>`
   background: ${props => (props.active ? 'var(--primary)' : 'var(--surface)')};
   color: ${props => (props.active ? 'white' : 'var(--text)')};
   border: 2px solid ${props => (props.active ? 'transparent' : 'var(--border)')};
@@ -232,7 +336,7 @@ const MessageGroup = styled.div`
   gap: 5px;
 `
 
-const Message = styled.div`
+const Message = styled.div<{ isOwn: boolean }>`
   max-width: 70%;
   padding: 12px 16px;
   border-radius: 18px;
@@ -248,7 +352,7 @@ const Message = styled.div`
   `}
 `
 
-const MessageTime = styled.div`
+const MessageTime = styled.div<{ isOwn: boolean }>`
   font-size: 0.75rem;
   color: #999;
   margin-top: 4px;
@@ -296,7 +400,7 @@ const InputContainer = styled.div`
   align-items: flex-end;
 `
 
-const MessageStatus = styled.div`
+const MessageStatus = styled.div<{ isOwn: boolean }>`
   display: flex;
   align-items: center;
   gap: 4px;
@@ -312,7 +416,7 @@ const MessageStatus = styled.div`
   `}
 `
 
-const StatusIcon = styled.span`
+const StatusIcon = styled.span<{ $status: MessageSendStatus }>`
   color: ${props => {
     if (props.$status === 'sending') return '#ffa726'
     if (props.$status === 'read') return '#2196f3'
@@ -393,7 +497,7 @@ const ProfanityFlaggedSentence = styled.span`
   white-space: pre-wrap;
 `
 
-const MessageInput = styled.textarea`
+const MessageInput = styled.textarea<{ hasProfanity: boolean }>`
   flex: 1;
   padding: 12px 16px;
   border: 1px solid ${p => (p.hasProfanity ? '#f44336' : '#ddd')};
@@ -568,7 +672,7 @@ const PlaceList = styled.div`
   margin-bottom: 1.5rem;
 `
 
-const PlaceItem = styled.button`
+const PlaceItem = styled.button<{ selected?: boolean }>`
   background: #f5f8ff;
   border: 2px solid
     ${({ selected }) => (selected ? 'var(--primary)' : '#e0e0e0')};
@@ -596,7 +700,7 @@ const DateList = styled.div`
   margin-bottom: 1.5rem;
 `
 
-const DateItem = styled.button`
+const DateItem = styled.button<{ selected: boolean }>`
   background: #f5f8ff;
   border: 2px solid
     ${({ selected }) => (selected ? 'var(--primary)' : '#e0e0e0')};
@@ -648,7 +752,7 @@ function useWindowWidth() {
 
 /* =================== 교내/교외 중간지점 추천 헬퍼 =================== */
 
-const ONCAMPUS_LABELS = {
+const ONCAMPUS_LABELS: Record<string, string> = {
   A: 'A동',
   B: 'B동',
   C: 'C동',
@@ -706,8 +810,8 @@ const CAMPUS_OPTIONS = [
 ]
 
 function buildCampusGraph() {
-  const g = {}
-  const add = (a, b, w) => {
+  const g: Record<string, { to: string; w: number }[]> = {}
+  const add = (a: string, b: string, w: number) => {
     g[a] = g[a] || []
     g[b] = g[b] || []
     g[a].push({ to: b, w })
@@ -745,16 +849,16 @@ function buildCampusGraph() {
 }
 const CAMPUS_GRAPH = buildCampusGraph()
 
-function dijkstraCampus(start, end) {
+function dijkstraCampus(start: string, end: string) {
   if (!CAMPUS_GRAPH[start] || !CAMPUS_GRAPH[end]) return null
-  const dist = {},
-    prev = {},
+  const dist: Record<string, number> = {},
+    prev: Record<string, string> = {},
     all = Object.keys(CAMPUS_GRAPH)
   all.forEach(n => (dist[n] = Infinity))
   dist[start] = 0
   const todo = new Set(all)
   const pick = () => {
-    let best = null,
+    let best: string | null = null,
       bd = Infinity
     for (const n of todo) {
       if (dist[n] < bd) {
@@ -778,15 +882,15 @@ function dijkstraCampus(start, end) {
     }
   }
   if (start !== end && !prev[end]) return null
-  const path = []
-  let cur = end
+  const path: string[] = []
+  let cur: string | undefined = end
   while (cur != null) {
     path.push(cur)
     cur = prev[cur]
   }
   return path.reverse()
 }
-function recommendOnCampus(aCode, bCode) {
+function recommendOnCampus(aCode: string, bCode: string) {
   const path = dijkstraCampus(aCode, bCode)
   if (!path) return null
   const mid = path[Math.floor((path.length - 1) / 2)]
@@ -794,7 +898,7 @@ function recommendOnCampus(aCode, bCode) {
 }
 
 /** 교외 노선/역 */
-const SUBWAY_MAP = {
+const SUBWAY_MAP: Record<string, string[]> = {
   '1호선': [
     '소요산',
     '동두천',
@@ -1333,15 +1437,15 @@ const SUBWAY_MAP = {
     '모란'
   ]
 }
-const getLineByStation = station => {
+const getLineByStation = (station: string | null) => {
   if (!station) return null
   for (const [line, arr] of Object.entries(SUBWAY_MAP))
     if (arr.includes(station)) return line
   return null
 }
 function buildStationGraphAndLineMap() {
-  const graph = {},
-    stationLines = {}
+  const graph: Record<string, Set<string>> = {},
+    stationLines: Record<string, Set<string>> = {}
   for (const [line, arr] of Object.entries(SUBWAY_MAP)) {
     arr.forEach((name, i) => {
       graph[name] = graph[name] || new Set()
@@ -1357,12 +1461,17 @@ function buildStationGraphAndLineMap() {
 }
 const { graph: ST_GRAPH, stationLines: ST_LINES } =
   buildStationGraphAndLineMap()
-const getUniqueStations = line => {
+const getUniqueStations = (line: string) => {
   const arr = SUBWAY_MAP[line] || []
   return Array.from(new Set(arr))
 }
 
-function dijkstraWeighted(start, end, transferCost = 10, penalizePenalty = 10) {
+function dijkstraWeighted(
+  start: string,
+  end: string,
+  transferCost = 10,
+  penalizePenalty = 10
+) {
   if (!ST_GRAPH[start] || !ST_GRAPH[end]) return null
   const penalized = new Set([
     '공항철도',
@@ -1370,13 +1479,13 @@ function dijkstraWeighted(start, end, transferCost = 10, penalizePenalty = 10) {
     '신분당선',
     '수인분당선'
   ])
-  const dist = {},
-    prev = {}
+  const dist: Record<string, number> = {},
+    prev: Record<string, string> = {}
   Object.keys(ST_GRAPH).forEach(s => (dist[s] = Infinity))
   dist[start] = 0
   const todo = new Set(Object.keys(ST_GRAPH))
   const pick = () => {
-    let b = null,
+    let b: string | null = null,
       bd = Infinity
     for (const s of todo)
       if (dist[s] < bd) {
@@ -1400,7 +1509,7 @@ function dijkstraWeighted(start, end, transferCost = 10, penalizePenalty = 10) {
           break
         }
       }
-      let w
+      let w: number
       if (commonNonPen) {
         w = 1
       } else {
@@ -1421,7 +1530,7 @@ function dijkstraWeighted(start, end, transferCost = 10, penalizePenalty = 10) {
     }
   }
   if (start !== end && !prev[end]) return null
-  const path = []
+  const path: string[] = []
   let cur = end
   path.unshift(cur)
   while (prev[cur]) {
@@ -1430,7 +1539,7 @@ function dijkstraWeighted(start, end, transferCost = 10, penalizePenalty = 10) {
   }
   return path
 }
-function recommendOffCampus(aStation, bStation) {
+function recommendOffCampus(aStation: string, bStation: string) {
   const path = dijkstraWeighted(aStation, bStation, 10, 10)
   if (!path) return null
   const mid = path[Math.floor(path.length / 2)]
@@ -1438,7 +1547,10 @@ function recommendOffCampus(aStation, bStation) {
 }
 
 /* ----------------------------- 예약 API ------------------------------ */
-async function apiGetReservation(roomId, t) {
+async function apiGetReservation(
+  roomId: number | null,
+  t: TFunction
+): Promise<ApiReservation | null> {
   const token = localStorage.getItem('accessToken') || ''
   const res = await fetch(`/api/chat/rooms/${roomId}/reservation`, {
     headers: { Authorization: `Bearer ${token}` }
@@ -1447,7 +1559,11 @@ async function apiGetReservation(roomId, t) {
   if (!res.ok) throw new Error(t('chat.reservationFetchFailed'))
   return res.json()
 }
-async function apiUpsertReservation(roomId, payload, t) {
+async function apiUpsertReservation(
+  roomId: number | null,
+  payload: ReservationPayload,
+  t: TFunction
+): Promise<ChatReservation> {
   const token = localStorage.getItem('accessToken') || ''
   const res = await fetch(`/api/chat/rooms/${roomId}/reservation`, {
     method: 'POST',
@@ -1460,7 +1576,11 @@ async function apiUpsertReservation(roomId, payload, t) {
   if (!res.ok) throw new Error(t('chat.reservationSaveFailed'))
   return res.json()
 }
-async function apiAcceptReservation(roomId, reservationId, t) {
+async function apiAcceptReservation(
+  roomId: number | null,
+  reservationId: number,
+  t: TFunction
+) {
   const token = localStorage.getItem('accessToken') || ''
   const res = await fetch(
     `/api/chat/rooms/${roomId}/reservation/${reservationId}/accept`,
@@ -1475,7 +1595,12 @@ async function apiAcceptReservation(roomId, reservationId, t) {
   }
   return res.json()
 }
-async function apiCancelReservation(roomId, reservationId, reason, t) {
+async function apiCancelReservation(
+  roomId: number | null,
+  reservationId: number,
+  reason: string,
+  t: TFunction
+) {
   const token = localStorage.getItem('accessToken') || ''
   const res = await fetch(
     `/api/chat/rooms/${roomId}/reservation/${reservationId}/cancel`,
@@ -1491,7 +1616,11 @@ async function apiCancelReservation(roomId, reservationId, reason, t) {
   if (!res.ok) throw new Error(t('chat.reservationCancelFailed'))
   return res.json()
 }
-async function apiCompleteReservation(roomId, reservationId, t) {
+async function apiCompleteReservation(
+  roomId: number | null,
+  reservationId: number,
+  t: TFunction
+) {
   const token = localStorage.getItem('accessToken') || ''
   const res = await fetch(
     `/api/chat/rooms/${roomId}/reservation/${reservationId}/complete`,
@@ -1505,7 +1634,7 @@ async function apiCompleteReservation(roomId, reservationId, t) {
 }
 
 /* ----------------------------- utils ------------------------------ */
-function normalizeDateTime(input) {
+function normalizeDateTime(input: string) {
   if (!input) return input
   if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return `${input}T12:00:00`
   if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(input))
@@ -1513,20 +1642,28 @@ function normalizeDateTime(input) {
   return input
 }
 
-const getAuthHeader = () => {
+const getAuthHeader = (): Record<string, string> => {
   const token = localStorage.getItem('accessToken') || ''
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-const toServerEnum = s =>
+const toServerEnum = (s: string) =>
   String(s || '')
     .toUpperCase()
     .replace(/-/g, '_')
-const toLocalStatus = s => String(s || '').toLowerCase()
+const toLocalStatus = (s: string | null) => String(s || '').toLowerCase()
 
-async function patchPostStatus(postId, status, buyerId, t) {
+async function patchPostStatus(
+  postId: number | null,
+  status: string,
+  buyerId: number | null,
+  t: TFunction
+) {
   if (!postId || !status) return
-  const headers = { 'Content-Type': 'application/json', ...getAuthHeader() }
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...getAuthHeader()
+  }
   const statusEnum = toServerEnum(status)
   const body = buyerId
     ? { status: statusEnum, buyerId }
@@ -1543,7 +1680,10 @@ async function patchPostStatus(postId, status, buyerId, t) {
   return res.json().catch(() => ({}))
 }
 
-async function fetchPost(postId, t) {
+async function fetchPost(
+  postId: number | null,
+  t: TFunction
+): Promise<{ status?: string } | null> {
   if (!postId) return null
   const res = await fetch(`/api/posts/${postId}`, { headers: getAuthHeader() })
   if (!res.ok) throw new Error(t('chat.postFetchFailed'))
@@ -1557,7 +1697,7 @@ const resolveWsEndpoint = () => {
   const env = import.meta.env || {}
   const { VITE_WS_BASE, VITE_API_BASE } = env
 
-  const makeWsUrlFromBase = base => {
+  const makeWsUrlFromBase = (base: string | undefined) => {
     if (!base || typeof window === 'undefined') return null
     try {
       const u = new URL(base, window.location.origin)
@@ -1598,10 +1738,10 @@ try {
 
 const ChatRoom = () => {
   const { t } = useTranslation()
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading] = useState(false)
-  const messagesEndRef = useRef(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { chatId } = useParams()
 
@@ -1612,14 +1752,14 @@ const ChatRoom = () => {
 
   const [isPending, setIsPending] = useState(false)
   const [isReserved, setIsReserved] = useState(false)
-  const [reservationId, setReservationId] = useState(null)
+  const [reservationId, setReservationId] = useState<number | null>(null)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [isCompleted, setIsCompleted] = useState(false)
 
   const reservationBannerKeyRef = useRef('')
 
-  function formatDateLabel(dateStr) {
+  function formatDateLabel(dateStr: string) {
     if (!dateStr) return ''
     const s = String(dateStr).trim()
     const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
@@ -1631,7 +1771,10 @@ const ChatRoom = () => {
     return s
   }
 
-  function buildReservationText(info, status) {
+  function buildReservationText(
+    info: ReservationLike | null | undefined,
+    status?: string
+  ) {
     const s = String(status || info?.status || '').toUpperCase()
     const rawDate =
       info?.reservedDate ||
@@ -1659,7 +1802,7 @@ const ChatRoom = () => {
     return [base, dateLabel, place].filter(Boolean).join(' · ')
   }
 
-  const injectReservationBanner = info => {
+  const injectReservationBanner = (info: ReservationLike | null) => {
     if (!info) return
     const key = [
       info.id,
@@ -1694,8 +1837,11 @@ const ChatRoom = () => {
   const [profanityBaseMessage, setProfanityBaseMessage] = useState('')
   const [profanityReasonMessage, setProfanityReasonMessage] = useState('')
   const [blockedMessage, setBlockedMessage] = useState('')
-  const [serverFlaggedSegments, setServerFlaggedSegments] = useState([])
-  const [moderationStats, setModerationStats] = useState(null)
+  const [serverFlaggedSegments, setServerFlaggedSegments] = useState<
+    FlaggedSegment[]
+  >([])
+  const [moderationStats, setModerationStats] =
+    useState<ModerationStats | null>(null)
 
   const moderationMessage = buildModerationStatsMessage(moderationStats, t)
   const moderationCleanMessage = buildModerationCleanMessage(moderationStats, t)
@@ -1719,20 +1865,20 @@ const ChatRoom = () => {
   )
 
   const [showReserveModal, setShowReserveModal] = useState(false)
-  const [selectedPlace, setSelectedPlace] = useState(null)
-  const [selectedDate, setSelectedDate] = useState(null)
+  const [selectedPlace, setSelectedPlace] = useState<string | null>(null)
+  const [selectedDate, setSelectedDate] = useState<SelectedDate | null>(null)
   const [reserveConfirmed, setReserveConfirmed] = useState(false)
 
   const width = useWindowWidth()
-  const [receiverId, setReceiverId] = useState(null)
-  const [senderId, setSenderId] = useState(null)
-  const [salePostId, setSalePostId] = useState(null)
+  const [receiverId, setReceiverId] = useState<number | null>(null)
+  const [senderId, setSenderId] = useState<number | null>(null)
+  const [salePostId, setSalePostId] = useState<number | null>(null)
 
-  const [postStatus, setPostStatus] = useState(null)
-  const [buyerId, setBuyerId] = useState(null)
-  const [sellerId, setSellerId] = useState(null)
+  const [postStatus, setPostStatus] = useState<string | null>(null)
+  const [buyerId, setBuyerId] = useState<number | null>(null)
+  const [sellerId, setSellerId] = useState<number | null>(null)
 
-  const stompClient = useRef(null)
+  const stompClient = useRef<Client | null>(null)
   const lastAttemptedMessageRef = useRef('')
   const { user } = useContext(AuthCtx)
   const currentUserId = user?.id
@@ -1752,22 +1898,27 @@ const ChatRoom = () => {
     return currentUserId === sellerId ? buyerId : sellerId
   }, [receiverId, buyerId, sellerId, currentUserId])
 
-  const [weeklyWeather, setWeeklyWeather] = useState(null)
+  const [weeklyWeather, setWeeklyWeather] = useState<WeeklyWeather | null>(null)
   const [weatherLoading, setWeatherLoading] = useState(false)
 
-  const [sellerDefault, setSellerDefault] = useState({
+  const [sellerDefault, setSellerDefault] = useState<{
+    oncampusPlaceCode: string | null
+    offcampusStationCode: string | null
+  }>({
     oncampusPlaceCode: null,
     offcampusStationCode: null
   })
 
-  const [meetType, setMeetType] = useState('on') // 'on' | 'off'
+  const [meetType, setMeetType] = useState<'on' | 'off'>('on')
   const [buyerCampusCode, setBuyerCampusCode] = useState('')
-  const [campusSuggest, setCampusSuggest] = useState(null)
+  const [campusSuggest, setCampusSuggest] =
+    useState<ReturnType<typeof recommendOnCampus>>(null)
   const [buyerLine, setBuyerLine] = useState('')
   const [buyerStation, setBuyerStation] = useState('')
-  const [offSuggest, setOffSuggest] = useState(null)
+  const [offSuggest, setOffSuggest] =
+    useState<ReturnType<typeof recommendOffCampus>>(null)
 
-  const getLabel = type => {
+  const getLabel = (type: string) => {
     if (width <= 600) return ''
     if (width <= 900) {
       switch (type) {
@@ -1809,7 +1960,11 @@ const ChatRoom = () => {
     }
   }
 
-  const iconColor = (activeColor, isActive, isHover) => {
+  const iconColor = (
+    activeColor: string,
+    isActive: boolean,
+    isHover: boolean
+  ) => {
     if (isActive || isHover) return activeColor
     return '#bbb'
   }
@@ -1918,8 +2073,9 @@ const ChatRoom = () => {
         setIsCompleted(st === 'COMPLETED')
 
         if (r.placeLabel || r.placeName || r.location || r.address) {
+          // 바로 위 조건이 같은 식이 비어 있지 않음을 확인한다
           setSelectedPlace(
-            r.placeLabel || r.placeName || r.location || r.address
+            (r.placeLabel || r.placeName || r.location || r.address)!
           )
         }
         const raw =
@@ -2036,9 +2192,11 @@ const ChatRoom = () => {
     const token = localStorage.getItem('accessToken') || ''
     if (!token) return
 
-    const handleNotify = evt => {
+    const handleNotify = (evt: unknown) => {
       try {
-        const data = typeof evt === 'string' ? JSON.parse(evt) : evt // notifications.js에서 e.data 파싱됨
+        const data = (
+          typeof evt === 'string' ? JSON.parse(evt) : evt
+        ) as ReservationNotification | null // notifications.js에서 e.data 파싱됨
         if (!data) return
 
         const sameRoom = roomId && Number(data.roomId) === Number(roomId)
@@ -2179,7 +2337,7 @@ const ChatRoom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleMessageChange = e => {
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value
     setNewMessage(text)
     if (serverFlaggedSegments.length) {
@@ -2213,15 +2371,15 @@ const ChatRoom = () => {
     setProfanityReasonMessage('')
   }
 
-  const handleQuickAction = action => {
-    const quickMessages = {
+  const handleQuickAction = (action: string) => {
+    const quickMessages: Record<string, string> = {
       [t('chat.quickAction.price')]: t('chat.quickAction.priceMessage'),
       [t('chat.quickAction.condition')]: t('chat.quickAction.conditionMessage')
     }
     setNewMessage(quickMessages[action])
   }
 
-  const handleKeyPress = e => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
@@ -2286,10 +2444,13 @@ const ChatRoom = () => {
         }
       }
 
+      // iso가 늘 있어 selectedDate 객체로 떨어지지 않는다
       const base = {
         meetType,
         placeLabel: selectedPlace,
-        reservedAt: selectedDate?.iso || selectedDate?.date || selectedDate
+        reservedAt: (selectedDate?.iso ||
+          selectedDate?.date ||
+          selectedDate) as string
       }
       const payload =
         meetType === 'on'
@@ -2327,8 +2488,9 @@ const ChatRoom = () => {
           type: 'system',
           message: buildReservationText(
             {
-              reservedAt:
-                selectedDate?.iso || selectedDate?.date || selectedDate,
+              reservedAt: (selectedDate?.iso ||
+                selectedDate?.date ||
+                selectedDate) as string,
               placeLabel: selectedPlace
             },
             'REQUESTED'
@@ -2480,7 +2642,7 @@ const ChatRoom = () => {
     }
   }
 
-  const handleReportSubmit = async e => {
+  const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const ABUSE_LABEL = t('chat.reportReasons.abuse')
     const FRAUD_LABEL = t('chat.reportReasons.fraud')
@@ -2569,7 +2731,7 @@ const ChatRoom = () => {
     }
   }
 
-  const formatTime = timestamp => {
+  const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
     return date.toLocaleTimeString('ko-KR', {
       hour: '2-digit',
@@ -2578,7 +2740,7 @@ const ChatRoom = () => {
   }
 
   async function getCoords() {
-    return new Promise(resolve => {
+    return new Promise<{ lat: number; lng: number }>(resolve => {
       if (!navigator.geolocation) return resolve({ lat: 37.5665, lng: 126.978 })
       navigator.geolocation.getCurrentPosition(
         pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
@@ -2588,12 +2750,21 @@ const ChatRoom = () => {
     })
   }
 
-  async function fetchWeeklyWeather({ lat, lng, sido }) {
+  async function fetchWeeklyWeather({
+    lat,
+    lng,
+    sido
+  }: {
+    lat: number
+    lng: number
+    sido?: string
+  }): Promise<WeeklyWeather> {
+    // URLSearchParams는 숫자 값도 문자열로 바꿔 넣는다
     const q = new URLSearchParams({
       lat,
       lng,
       ...(sido ? { sido } : {})
-    }).toString()
+    } as unknown as Record<string, string>).toString()
     const res = await fetch(`/api/weather/weekly?${q}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`
@@ -3579,7 +3750,13 @@ const ChatRoom = () => {
   )
 }
 
-const MessageStatusIndicator = ({ status, isOwn }) => {
+const MessageStatusIndicator = ({
+  status,
+  isOwn
+}: {
+  status: MessageSendStatus
+  isOwn: boolean
+}) => {
   const { t } = useTranslation()
   const getStatusText = () => {
     switch (status) {
@@ -3626,7 +3803,7 @@ const PROFANITY_PATTERNS = [
   /hell/gi
 ]
 
-function detectProfanity(text) {
+function detectProfanity(text: string) {
   if (!text) return null
   const source = String(text)
   for (const pattern of PROFANITY_PATTERNS) {
@@ -3646,7 +3823,7 @@ function detectProfanity(text) {
   return null
 }
 
-function extractProfanitySentence(text, index) {
+function extractProfanitySentence(text: string, index: number) {
   if (!text) return ''
   const separators = /[.!?\n\r\u2026\u3002\uff01\uff1f]/
   let start = index
@@ -3662,7 +3839,7 @@ function extractProfanitySentence(text, index) {
   return text.slice(start, end).trim()
 }
 
-function formatPercentage(value) {
+function formatPercentage(value: number | null) {
   if (typeof value !== 'number' || Number.isNaN(value)) return null
   const pct = value * 100
   if (!Number.isFinite(pct)) return null
@@ -3670,7 +3847,7 @@ function formatPercentage(value) {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
 }
 
-function buildProfanityDetailMessage(text, t) {
+function buildProfanityDetailMessage(text: string, t: TFunction) {
   if (!text) return null
   const detection = detectProfanity(text)
   if (!detection) return null
@@ -3683,9 +3860,13 @@ function buildProfanityDetailMessage(text, t) {
   }
 }
 
-function buildProfanityDetailFromSegments(segments, fallbackText, t) {
+function buildProfanityDetailFromSegments(
+  segments: FlaggedSegment[],
+  fallbackText: string,
+  t: TFunction
+) {
   if (!Array.isArray(segments) || segments.length === 0) return null
-  const first = segments[0] || {}
+  const first: FlaggedSegment = segments[0] || {}
   const sentenceCandidate =
     typeof first.sentence === 'string' && first.sentence.trim().length
       ? first.sentence.trim()
@@ -3706,7 +3887,7 @@ function buildProfanityDetailFromSegments(segments, fallbackText, t) {
   }
 }
 
-function buildModerationReasonMessage(reason, t) {
+function buildModerationReasonMessage(reason: unknown, t: TFunction) {
   const normalized =
     typeof reason === 'string' ? reason.trim().toLowerCase() : ''
   const reasonKey = normalized
@@ -3724,7 +3905,10 @@ function buildModerationReasonMessage(reason, t) {
   return labelled
 }
 
-function buildModerationCleanMessage(stats, t) {
+function buildModerationCleanMessage(
+  stats: ModerationStats | null,
+  t: TFunction
+) {
   if (!stats || typeof stats.clean !== 'number') return ''
   const cleanValue = formatPercentage(stats.clean)
   if (cleanValue == null) return ''
@@ -3733,7 +3917,10 @@ function buildModerationCleanMessage(stats, t) {
   })
 }
 
-function buildModerationStatsMessage(stats, t) {
+function buildModerationStatsMessage(
+  stats: ModerationStats | null,
+  t: TFunction
+) {
   if (!stats) return null
   const maliciousValue = formatPercentage(stats.malicious)
   if (maliciousValue == null) return null
@@ -3746,7 +3933,11 @@ function buildModerationStatsMessage(stats, t) {
   })
 }
 
-function formatFlaggedSegments(segments, fallbackText, t) {
+function formatFlaggedSegments(
+  segments: FlaggedSegment[],
+  fallbackText: string,
+  t: TFunction
+) {
   if (!Array.isArray(segments) || segments.length === 0) return []
   const fallbackSentence =
     typeof fallbackText === 'string' && fallbackText.trim().length
