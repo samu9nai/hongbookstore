@@ -17,9 +17,9 @@ import MyPage from '@/features/account/MyPage'
 import Login from '@/features/auth/Login'
 import Search from '@/features/marketplace/Search.jsx'
 
-import Wanted from '@/features/wanted/Wanted.jsx'
-import WantedWrite from '@/features/wanted/WantedWrite.jsx'
-import WantedDetail from '@/features/wanted/WantedDetail.jsx'
+import Wanted from '@/features/wanted/Wanted'
+import WantedWrite from '@/features/wanted/WantedWrite'
+import WantedDetail from '@/features/wanted/WantedDetail'
 
 import MyBookstore from '@/features/marketplace/MyBookstore.jsx'
 
