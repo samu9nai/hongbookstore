@@ -13,7 +13,7 @@ import Footer from '@/shared/layout/Footer'
 import { Loading } from '@/shared/ui'
 
 import Marketplace from '@/features/marketplace/Marketplace.jsx'
-import MyPage from '@/features/account/MyPage.jsx'
+import MyPage from '@/features/account/MyPage'
 import Login from '@/features/auth/Login'
 import Search from '@/features/marketplace/Search.jsx'
 
@@ -32,7 +32,7 @@ import ChatRoom from '@/features/chat/ChatRoom.jsx'
 
 import MapPage from '@/features/map/Map'
 
-import UserProfile from '@/features/account/UserProfile.jsx'
+import UserProfile from '@/features/account/UserProfile'
 import VerificationConfirmPage from '@/features/auth/VerificationConfirmPage'
 import OAuth2RedirectHandler from '@/features/auth/OAuth2RedirectHandler'
 
@@ -44,7 +44,7 @@ import { LocationProvider } from '@/features/map/LocationContext'
 
 import RequireAuth from './RequireAuth'
 
-import AccountDeactivate from '@/features/account/AccountDeactivate.jsx' // ← 추가
+import AccountDeactivate from '@/features/account/AccountDeactivate' // ← 추가
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)

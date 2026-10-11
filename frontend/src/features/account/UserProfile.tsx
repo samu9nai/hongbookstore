@@ -2,11 +2,43 @@ import React, { useEffect, useState, useCallback } from 'react'
 import styled from 'styled-components'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
+import type { ApiResponse } from '@/shared/api/client'
 import {
   getUserPeerReviews,
-  getUserPeerSummary
+  getUserPeerSummary,
+  type PeerReview,
+  type PeerReviewRole,
+  type PeerReviewSummary
 } from '@/shared/api/peerReviews'
+
+/** 사용자 조회 응답에서 이름을 찾는 필드. 기존 코드가 여러 모양에 대비하므로 넓게 둔다 */
+interface UserNameSource {
+  nickname?: string
+  username?: string
+  userName?: string
+  name?: string
+  fullName?: string
+  displayName?: string
+  email?: unknown
+  profile?: { nickname?: string; name?: string }
+}
+
+/** 판매자 글 목록 항목에서 이름을 찾는 필드. 백엔드는 sellerNickname을 보낸다 */
+interface SellerPostNameSource {
+  sellerNickname?: string
+  sellerName?: string
+  sellerUsername?: string
+  seller?: { nickname?: string; username?: string }
+}
+
+/** 백엔드 PeerReview 응답에는 없지만 기존 코드가 찾던 이름 필드 */
+type PeerReviewWithNames = PeerReview & {
+  targetNickname?: string
+  ownerNickname?: string
+  userNickname?: string
+  sellerNickname?: string
+}
 
 const Container = styled.div`
   max-width: 1100px;
@@ -30,7 +62,7 @@ const Tabs = styled.div`
   gap: 8px;
   margin: 10px 0 16px;
 `
-const TabBtn = styled.button`
+const TabBtn = styled.button<{ $active: boolean }>`
   padding: 8px 14px;
   border-radius: 16px;
   border: 1px solid ${p => (p.$active ? '#1976d2' : '#e0e0e0')};
@@ -88,7 +120,10 @@ function getAuthHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-function pickDisplayName(u, fallbackId) {
+function pickDisplayName(
+  u: UserNameSource | null | undefined,
+  fallbackId: string
+) {
   if (!u) return ''
   const emailName = typeof u.email === 'string' ? u.email.split('@')[0] : ''
   return (
@@ -106,7 +141,7 @@ function pickDisplayName(u, fallbackId) {
 }
 
 /** 가능한 기존 엔드포인트만 시도 (백엔드 추가 없음) */
-async function resolveUserName(uid) {
+async function resolveUserName(uid: string) {
   const headers = getAuthHeaders()
 
   // 1) 일반 사용자 조회가 이미 있다면 (있을 수도/없을 수도)
@@ -117,7 +152,7 @@ async function resolveUserName(uid) {
   ]
   for (const url of userEndpoints) {
     try {
-      const r = await axios.get(url, { headers, timeout: 7000 })
+      const r = await axios.get<UserNameSource>(url, { headers, timeout: 7000 })
       const name = pickDisplayName(r?.data, uid)
       if (name && !/^사용자\s?#?\d+$/i.test(name)) return name
     } catch {}
@@ -125,10 +160,13 @@ async function resolveUserName(uid) {
 
   // 2) 판매자 글 목록에서 sellerNickname 얻기 (이미 프로젝트에 존재)
   try {
-    const r = await axios.get(`/api/posts/seller/${uid}?page=0&size=1`, {
-      headers,
-      timeout: 7000
-    })
+    const r = await axios.get<SellerPostNameSource[]>(
+      `/api/posts/seller/${uid}?page=0&size=1`,
+      {
+        headers,
+        timeout: 7000
+      }
+    )
     const first = Array.isArray(r?.data) ? r.data[0] : null
     const name =
       first?.sellerNickname ||
@@ -142,7 +180,9 @@ async function resolveUserName(uid) {
   // 3) 리뷰 API에서 소유자/대상 닉네임이 내려온다면 활용 (있으면 쓰고, 없으면 패스)
   try {
     const data = await getUserPeerReviews(uid, 'SELLER', 0, 1)
-    const one = Array.isArray(data?.content) ? data.content[0] : null
+    const one: PeerReviewWithNames | null = Array.isArray(data?.content)
+      ? data.content[0]
+      : null
     const name =
       one?.targetNickname ||
       one?.ownerNickname ||
@@ -167,10 +207,10 @@ const UserProfile = () => {
     location.state?.nickname ||
     ''
 
-  const [role, setRole] = useState('SELLER')
-  const [sumSeller, setSumSeller] = useState(null)
-  const [sumBuyer, setSumBuyer] = useState(null)
-  const [list, setList] = useState([])
+  const [role, setRole] = useState<PeerReviewRole>('SELLER')
+  const [sumSeller, setSumSeller] = useState<PeerReviewSummary | null>(null)
+  const [sumBuyer, setSumBuyer] = useState<PeerReviewSummary | null>(null)
+  const [list, setList] = useState<PeerReview[]>([])
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
   const [last, setLast] = useState(true)
@@ -179,7 +219,7 @@ const UserProfile = () => {
   const [userName, setUserName] = useState(nameFromState)
   const [userNameLoading, setUserNameLoading] = useState(false)
 
-  const fetchUserName = useCallback(async uid => {
+  const fetchUserName = useCallback(async (uid: string | undefined) => {
     if (!uid) {
       setUserName('')
       return
@@ -193,7 +233,7 @@ const UserProfile = () => {
     }
   }, [])
 
-  const fetchSummary = useCallback(async uid => {
+  const fetchSummary = useCallback(async (uid: string) => {
     try {
       const [s1, s2] = await Promise.all([
         getUserPeerSummary(uid, 'SELLER'),
@@ -208,7 +248,7 @@ const UserProfile = () => {
   }, [])
 
   const fetchList = useCallback(
-    async (uid, r, p = 0, z = size) => {
+    async (uid: string, r: PeerReviewRole, p = 0, z = size) => {
       setLoading(true)
       setError('')
       try {
@@ -220,7 +260,8 @@ const UserProfile = () => {
       } catch (e) {
         setList([])
         setError(
-          e?.response?.data?.message || t('userProfile.error.loadReviews')
+          (e as AxiosError<ApiResponse> | undefined)?.response?.data?.message ||
+            t('userProfile.error.loadReviews')
         )
       } finally {
         setLoading(false)
@@ -334,12 +375,13 @@ const UserProfile = () => {
 
       <Pager>
         <SmallBtn
-          onClick={() => fetchList(userId, role, Math.max(0, page - 1), size)}
+          // 라우트가 /users/:userId라 userId는 항상 있다
+          onClick={() => fetchList(userId!, role, Math.max(0, page - 1), size)}
           disabled={page <= 0}>
           {t('userProfile.previous')}
         </SmallBtn>
         <SmallBtn
-          onClick={() => !last && fetchList(userId, role, page + 1, size)}
+          onClick={() => !last && fetchList(userId!, role, page + 1, size)}
           disabled={last}>
           {t('userProfile.next')}
         </SmallBtn>
