@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import styled, { keyframes } from 'styled-components'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { useNavigate } from 'react-router-dom'
 import SidebarMenu, { MainContent } from '@/shared/layout/SidebarMenu'
 import {
@@ -8,7 +9,35 @@ import {
   FilterButton as OriginalFilterButton,
   Loading
 } from '@/shared/ui'
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
+import type { SalePostSummary } from './types'
+
+/** 목록 응답의 페이지 정보. 백엔드는 Spring Page를 보낸다 */
+interface PostListPage {
+  content?: SalePostSummary[]
+  last?: boolean
+  number?: number
+  totalPages?: number
+  totalElements?: number
+  size?: number
+}
+
+/** data로 감싼 모양과 배열은 예전 코드가 대비하던 모양이다 */
+interface PostListPayload extends PostListPage {
+  data?: PostListPage
+}
+
+/** 검색·필터 조건. 가격은 입력 상자 값이라 문자열이다 */
+interface MarketplaceQuery {
+  query: string
+  category: string
+  minPrice: string
+  maxPrice: string
+  sort: string
+}
+
+/** 대분류 → 단과대학 → 학과 목록 */
+type CategoryMap = Record<string, Record<string, string[]>>
 
 const shimmer = keyframes`
   0% { background-position: -200px 0; }
@@ -517,7 +546,7 @@ const DiscountBadge = styled.span`
   margin-left: 0.5rem;
 `
 
-const LikeButton = styled.button`
+const LikeButton = styled.button<{ $liked: boolean }>`
   position: absolute;
   top: 1rem;
   right: 1rem;
@@ -556,7 +585,7 @@ const BookMeta = styled.div`
   border-top: 1px solid var(--border);
 `
 
-const Condition = styled.span`
+const Condition = styled.span<{ $bgColor?: string; $color?: string }>`
   background: ${props => props.$bgColor};
   color: ${props => props.$color};
   padding: 0.25rem 0.75rem;
@@ -638,7 +667,7 @@ const PaginationContainer = styled.div`
   gap: 0.5rem;
 `
 
-const PageButton = styled.button`
+const PageButton = styled.button<{ $active?: boolean }>`
   padding: 0.5rem 1rem;
   border: 1px solid var(--border);
   background: ${props => (props.$active ? 'var(--primary)' : 'white')};
@@ -694,7 +723,7 @@ const LoadingMessage = styled.div`
   font-size: 1.1rem;
 `
 
-const getCategories = t => ({
+const getCategories = (t: TFunction): CategoryMap => ({
   [t('categories.Major')]: {
     [t('categories.colleges.business')]: [t('categories.departments.business')],
     [t('categories.colleges.engineering')]: [
@@ -775,7 +804,10 @@ const getCategories = t => ({
 })
 
 // Handle both Spring Page<T> and array responses so the UI always receives a safe list.
-const normalizePostListResponse = (payload, pageSize) => {
+const normalizePostListResponse = (
+  payload: PostListPayload | null | undefined,
+  pageSize: number
+): { items: SalePostSummary[]; isLast: boolean } => {
   if (payload && typeof payload === 'object') {
     const directContent = Array.isArray(payload.content)
       ? payload.content
@@ -793,7 +825,9 @@ const normalizePostListResponse = (payload, pageSize) => {
     ).filter(Boolean)
 
     if (directContent || wrappedContent || fallbackArray) {
-      const source = directContent ? payload : (payload?.data ?? {})
+      const source: PostListPage = directContent
+        ? payload
+        : (payload?.data ?? {})
       if (typeof source.last === 'boolean') {
         return { items, isLast: source.last }
       }
@@ -960,7 +994,15 @@ const getAuthHeader = () => {
 }
 
 // 이미지 로딩 실패 시 안정적으로 대체 컨텐츠를 보여주기 위한 별도 컴포넌트
-const BookImageWithFallback = ({ src, alt, t }) => {
+const BookImageWithFallback = ({
+  src,
+  alt,
+  t
+}: {
+  src: string | null
+  alt: string
+  t: TFunction
+}) => {
   const [hasError, setHasError] = useState(false)
 
   // 부모 컴포넌트에서 src prop이 변경될 때마다 에러 상태를 초기화
@@ -999,18 +1041,18 @@ const Marketplace = () => {
   const navigate = useNavigate()
 
   // API 데이터 상태
-  const [posts, setPosts] = useState([]) // API로부터 받아온 게시글 목록
+  const [posts, setPosts] = useState<SalePostSummary[]>([]) // API로부터 받아온 게시글 목록
   const [page, setPage] = useState(0) // 현재 페이지 번호 (무한 스크롤용)
   const [hasMore, setHasMore] = useState(true) // 더 불러올 데이터가 있는지 여부
   const [isLoading, setIsLoading] = useState(true) // 데이터 로딩 상태
-  const [likedPostIds, setLikedPostIds] = useState(new Set()) // 찜한 게시글 ID Set
+  const [likedPostIds, setLikedPostIds] = useState<Set<number>>(new Set()) // 찜한 게시글 ID Set
   const [error, setError] = useState('') // 에러 상태
 
   // 검색어 입력 상태 분리
   const [searchQuery, setSearchQuery] = useState('') // 사용자가 입력하는 검색어 (UI 표시용)
 
   // 검색 및 필터 상태
-  const [searchParams, setSearchParams] = useState({
+  const [searchParams, setSearchParams] = useState<MarketplaceQuery>({
     query: '',
     category: '',
     minPrice: '',
@@ -1025,15 +1067,15 @@ const Marketplace = () => {
   })
 
   const [filterOpen, setFilterOpen] = useState(false) // 필터 팝오버 표시 여부
-  const filterRef = useRef()
-  const observerRef = useRef() // Intersection Observer를 위한 ref
+  const filterRef = useRef<HTMLDivElement>(null)
+  const observerRef = useRef<HTMLDivElement>(null) // Intersection Observer를 위한 ref
 
   // 내가 찜한 글 목록을 불러와서 Set에 저장하는 함수
   const fetchMyLikes = useCallback(async () => {
     // 로그인 상태가 아니면 실행하지 않음
     if (!localStorage.getItem('accessToken')) return
     try {
-      const response = await axios.get('/api/my/likes', {
+      const response = await axios.get<{ postId: number }[]>('/api/my/likes', {
         headers: getAuthHeader()
       })
       const likedIds = new Set(response.data.map(post => post.postId))
@@ -1042,67 +1084,78 @@ const Marketplace = () => {
   }, [])
 
   // API 호출 로직
-  const fetchPosts = useCallback(async (params, pageToFetch = 0) => {
-    setIsLoading(true)
-    if (pageToFetch === 0) {
-      setError('')
-    }
-    try {
-      const activeParams = {
-        page: pageToFetch,
-        size: 12,
-        sort: params.sort
-      }
-      if (params.query) activeParams.query = params.query
-      if (params.category) activeParams.category = params.category
-      if (params.minPrice) activeParams.minPrice = params.minPrice
-      if (params.maxPrice) activeParams.maxPrice = params.maxPrice
-
-      const { data } = await axios.get('/api/posts', {
-        params: activeParams,
-        timeout: 10000
-      })
-
-      const { items, isLast } = normalizePostListResponse(
-        data,
-        activeParams.size
-      )
-      const safeItems = Array.isArray(items) ? items : []
-      const expectedPageSize =
-        typeof activeParams.size === 'number'
-          ? activeParams.size
-          : safeItems.length || 0
-      const hasMoreFallback =
-        expectedPageSize > 0 ? safeItems.length >= expectedPageSize : false
-      const shouldContinue =
-        typeof isLast === 'boolean' ? !isLast : hasMoreFallback
-
-      setPosts(prev =>
-        pageToFetch === 0 ? safeItems : [...prev, ...safeItems]
-      )
-      setHasMore(shouldContinue)
-      setPage(pageToFetch + 1)
-    } catch (error) {
+  const fetchPosts = useCallback(
+    async (params: MarketplaceQuery, pageToFetch = 0) => {
+      setIsLoading(true)
       if (pageToFetch === 0) {
-        setPosts([])
+        setError('')
       }
-      setHasMore(false)
+      try {
+        const activeParams: {
+          page: number
+          size: number
+          sort: string
+          query?: string
+          category?: string
+          minPrice?: string
+          maxPrice?: string
+        } = {
+          page: pageToFetch,
+          size: 12,
+          sort: params.sort
+        }
+        if (params.query) activeParams.query = params.query
+        if (params.category) activeParams.category = params.category
+        if (params.minPrice) activeParams.minPrice = params.minPrice
+        if (params.maxPrice) activeParams.maxPrice = params.maxPrice
 
-      if (error.code === 'ECONNABORTED') {
-        setError('요청 시간이 초과되었어요. 네트워크 상태를 확인해주세요 📡')
-      } else if (error.response?.status === 404) {
-        setError('해당 페이지를 찾을 수 없어요 🤔')
-      } else if (error.response?.status >= 500) {
-        setError('서버에 문제가 발생했어요. 잠시 후 다시 시도해주세요 🛠️')
-      } else {
-        setError(
-          '게시글을 불러오는 중 오류가 발생했어요. 잠시 후 다시 시도해주세요 😅'
+        const { data } = await axios.get<PostListPayload>('/api/posts', {
+          params: activeParams,
+          timeout: 10000
+        })
+
+        const { items, isLast } = normalizePostListResponse(
+          data,
+          activeParams.size
         )
+        const safeItems = Array.isArray(items) ? items : []
+        const expectedPageSize =
+          typeof activeParams.size === 'number'
+            ? activeParams.size
+            : safeItems.length || 0
+        const hasMoreFallback =
+          expectedPageSize > 0 ? safeItems.length >= expectedPageSize : false
+        const shouldContinue =
+          typeof isLast === 'boolean' ? !isLast : hasMoreFallback
+
+        setPosts(prev =>
+          pageToFetch === 0 ? safeItems : [...prev, ...safeItems]
+        )
+        setHasMore(shouldContinue)
+        setPage(pageToFetch + 1)
+      } catch (error) {
+        if (pageToFetch === 0) {
+          setPosts([])
+        }
+        setHasMore(false)
+
+        if ((error as AxiosError).code === 'ECONNABORTED') {
+          setError('요청 시간이 초과되었어요. 네트워크 상태를 확인해주세요 📡')
+        } else if ((error as AxiosError).response?.status === 404) {
+          setError('해당 페이지를 찾을 수 없어요 🤔')
+        } else if (((error as AxiosError).response?.status as number) >= 500) {
+          setError('서버에 문제가 발생했어요. 잠시 후 다시 시도해주세요 🛠️')
+        } else {
+          setError(
+            '게시글을 불러오는 중 오류가 발생했어요. 잠시 후 다시 시도해주세요 😅'
+          )
+        }
+      } finally {
+        setIsLoading(false)
       }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+    },
+    []
+  )
 
   // 검색 조건이 바뀔 때마다, 데이터를 초기화하고 첫 페이지부터 다시 로드
   useEffect(() => {
@@ -1142,7 +1195,7 @@ const Marketplace = () => {
   }, [hasMore, isLoading, fetchPosts, searchParams, page])
 
   // 찜하기/찜취소 핸들러
-  const handleLikeToggle = async (e, postId) => {
+  const handleLikeToggle = async (e: React.MouseEvent, postId: number) => {
     e.stopPropagation() // 카드 클릭 이벤트 전파 방지
     if (!localStorage.getItem('accessToken')) {
       alert('로그인이 필요한 기능이에요! 😊')
@@ -1217,23 +1270,23 @@ const Marketplace = () => {
     }
   }
 
-  const handleBookClick = postId => navigate(`/posts/${postId}`)
+  const handleBookClick = (postId: number) => navigate(`/posts/${postId}`)
 
-  const handleSearch = e => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setSearchParams(prev => ({ ...prev, query: searchQuery }))
   }
 
   // 검색어 입력 핸들러 추가
-  const handleSearchInputChange = e => {
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
   }
 
-  const handleSortChange = e => {
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSearchParams(prev => ({ ...prev, sort: e.target.value }))
   }
 
-  const handleCategoryChange = e => {
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSearchParams(prev => ({ ...prev, category: e.target.value }))
   }
 
@@ -1262,7 +1315,7 @@ const Marketplace = () => {
 
   // 카테고리 옵션 생성 함수
   const renderCategoryOptions = () => {
-    const options = []
+    const options: React.ReactElement[] = []
     const categories = getCategories(t)
     Object.keys(categories).forEach(majorCategory => {
       Object.keys(categories[majorCategory]).forEach(college => {
@@ -1281,7 +1334,7 @@ const Marketplace = () => {
   }
 
   // 책 카드 렌더링 함수
-  const renderBookCard = post => (
+  const renderBookCard = (post: SalePostSummary) => (
     <BookCard
       key={post.postId}
       onClick={() => handleBookClick(post.postId)}>
@@ -1308,8 +1361,11 @@ const Marketplace = () => {
 
   // 필터 팝오버 외부 클릭 시 닫기 핸들러
   useEffect(() => {
-    const handleClickOutside = event => {
-      if (filterRef.current && !filterRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target as Node)
+      ) {
         setFilterOpen(false)
       }
     }
@@ -1323,7 +1379,7 @@ const Marketplace = () => {
   }, [filterOpen])
 
   // Enter 키로 검색 실행하는 핸들러
-  const handleSearchKeyPress = e => {
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
       setSearchParams(prev => ({ ...prev, query: searchQuery }))
