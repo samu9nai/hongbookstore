@@ -3,16 +3,74 @@ import React, { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import { LucideArrowLeft, LucideBook, LucideSearch } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import WarningModal from '@/shared/layout/WarningModal'
 import { useWriting } from '@/shared/contexts/WritingContext'
 
+/** 기존 코드가 사용자 ID를 찾던 JWT 클레임 */
+interface JwtClaims {
+  userId?: string | number
+  id?: string | number
+  user_id?: string | number
+  uid?: string | number
+  sub?: string | number
+  nickname?: string
+}
+
+/** 책 검색 결과 항목. 백엔드 KakaoBookSearchResponseDTO.Document에서 화면이 읽는 필드다 */
+interface RawBook {
+  title?: string
+  authors?: string[]
+  author?: string
+  publisher?: string
+  isbn?: string
+  thumbnail?: string
+}
+
+/** 책 검색 응답. documents(카카오) 외에는 예전 코드가 대비하던 모양이다 */
+interface BookSearchResponse {
+  documents?: RawBook[]
+  items?: RawBook[]
+  results?: RawBook[]
+}
+
+/**
+ * 화면에 쓰는 책 정보. category·department는 normalizeBook이 채우지 않지만
+ * handleBookSelect가 읽는다(FE-13)
+ */
+interface SearchBook {
+  title: string
+  author: string
+  publisher: string
+  isbn: string
+  thumbnail: string
+  category?: string
+  department?: string
+}
+
+/** 작성 폼 입력값. 가격은 입력 상자 값이라 문자열이다 */
+interface WantedForm {
+  title: string
+  isbn: string
+  author: string
+  condition: string
+  price: string
+  mainCategory: string
+  subCategory: string
+  detailCategory: string
+  content: string
+}
+
+/** 대분류 → 중분류 → 학과 목록 */
+type CategoryMap = Record<string, Record<string, string[]>>
+
 /* =========================
    헬퍼: userId 보장하기
    ========================= */
 // JWT payload 파싱
-function parseJwt(token) {
+function parseJwt(token: string): JwtClaims | null {
   try {
     const base64Url = token.split('.')[1]
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
@@ -72,7 +130,7 @@ const getAuthHeader = () => {
 }
 
 // 공백 구분된 ISBN에서 우선순위 선택
-const pickIsbn = raw => {
+const pickIsbn = (raw: string | undefined) => {
   const tokens = String(raw || '')
     .split(/\s+/)
     .map(t => t.trim())
@@ -84,7 +142,9 @@ const pickIsbn = raw => {
 }
 
 // 카카오/알라딘 등 포맷을 표준 구조로
-const toBookArray = data => {
+const toBookArray = (
+  data: BookSearchResponse | null | undefined
+): RawBook[] => {
   if (!data) return []
   if (Array.isArray(data.documents)) return data.documents
   if (Array.isArray(data.items)) return data.items
@@ -92,7 +152,7 @@ const toBookArray = data => {
   if (Array.isArray(data)) return data
   return []
 }
-const normalizeBook = doc => ({
+const normalizeBook = (doc: RawBook): SearchBook => ({
   title: doc?.title ?? '',
   author: Array.isArray(doc?.authors)
     ? doc.authors.filter(Boolean).join(', ')
@@ -105,7 +165,7 @@ const normalizeBook = doc => ({
 // 가격 한도(백엔드와 통일)
 const PRICE_MIN = 0
 const PRICE_MAX = 1_000_000_000
-const clampInt = (val, min, max) => {
+const clampInt = (val: string, min: number, max: number) => {
   if (val === '' || val === null || typeof val === 'undefined') return ''
   let n = Math.floor(Number(val))
   if (!Number.isFinite(n)) return ''
@@ -281,7 +341,7 @@ const InputTypeButtons = styled.div`
   gap: 1rem;
   margin-bottom: 1rem;
 `
-const InputTypeButton = styled.button`
+const InputTypeButton = styled.button<{ $active: boolean }>`
   padding: 0.75rem 1.5rem;
   border: 2px solid ${props => (props.$active ? '#007bff' : '#ddd')};
   background: ${props => (props.$active ? '#007bff' : 'white')};
@@ -385,7 +445,7 @@ const SelectedBookDisplay = styled.div`
 `
 
 /* -------------------- 카테고리 -------------------- */
-const getCategories = t => ({
+const getCategories = (t: TFunction): CategoryMap => ({
   [t('wantedWrite.category.major')]: {
     [t('categories.major.경영대학')]: [t('departments.경영학부')],
     [t('categories.major.공과대학')]: [
@@ -453,7 +513,7 @@ const getCategories = t => ({
 
 export default function WantedWrite() {
   const { t } = useTranslation()
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<WantedForm>({
     title: '',
     isbn: '', // 검색으로 채움(현재 API 전송 X)
     author: '',
@@ -464,15 +524,17 @@ export default function WantedWrite() {
     detailCategory: '',
     content: '' // ✅ 본문
   })
-  const [errors, setErrors] = useState({})
-  const [inputType, setInputType] = useState('title') // 'title' | 'search'
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [inputType, setInputType] = useState<'title' | 'search'>('title')
   const [showBookSearch, setShowBookSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState([])
+  const [searchResults, setSearchResults] = useState<SearchBook[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
 
   const [showWarningModal, setShowWarningModal] = useState(false)
-  const [pendingNavigation, setPendingNavigation] = useState(null)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+    null
+  )
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   // 카테고리 트리: 상태로 보관하지 않고 계산값으로 사용
@@ -512,7 +574,7 @@ export default function WantedWrite() {
   }, [formData, setUnsavedChanges])
 
   useEffect(() => {
-    const beforeUnload = e => {
+    const beforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
         e.preventDefault()
         e.returnValue = ''
@@ -601,7 +663,11 @@ export default function WantedWrite() {
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- 수정할 글은 id가 바뀔 때만 불러온다
   }, [isEdit, id])
 
-  const handleInputChange = e => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target
     let next = value
     if (name === 'price') {
@@ -611,13 +677,13 @@ export default function WantedWrite() {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
   }
 
-  const handleMajorChange = e => {
+  const handleMajorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const mainCategory = e.target.value
     const mainNode = (catTree || []).find(m => m.name === mainCategory)
     const firstSub = mainNode?.children?.[0]?.name || ''
     const firstDetail = firstSub
-      ? mainNode.children.find(s => s.name === firstSub)?.children?.[0]?.name ||
-        ''
+      ? mainNode!.children.find(s => s.name === firstSub)?.children?.[0]
+          ?.name || ''
       : ''
     setFormData(prev => ({
       ...prev,
@@ -626,7 +692,7 @@ export default function WantedWrite() {
       detailCategory: firstDetail || ''
     }))
   }
-  const handleSubChange = e => {
+  const handleSubChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const subCategory = e.target.value
     const mainNode = (catTree || []).find(m => m.name === formData.mainCategory)
     const firstDetail = subCategory
@@ -639,7 +705,7 @@ export default function WantedWrite() {
       detailCategory: firstDetail || ''
     }))
   }
-  const handleDetailChange = e => {
+  const handleDetailChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, detailCategory: e.target.value }))
   }
 
@@ -659,7 +725,7 @@ export default function WantedWrite() {
     }
     setSearchLoading(true)
     try {
-      const res = await axios.get('/api/search/books', {
+      const res = await axios.get<BookSearchResponse>('/api/search/books', {
         params: { query: searchQuery.trim() },
         headers: getAuthHeader()
       })
@@ -674,7 +740,7 @@ export default function WantedWrite() {
     }
   }
 
-  const handleBookSelect = book => {
+  const handleBookSelect = (book: SearchBook) => {
     const mainCategory = book.category || ''
     if (!mainCategory) {
       const mainCategory = book.department
@@ -722,7 +788,7 @@ export default function WantedWrite() {
   }
 
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors: Record<string, string> = {}
 
     // 제목/본문 최소 입력 보장: 두 항목 모두 비어있으면 에러
     if (!formData.title.trim() && !formData.content.trim()) {
@@ -752,7 +818,7 @@ export default function WantedWrite() {
   }
 
   // 실제 API 연동: 등록/수정
-  const handleSubmit = async e => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
     // 이전 에러 초기화
@@ -828,7 +894,9 @@ export default function WantedWrite() {
               lvl
             setErrors(prev => ({ ...prev, [data.field]: fieldMsg }))
             // 해당 필드로 포커스 이동(가능한 경우)
-            const el = document.querySelector(`[name="${data.field}"]`)
+            const el = document.querySelector<HTMLElement>(
+              `[name="${data.field}"]`
+            )
             if (el && typeof el.focus === 'function') el.focus()
             return // 모더레이션 에러는 알림창 없이 필드 에러로 처리
           }
@@ -868,7 +936,7 @@ export default function WantedWrite() {
   }
 
   // 안전 네비게이션
-  const safeNavigate = path => {
+  const safeNavigate = (path: string) => {
     if (hasUnsavedChanges) {
       setPendingNavigation(path)
       setShowWarningModal(true)
