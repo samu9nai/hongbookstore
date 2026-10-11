@@ -34,4 +34,9 @@ interface Window {
   naver?: typeof naver
   /** ChatRoom이 웹소켓 주소에서 뽑아 둔 백엔드 호스트 */
   __HBS_BACKEND_HOST__?: string
+  /** 개발 모드에서 i18n.ts가 디버깅용으로 노출한다 */
+  i18n?: import('i18next').i18n
 }
+
+/** i18n.ts가 읽는다. Vite가 process.env.NODE_ENV를 모드 값으로 바꿔 넣는다 */
+declare const process: { env: { NODE_ENV?: string } }

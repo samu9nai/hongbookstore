@@ -11,8 +11,6 @@
       "@/*": ["./src/*"]
     },
     "strict": true,
-    "allowJs": true,
-    "checkJs": false,
     "isolatedModules": true,
     "noEmit": true,
     "skipLibCheck": true

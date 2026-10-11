@@ -7,7 +7,7 @@ import {
 } from 'react-router-dom'
 import GlobalStyles from './GlobalStyles'
 import Header from '@/shared/layout/Header'
-import i18n from './i18n.js'
+import i18n from './i18n'
 import Hero from '@/features/home/Hero'
 import Footer from '@/shared/layout/Footer'
 import { Loading } from '@/shared/ui'
@@ -28,7 +28,6 @@ import PostDetail from '@/features/marketplace/PostDetail'
 
 import ChatList from '@/features/chat/ChatList'
 import ChatRoomWrapper from '@/features/chat/ChatRoomWrapper'
-import ChatRoom from '@/features/chat/ChatRoom'
 
 import MapPage from '@/features/map/Map'
 
@@ -190,9 +189,7 @@ function App() {
                     <>
                       <Header />
                       {/* 프로젝트 구조에 맞게 래퍼 사용 */}
-                      <ChatRoomWrapper>
-                        <ChatRoom />
-                      </ChatRoomWrapper>
+                      <ChatRoomWrapper />
                     </>
                   </RequireAuth>
                 }
