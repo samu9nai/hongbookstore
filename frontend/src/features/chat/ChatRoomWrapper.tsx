@@ -1,27 +1,9 @@
 import React from 'react'
 import ChatRoom from './ChatRoom'
-import { useParams } from 'react-router-dom'
 
+// ChatRoom은 props를 받지 않고 주소의 chatId를 직접 읽는다
 const ChatRoomWrapper = () => {
-  // ✅ 반드시 chatId로 꺼내야 맞음!
-  const { chatId } = useParams()
-
-  const userJson = localStorage.getItem('user')
-  let username = '익명'
-
-  if (userJson) {
-    try {
-      const userObj = JSON.parse(userJson)
-      username = userObj.username || '익명'
-    } catch {}
-  }
-
-  return (
-    <ChatRoom
-      chatId={chatId}
-      username={username}
-    />
-  )
+  return <ChatRoom />
 }
 
 export default ChatRoomWrapper
