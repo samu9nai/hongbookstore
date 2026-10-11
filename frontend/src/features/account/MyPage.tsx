@@ -32,7 +32,7 @@ import Modal from '@/shared/ui/Modal'
 import Loading from '@/shared/ui/Loading'
 // 지도 선택 기능 제거로 NaverMap import 불필요
 import { AuthCtx } from '@/shared/contexts/AuthContext'
-import AdminReportCard from './AdminReportCard.jsx'
+import AdminReportCard from './AdminReportCard'
 
 const MyPageContainer = styled.div`
   padding: 2rem 1rem 4rem;
