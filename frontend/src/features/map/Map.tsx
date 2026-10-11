@@ -11,11 +11,88 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import NaverMap from './Navermap'
+import type { MapCategory, MapPlace, NaverMapHandle } from './Navermap'
 import UserCategory from './UserCategory'
+import type { UserCategoryItem } from './UserCategory'
 import PlaceDetailModal from './PlaceDetailModal'
 import { useLocation } from './LocationContext'
 import { Loading } from '@/shared/ui'
 import api from '@/shared/api/client'
+
+/** 네이버 지역 검색 결과의 항목. 백엔드는 네이버 응답의 items만 홍대 거리순으로 바꿔 보낸다 */
+interface NaverLocalItem {
+  title: string
+  address: string
+  roadAddress?: string
+  mapx: string
+  mapy: string
+  category?: string
+}
+
+interface NaverLocalResponse {
+  items?: NaverLocalItem[]
+}
+
+/** 검색 결과를 지도 장소 모양으로 바꾼 값. 주소는 항상 있다 */
+interface SearchPlace extends MapPlace {
+  id: string
+  address: string
+}
+
+/** 저장할 때 보내는 값. 백엔드 PlaceDto.SaveRequest와 같다 */
+interface PlaceSaveRequest {
+  name: string
+  category: string
+  address: string
+  description: string
+  lat: number
+  lng: number
+}
+
+/**
+ * 카테고리에 담긴 장소의 응답 항목. 백엔드는 PlaceDto.Response 배열을 보내지만
+ * 기존 코드가 여러 모양에 대비하므로 넓게 둔다
+ */
+interface RawCategoryPlace {
+  id?: number | string
+  placeId?: number | string
+  place_id?: number | string
+  name?: string
+  placeName?: string
+  title?: string
+  address?: string
+  roadAddress?: string
+  addr?: string
+  lat?: unknown
+  latitude?: unknown
+  lng?: unknown
+  longitude?: unknown
+  place?: RawCategoryPlace
+}
+
+type CategoryPlacesResponse =
+  | RawCategoryPlace[]
+  | { places?: RawCategoryPlace[]; items?: RawCategoryPlace[] }
+
+/** 응답 항목을 정규화한 값. 좌표가 숫자가 아니면 null이다 */
+interface CategoryPlace {
+  id: number | string | undefined
+  name: string
+  address: string
+  lat: number | null
+  lng: number | null
+}
+
+/** 장소 추가 모달의 입력값 */
+interface NewPlaceForm {
+  name: string
+  category: string
+  address: string
+  detailedAddress: string
+  description: string
+  photos: unknown[]
+  coordinates: { lat: number; lng: number } | null
+}
 
 // 공용 axios 인스턴스(`src/lib/api.js`)를 그대로 사용
 // 모든 요청은 '/api'를 자동 프록시 경유하므로 로컬과 배포 환경 모두 동일하게 동작
@@ -24,11 +101,16 @@ import api from '@/shared/api/client'
 const HONGIK_CENTER = { lat: 37.5513, lng: 126.9246 }
 
 // 장소 검색
-const searchPlacesFromBackend = async query => {
+const searchPlacesFromBackend = async (
+  query: string
+): Promise<SearchPlace[]> => {
   if (!query.trim()) return []
   try {
-    const data = await api.get('/places/search', { params: { query } })
-    const res = typeof data === 'string' ? JSON.parse(data) : data
+    const data = await api.get<NaverLocalResponse | string>('/places/search', {
+      params: { query }
+    })
+    const res: NaverLocalResponse =
+      typeof data === 'string' ? JSON.parse(data) : data
     if (res && Array.isArray(res.items)) {
       return res.items.map(item => ({
         id: item.address + item.title,
@@ -46,9 +128,9 @@ const searchPlacesFromBackend = async query => {
 }
 
 // 저장된 장소 전체
-const getPlacesFromBackend = async () => {
+const getPlacesFromBackend = async (): Promise<MapPlace[]> => {
   try {
-    const data = await api.get('/places')
+    const data = await api.get<MapPlace[]>('/places')
     return Array.isArray(data) ? data : []
   } catch {
     alert('저장된 장소를 불러오는 데 실패했습니다.')
@@ -57,9 +139,11 @@ const getPlacesFromBackend = async () => {
 }
 
 // 장소 저장
-const savePlaceToBackend = async placeData => {
+const savePlaceToBackend = async (
+  placeData: PlaceSaveRequest
+): Promise<MapPlace | null> => {
   try {
-    const data = await api.post('/places', placeData)
+    const data = await api.post<MapPlace>('/places', placeData)
     return data
   } catch {
     alert('장소 저장에 실패했습니다.')
@@ -68,27 +152,32 @@ const savePlaceToBackend = async placeData => {
 }
 
 // 사용자 카테고리
-const getUserCategories = async () => {
-  const data = await api.get('/user-categories')
+const getUserCategories = async (): Promise<UserCategoryItem[]> => {
+  const data = await api.get<UserCategoryItem[]>('/user-categories')
   return Array.isArray(data) ? data : []
 }
 
 // 카테고리 생성 (서버는 JSON {name} 기대)
-const createUserCategory = async name => {
-  const data = await api.post('/user-categories', { name })
+const createUserCategory = async (name: string) => {
+  const data = await api.post<UserCategoryItem>('/user-categories', { name })
   return data
 }
 
-const renameUserCategory = async (id, name) => {
-  const data = await api.patch(`/user-categories/${id}`, { name })
+const renameUserCategory = async (id: number, name: string) => {
+  const data = await api.patch<UserCategoryItem>(`/user-categories/${id}`, {
+    name
+  })
   return data
 }
 
-const deleteUserCategory = async id => {
+const deleteUserCategory = async (id: number) => {
   await api.delete(`/user-categories/${id}`)
 }
 
-const addPlaceIntoUserCategory = async (categoryId, placeId) => {
+const addPlaceIntoUserCategory = async (
+  categoryId: number | string,
+  placeId: MapPlace['id']
+) => {
   try {
     await api.post(`/user-categories/${categoryId}/places/${placeId}`)
   } catch {
@@ -96,7 +185,10 @@ const addPlaceIntoUserCategory = async (categoryId, placeId) => {
   }
 }
 
-const removePlaceFromUserCategory = async (categoryId, placeId) => {
+const removePlaceFromUserCategory = async (
+  categoryId: number,
+  placeId: CategoryPlace['id']
+) => {
   try {
     await api.delete(`/user-categories/${categoryId}/places/${placeId}`)
   } catch {
@@ -107,13 +199,19 @@ const removePlaceFromUserCategory = async (categoryId, placeId) => {
 }
 
 // 카테고리에 속한 장소 목록 불러오기 (여러 스펙 대응)
-const getPlacesOfUserCategory = async categoryId => {
+const getPlacesOfUserCategory = async (
+  categoryId: number
+): Promise<CategoryPlace[]> => {
   const tryList = [
-    () => api.get(`/user-categories/${categoryId}/places`),
-    () => api.get(`/user-categories/${categoryId}`), // { id, name, places: [...] } 가능성
-    () => api.get(`/user-categories/${categoryId}/place-list`)
+    () =>
+      api.get<CategoryPlacesResponse>(`/user-categories/${categoryId}/places`),
+    () => api.get<CategoryPlacesResponse>(`/user-categories/${categoryId}`), // { id, name, places: [...] } 가능성
+    () =>
+      api.get<CategoryPlacesResponse>(
+        `/user-categories/${categoryId}/place-list`
+      )
   ]
-  let lastErr
+  let lastErr: unknown
   for (const fn of tryList) {
     try {
       const data = await fn()
@@ -159,11 +257,11 @@ const getPlacesOfUserCategory = async categoryId => {
 const MapPage = () => {
   const { t } = useTranslation()
   const { userLocation } = useLocation()
-  const mapRef = useRef(null)
+  const mapRef = useRef<NaverMapHandle>(null)
 
   // 장소 유형 필터(고정 목록)
   const [selectedType, setSelectedType] = useState('all')
-  const categories = useMemo(
+  const categories = useMemo<MapCategory[]>(
     () => [
       {
         id: 'restaurant',
@@ -185,21 +283,25 @@ const MapPage = () => {
   )
 
   // DB 장소
-  const [places, setPlaces] = useState([])
+  const [places, setPlaces] = useState<MapPlace[]>([])
 
   // 사용자 카테고리 & 선택 상태
-  const [userCategories, setUserCategories] = useState([])
-  const [selectedUserCategoryId, setSelectedUserCategoryId] = useState(null)
+  const [userCategories, setUserCategories] = useState<UserCategoryItem[]>([])
+  const [selectedUserCategoryId, setSelectedUserCategoryId] = useState<
+    number | null
+  >(null)
   const [selectedUserCategoryName, setSelectedUserCategoryName] = useState('')
-  const [selectedCategoryPlaces, setSelectedCategoryPlaces] = useState([])
+  const [selectedCategoryPlaces, setSelectedCategoryPlaces] = useState<
+    CategoryPlace[]
+  >([])
   const [loadingSelectedCat, setLoadingSelectedCat] = useState(false)
 
   // 기타 UI 상태
   const [showAddPlace, setShowAddPlace] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [showPlaceDetail, setShowPlaceDetail] = useState(false)
-  const [selectedPlace, setSelectedPlace] = useState(null)
-  const [newPlace, setNewPlace] = useState({
+  const [selectedPlace, setSelectedPlace] = useState<MapPlace | null>(null)
+  const [newPlace, setNewPlace] = useState<NewPlaceForm>({
     name: '',
     category: 'restaurant',
     address: '',
@@ -209,7 +311,7 @@ const MapPage = () => {
     coordinates: null
   })
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState([])
+  const [searchResults, setSearchResults] = useState<SearchPlace[]>([])
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [isGeocoding] = useState(false)
@@ -295,8 +397,11 @@ const MapPage = () => {
 
   // 드롭다운 외부 클릭 닫기
   useEffect(() => {
-    const handleClickOutside = event => {
-      if (showTypeDropdown && !event.target.closest('.type-filter-dropdown')) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showTypeDropdown &&
+        !(event.target as Element).closest('.type-filter-dropdown')
+      ) {
         setShowTypeDropdown(false)
       }
     }
@@ -304,7 +409,7 @@ const MapPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showTypeDropdown])
 
-  const handleSearchResultClick = place => {
+  const handleSearchResultClick = (place: SearchPlace) => {
     setShowSearchResults(false)
     setSearchQuery('')
     mapRef.current?.moveToLocation(place.lat, place.lng, 16)
@@ -336,7 +441,7 @@ const MapPage = () => {
       return
     }
 
-    const placeData = {
+    const placeData: PlaceSaveRequest = {
       name: newPlace.name,
       category: newPlace.category,
       address: fullAddress,
@@ -373,7 +478,10 @@ const MapPage = () => {
   })
 
   // 사용자 카테고리 선택/해제
-  const handleSelectUserCategory = async (categoryId, categoryName) => {
+  const handleSelectUserCategory = async (
+    categoryId: number,
+    categoryName?: string
+  ) => {
     setSelectedUserCategoryId(categoryId)
     setSelectedUserCategoryName(
       categoryName ??
@@ -406,7 +514,7 @@ const MapPage = () => {
   })()
 
   // 사용자 카테고리 조작
-  const handleAddUserCategory = async name => {
+  const handleAddUserCategory = async (name: string) => {
     const trimmed = (name || '').trim()
     if (!trimmed) return
     try {
@@ -417,7 +525,7 @@ const MapPage = () => {
     }
   }
 
-  const handleDeleteUserCategory = async categoryId => {
+  const handleDeleteUserCategory = async (categoryId: number) => {
     try {
       await deleteUserCategory(categoryId)
       setUserCategories(prev => prev.filter(cat => cat.id !== categoryId))
@@ -427,7 +535,10 @@ const MapPage = () => {
     }
   }
 
-  const handleUpdateUserCategory = async (categoryId, newName) => {
+  const handleUpdateUserCategory = async (
+    categoryId: number,
+    newName: string
+  ) => {
     const trimmed = (newName || '').trim()
     if (!trimmed) return
     try {
@@ -442,9 +553,13 @@ const MapPage = () => {
     }
   }
 
-  const handleAddPlaceToCategory = async (placeId, categoryId) => {
+  const handleAddPlaceToCategory = async (
+    placeId: MapPlace['id'],
+    categoryId: string
+  ) => {
     try {
       await addPlaceIntoUserCategory(categoryId, placeId)
+      // @ts-expect-error -- FE-16: 숫자 id와 선택 상자의 문자열 값을 비교해 항상 거짓이다. 동작을 바꾸지 않으려고 그대로 둔다
       if (selectedUserCategoryId === categoryId) {
         // 선택된 카테고리일 경우 즉시 반영
         await handleSelectUserCategory(categoryId, selectedUserCategoryName)
@@ -454,7 +569,9 @@ const MapPage = () => {
     }
   }
 
-  const handleRemovePlaceFromSelectedCategory = async placeId => {
+  const handleRemovePlaceFromSelectedCategory = async (
+    placeId: CategoryPlace['id']
+  ) => {
     if (!selectedUserCategoryId) return
     try {
       await removePlaceFromUserCategory(selectedUserCategoryId, placeId)
@@ -464,13 +581,15 @@ const MapPage = () => {
     }
   }
 
-  const handlePlaceClick = place => {
+  const handlePlaceClick = (place: MapPlace) => {
     setSelectedPlace(place)
     setShowPlaceDetail(true)
   }
 
   // 사이드바 보조 드롭다운(백업 UI): onSelectCategory 콜백이 없을 경우 대비
-  const handleBackupSelectChange = async e => {
+  const handleBackupSelectChange = async (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     const value = e.target.value
     if (value === '') {
       clearSelectedUserCategory()
@@ -500,15 +619,12 @@ const MapPage = () => {
           )}
         </SidebarHeader>
 
-        {/* 사용자 카테고리 리스트 (기존 컴포넌트).
-            아이템 클릭 시 props.onSelectCategory?.(category) 만 호출해주면 즉시 연동됩니다. */}
+        {/* 사용자 카테고리 리스트 (기존 컴포넌트). 항목을 눌러 선택하는 기능은 없다 */}
         <UserCategory
           categories={userCategories}
           onAddCategory={handleAddUserCategory}
           onDeleteCategory={handleDeleteUserCategory}
           onUpdateCategory={handleUpdateUserCategory}
-          loading={loadingCats}
-          onSelectCategory={cat => handleSelectUserCategory(cat.id, cat.name)}
         />
 
         {/* 백업 UI: 드롭다운으로도 선택 가능 (onSelectCategory가 없을 때 사용) */}
@@ -581,7 +697,8 @@ const MapPage = () => {
                             )
                           }
                           const openObj = full?.id ? full : null
-                          if (openObj) handlePlaceClick(full)
+                          // 전체 목록에 없는 장소는 좌표가 null일 수 있지만 기존 코드처럼 그대로 연다
+                          if (openObj) handlePlaceClick(full as MapPlace)
                         }}>
                         <LucideMapPin />
                         <div>
@@ -1080,7 +1197,7 @@ const TypeDropdownMenu = styled.div`
   margin-top: 4px;
 `
 
-const TypeDropdownItem = styled.div`
+const TypeDropdownItem = styled.div<{ $isSelected: boolean }>`
   padding: 12px 16px;
   cursor: pointer;
   font-size: 14px;
@@ -1098,7 +1215,7 @@ const TypeDropdownItem = styled.div`
   }
 `
 
-const SearchResultsContainer = styled.div`
+const SearchResultsContainer = styled.div<{ $show: boolean }>`
   position: absolute;
   top: 140px;
   left: 20px;
@@ -1353,7 +1470,7 @@ const CategoryGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 10px;
 `
-const CategoryButton = styled.button`
+const CategoryButton = styled.button<{ $isSelected: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
