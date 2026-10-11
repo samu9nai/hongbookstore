@@ -26,9 +26,9 @@ import MyBookstore from '@/features/marketplace/MyBookstore'
 import PostWrite from '@/features/marketplace/PostWrite'
 import PostDetail from '@/features/marketplace/PostDetail'
 
-import ChatList from '@/features/chat/ChatList.jsx'
-import ChatRoomWrapper from '@/features/chat/ChatRoomWrapper.jsx'
-import ChatRoom from '@/features/chat/ChatRoom.jsx'
+import ChatList from '@/features/chat/ChatList'
+import ChatRoomWrapper from '@/features/chat/ChatRoomWrapper'
+import ChatRoom from '@/features/chat/ChatRoom'
 
 import MapPage from '@/features/map/Map'
 
