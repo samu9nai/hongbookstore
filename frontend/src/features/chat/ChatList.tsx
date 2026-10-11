@@ -7,12 +7,65 @@ import {
   LucideCircleCheck,
   LucideSearch
 } from 'lucide-react'
-import SidebarMenu, { MainContent } from '@/shared/layout/SidebarMenu'
+import SidebarMenu, {
+  MainContent,
+  type SidebarMenuKey
+} from '@/shared/layout/SidebarMenu'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getOrCreateChatRoom } from './api/chat'
 import { AuthCtx } from '@/shared/contexts/AuthContext'
-import { createPeerReview } from '@/shared/api/peerReviews'
+import { createPeerReview, type PeerReviewRole } from '@/shared/api/peerReviews'
+import type { ModerationError } from '@/shared/api/client'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
+import type { ChatReservation, ChatRoomResponse } from './types'
+
+/** 화면에 쓰는 거래 상태 */
+type TradeStatus = 'requested' | 'reserved' | 'completed' | 'in_progress'
+
+/** 마지막 메시지가 객체로 올 때의 모양. 백엔드는 마지막 메시지를 보내지 않는다 */
+interface LastMessageObject {
+  message?: string
+  sentAt?: string
+}
+
+/**
+ * 채팅방 목록 응답 항목. 백엔드는 ChatRoomResponse를 보낸다.
+ * 나머지 선택 속성은 백엔드가 보내지 않지만 기존 코드가 대비하는 필드다
+ */
+interface RawChatRoom extends Partial<ChatRoomResponse> {
+  roomId?: number | string
+  chatId?: number | string
+  buyer?: { id?: number; username?: string; name?: string }
+  seller?: { id?: number; username?: string; name?: string }
+  type?: string
+  buyerName?: string
+  sellerName?: string
+  userName?: string
+  postTitle?: string
+  title?: string
+  lastMessage?: string | LastMessageObject
+  lastMessageAt?: string
+  updatedAt?: string
+  lastTime?: string
+  tradeStatus?: string
+  isPending?: boolean
+  isReserved?: boolean
+  isCompleted?: boolean
+  unreadCountForMe?: number
+  unreadCount?: number
+  unread?: number
+  postId?: number
+  hasMyReview?: boolean
+  myReviewedAt?: string | null
+}
+
+type ChatRoomView = ReturnType<typeof normalizeRoom>
+
+/** 후기 저장 오류. 모더레이션 차단이면 인터셉터가 붙인 필드가 있다 */
+type ReviewError = ModerationError & {
+  response?: { data?: { message?: string } }
+}
 
 /* ---------------------------- styled components ---------------------------- */
 
@@ -134,7 +187,7 @@ const TabButtonGroup = styled.div`
   }
 `
 
-const TabButton = styled.button`
+const TabButton = styled.button<{ $active: boolean }>`
   padding: 6px 18px;
   border-radius: 16px;
   border: 1.5px solid ${props => (props.$active ? '#1976d2' : '#e0e0e0')};
@@ -162,7 +215,12 @@ const ChatList = styled.div`
   overflow-y: auto;
 `
 
-const ChatItem = styled.div`
+const ChatItem = styled.div<{
+  $isPending: boolean
+  $isReserved: boolean
+  $isCompleted: boolean
+  $hasUnread: boolean
+}>`
   display: flex;
   align-items: center;
   padding: 20px;
@@ -297,7 +355,7 @@ const UnreadCount = styled.div`
 `
 
 /* 상태 칩 */
-const TradeStatus = styled.div`
+const TradeStatus = styled.div<{ $status: TradeStatus }>`
   display: inline-block;
   margin-top: 4px;
   padding: 2px 12px;
@@ -437,12 +495,19 @@ const ModalButton = styled.button`
 
 /* ---------------------------- 유틸 & 정규화 로직 ---------------------------- */
 
-function safeLower(v) {
+function safeLower(v: string | undefined) {
   return (v ?? '').toString().toLowerCase()
 }
 
 /* 상태 문자열 정규화: requested | reserved | completed | in_progress */
-function normalizeTradeStatus(status, flags = {}) {
+function normalizeTradeStatus(
+  status: string | undefined,
+  flags: {
+    isPending?: boolean
+    isReserved?: boolean
+    isCompleted?: boolean
+  } = {}
+): TradeStatus {
   const s = safeLower(status)
   if (s === 'requested' || flags.isPending) return 'requested'
   if (s === 'reserved' || flags.isReserved) return 'reserved'
@@ -450,7 +515,7 @@ function normalizeTradeStatus(status, flags = {}) {
   return 'in_progress'
 }
 
-function toTimestamp(anyTime) {
+function toTimestamp(anyTime: string | undefined) {
   if (!anyTime) return 0
   const d1 = new Date(anyTime)
   if (!isNaN(d1.getTime())) return d1.getTime()
@@ -465,10 +530,10 @@ function toTimestamp(anyTime) {
   return 0
 }
 
-function formatDisplayTime(ts) {
+function formatDisplayTime(ts: number) {
   if (!ts) return ''
   const d = new Date(ts)
-  if (isNaN(d)) return ''
+  if (isNaN(d.getTime())) return ''
   const now = new Date()
   if (d.toDateString() === now.toDateString()) {
     return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -476,7 +541,7 @@ function formatDisplayTime(ts) {
   return d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
 }
 
-function readMyId() {
+function readMyId(): number | null {
   try {
     const u = localStorage.getItem('user')
     if (u) return JSON.parse(u).id
@@ -491,7 +556,11 @@ function readMyId() {
 }
 
 /** 서버 응답을 화면용 형태로 정규화 */
-function normalizeRoom(raw, myId, t) {
+function normalizeRoom(
+  raw: RawChatRoom,
+  myId: number | null | undefined,
+  t: TFunction
+) {
   const id = raw.id ?? raw.roomId ?? raw.chatId
   const buyerId = raw.buyerId ?? raw.buyer?.id
   const sellerId = raw.sellerId ?? raw.seller?.id
@@ -514,8 +583,9 @@ function normalizeRoom(raw, myId, t) {
   const userAvatar = (counterpartyName || '?').slice(0, 1).toUpperCase()
   const bookTitle = raw.bookTitle ?? raw.postTitle ?? raw.title ?? ''
 
-  const lastMsgObj = raw.lastMessage || {}
-  const lastMessage = lastMsgObj.message ?? raw.lastMessage ?? ''
+  // 문자열이면 message·sentAt이 없어 아래에서 문자열을 그대로 쓴다
+  const lastMsgObj = (raw.lastMessage || {}) as LastMessageObject
+  const lastMessage = lastMsgObj.message ?? (raw.lastMessage as string) ?? ''
   const lastTimeRaw =
     raw.lastMessageAt ?? lastMsgObj.sentAt ?? raw.updatedAt ?? raw.lastTime
   const lastTimeTs = toTimestamp(lastTimeRaw)
@@ -562,31 +632,39 @@ const ChatListPage = () => {
   const myId = user?.id ?? readMyId()
 
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('all') // all | seller | buyer
+  const [activeTab, setActiveTab] = useState<'all' | 'seller' | 'buyer'>('all')
   const [searchTerm, setSearchTerm] = useState('')
-  const [roomsRaw, setRoomsRaw] = useState([])
-  const [error, setError] = useState(null)
-  const [reviewModal, setReviewModal] = useState({
+  const [roomsRaw, setRoomsRaw] = useState<RawChatRoom[]>([])
+  const [error, setError] = useState<unknown>(null)
+  const [reviewModal, setReviewModal] = useState<{
+    open: boolean
+    postId: number | null
+    role: PeerReviewRole | null
+  }>({
     open: false,
     postId: null,
     role: null
   })
-  const [star, setStar] = useState(null)
+  const [star, setStar] = useState<number | null>(null)
   const [keywords, setKeywords] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // roomId -> reservation 객체(또는 null) 캐시
-  const [reservationMap, setReservationMap] = useState({})
+  const [reservationMap, setReservationMap] = useState<
+    Record<string, ChatReservation | null>
+  >({})
 
   // ✅ 내가 이미 작성한 후기 여부(로컬 캐시)
-  const [reviewDoneMap, setReviewDoneMap] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('reviewDoneMap') || '{}')
-    } catch {
-      return {}
+  const [reviewDoneMap, setReviewDoneMap] = useState<Record<string, boolean>>(
+    () => {
+      try {
+        return JSON.parse(localStorage.getItem('reviewDoneMap') || '{}')
+      } catch {
+        return {}
+      }
     }
-  })
-  const setReviewDone = (postId, role) => {
+  )
+  const setReviewDone = (postId: number, role: PeerReviewRole) => {
     const key = `${postId}:${role}`
     setReviewDoneMap(prev => {
       const next = { ...prev, [key]: true }
@@ -604,7 +682,7 @@ const ChatListPage = () => {
       try {
         const res = await getOrCreateChatRoom(bookId)
         const room = await res.json()
-        const rid = room?.id ?? room?.roomId
+        const rid = room?.id ?? (room as { roomId?: string })?.roomId
         if (!rid) throw new Error(t('chat.noChatRoomId'))
         void navigate(`/chat/${rid}`, { replace: true })
       } catch {
@@ -643,14 +721,20 @@ const ChatListPage = () => {
     if (!roomsRaw?.length) return
 
     const ids = Array.from(
-      new Set(roomsRaw.map(r => r.id ?? r.roomId ?? r.chatId).filter(Boolean))
+      new Set(
+        roomsRaw.map(r => r.id ?? r.roomId ?? r.chatId).filter(Boolean) as (
+          number | string
+        )[]
+      )
     )
 
     const need = ids.filter(id => !(id in reservationMap))
     if (!need.length) return
 
     const token = localStorage.getItem('accessToken') || ''
-    const headers = token ? { Authorization: `Bearer ${token}` } : {}
+    const headers: Record<string, string> = token
+      ? { Authorization: `Bearer ${token}` }
+      : {}
 
     // 동시성 제한(최대 4개씩)
     const maxConcurrency = 4
@@ -658,7 +742,7 @@ const ChatListPage = () => {
     const nextBatch = () => need.slice(cursor, cursor + maxConcurrency)
 
     void (async () => {
-      const collected = {}
+      const collected: Record<string, ChatReservation | null> = {}
       while (cursor < need.length) {
         const batch = nextBatch()
         await Promise.all(
@@ -694,7 +778,7 @@ const ChatListPage = () => {
   const rooms = useMemo(() => {
     return roomsRaw.map(r => {
       const id = r.id ?? r.roomId ?? r.chatId
-      const rez = reservationMap[id]
+      const rez = reservationMap[id as string]
 
       // 서버 예약 상태 → 화면 상태 플래그
       const rezStatus = rez?.status || null
@@ -732,12 +816,12 @@ const ChatListPage = () => {
 
   const handleBack = () => navigate('/marketplace')
 
-  const handleChatClick = chatId => {
+  const handleChatClick = (chatId: ChatRoomView['id']) => {
     if (!chatId) return
     void navigate(`/chat/${chatId}`)
   }
 
-  const handleSidebarMenu = menu => {
+  const handleSidebarMenu = (menu: SidebarMenuKey) => {
     switch (menu) {
       case 'bookstore/add':
         void navigate('/bookstore/add')
@@ -756,7 +840,7 @@ const ChatListPage = () => {
     }
   }
 
-  const getStatusText = status => {
+  const getStatusText = (status: TradeStatus) => {
     switch (status) {
       case 'requested':
         return t('chat.statusRequested')
@@ -770,7 +854,7 @@ const ChatListPage = () => {
     }
   }
 
-  const openReviewForChat = chat => {
+  const openReviewForChat = (chat: ChatRoomView) => {
     if (chat.tradeStatus !== 'completed') return // 버튼이 안 보이지만 방어
     if (!chat?.salePostId) {
       alert(t('chat.noPostInfo'))
@@ -816,17 +900,23 @@ const ChatListPage = () => {
       alert(t('chat.reviewSaved'))
       setReviewModal({ open: false, postId: null, role: null })
     } catch (e) {
-      if (e.isModeration) {
+      if ((e as ReviewError).isModeration) {
         const pct =
-          typeof e.malicious === 'number'
-            ? `, ${Math.round(e.malicious * 100)}%`
+          typeof (e as ReviewError).malicious === 'number'
+            ? `, ${Math.round(((e as ReviewError).malicious as number) * 100)}%`
             : ''
         alert(
-          (e.message || t('chat.inappropriateContentDetected')) +
-            (e.predictionLevel ? ` (${e.predictionLevel}${pct})` : '')
+          ((e as ReviewError).message ||
+            t('chat.inappropriateContentDetected')) +
+            ((e as ReviewError).predictionLevel
+              ? ` (${(e as ReviewError).predictionLevel}${pct})`
+              : '')
         )
       } else {
-        alert(e.response?.data?.message || t('chat.reviewSaveError'))
+        alert(
+          (e as ReviewError).response?.data?.message ||
+            t('chat.reviewSaveError')
+        )
       }
     } finally {
       setSubmitting(false)
