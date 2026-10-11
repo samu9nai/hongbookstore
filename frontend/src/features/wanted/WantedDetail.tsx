@@ -11,12 +11,79 @@ import {
   LucideUser
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import SidebarMenu, { MainContent } from '@/shared/layout/SidebarMenu'
+import SidebarMenu, {
+  MainContent,
+  type SidebarMenuKey
+} from '@/shared/layout/SidebarMenu'
 import WarningModal from '@/shared/layout/WarningModal'
 import WantedComments from './WantedComments'
 import { useWriting } from '@/shared/contexts/WritingContext'
 import { displayMaskedName } from '@/shared/lib/nameMask'
+
+/** 기존 코드가 탈퇴 여부를 찾던 필드. 백엔드는 보내지 않는다 */
+interface DeactivationHints {
+  requesterStatus?: string
+  userStatus?: string
+  status?: string
+  requesterDeactivated?: boolean
+  authorDeactivated?: boolean
+  userDeactivated?: boolean
+  deactivated?: boolean
+  deleted?: boolean
+  isDeleted?: boolean
+  isDeactivated?: boolean
+  requesterDeactivatedAt?: string
+  requesterDeletedAt?: string
+  deletedAt?: string
+}
+
+/**
+ * 구해요 글 상세. 백엔드 WantedDetailResponseDTO와 같다.
+ * 조회수와 작성자 이름 필드는 백엔드가 보내지 않지만 기존 코드가 대비한다
+ */
+interface WantedDetailData extends DeactivationHints {
+  id: number
+  title: string | null
+  author: string | null
+  /** 서버는 HIGH|MEDIUM|LOW를 보낸다 */
+  condition: string | null
+  price: number
+  category: string | null
+  department: string | null
+  content: string | null
+  contentToxic: boolean
+  contentToxicLevel: string | null
+  contentToxicMalicious: number | null
+  contentToxicClean: number | null
+  contentToxicReason: string | null
+  requesterId: number
+  /** LocalDateTime(오프셋 없는 ISO 문자열) */
+  createdAt: string | null
+  updatedAt: string | null
+  views?: number
+  viewCount?: number
+  requesterNickname?: string
+  requesterName?: string
+  requesterUsername?: string
+  authorName?: string
+  nickname?: string
+}
+
+/** 기존 코드가 현재 사용자를 찾던 JWT 클레임 */
+interface JwtClaims {
+  id?: unknown
+  userId?: unknown
+  uid?: unknown
+  sub?: unknown
+  nickname?: string
+  name?: string
+  preferred_username?: string
+}
+
+/** 사이드바 메뉴와, 사이드바가 보내지 않지만 기존 코드가 처리하던 메뉴 */
+type WantedDetailMenu = SidebarMenuKey | 'comments' | 'detail'
 
 /* ----------------------------- styled components ----------------------------- */
 const PageWrapper = styled.div`
@@ -53,7 +120,7 @@ const Actions = styled.div`
   display: flex;
   gap: 8px;
 `
-const Button = styled.button`
+const Button = styled.button<{ $variant?: 'primary' | 'danger' | 'ghost' }>`
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid
@@ -148,7 +215,7 @@ const PriceChip = styled(Chip)`
   border-color: #d7e7ff;
   color: #0d6efd;
 `
-const ConditionChip = styled(Chip)`
+const ConditionChip = styled(Chip)<{ $condition: string | null }>`
   background: ${({ $condition }) => ($condition === 'HIGH' ? '#eaf7ee' : $condition === 'MEDIUM' ? '#fff6e5' : $condition === 'LOW' ? '#fdeaea' : '#f8fafc')};
   border-color: ${({ $condition }) => ($condition === 'HIGH' ? '#cfeedd' : $condition === 'MEDIUM' ? '#ffe7bf' : $condition === 'LOW' ? '#f7c7c7' : '#e5e7eb')};
   color: ${({ $condition }) => ($condition === 'HIGH' ? '#2e7d32' : $condition === 'MEDIUM' ? '#b26a00' : $condition === 'LOW' ? '#c62828' : '#374151')};
@@ -294,7 +361,7 @@ const ModalTextarea = styled.textarea`
 `
 
 /** ---- Robust current-user inference (JWT → user object → legacy localStorage) ---- */
-function parseJwt(token) {
+function parseJwt(token: string): JwtClaims | null {
   try {
     const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
     const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
@@ -303,15 +370,15 @@ function parseJwt(token) {
     return null
   }
 }
-function toNum(v) {
+function toNum(v: unknown) {
   if (v == null) return null
   const n = Number(v)
   return Number.isFinite(n) ? n : null
 }
 function getCurrentUserLocal() {
   const token = localStorage.getItem('accessToken') || ''
-  let id = null,
-    nickname = null
+  let id: number | null = null,
+    nickname: string | null = null
 
   if (token) {
     const p = parseJwt(token)
@@ -334,7 +401,7 @@ function getCurrentUserLocal() {
 }
 
 /* ---------------------------------- helpers ---------------------------------- */
-function getAuthHeader() {
+function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('accessToken') || ''
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
@@ -343,13 +410,13 @@ function getXsrfTokenFromCookie() {
   const m = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)
   return m ? m[1] : null
 }
-function xsrfHeader() {
+function xsrfHeader(): Record<string, string> {
   const v = getXsrfTokenFromCookie()
   return v ? { 'X-XSRF-TOKEN': v } : {}
 }
 
 // 상태 문자열을 UI 친화적으로 정규화 (상/중/하)
-function normalizeCondition(v, t) {
+function normalizeCondition(v: string | null, t: TFunction) {
   const val = (v ?? '').toString().trim()
   const up = val.toUpperCase()
   if (up === 'HIGH' || val === t('wantedWrite.condition.high'))
@@ -362,7 +429,7 @@ function normalizeCondition(v, t) {
 }
 
 // 카테고리 문자열 번역
-function translateCategory(category, t) {
+function translateCategory(category: string, t: TFunction) {
   if (!category) return '-'
   if (category === '교양') return t('wantedDetail.category.general')
   if (category === '전공') return t('wantedDetail.category.major')
@@ -370,7 +437,7 @@ function translateCategory(category, t) {
 }
 
 // 탈퇴 여부를 다양한 백엔드 표현에서 폭넓게 감지
-function isDeactivatedFromDetail(d) {
+function isDeactivatedFromDetail(d: WantedDetailData) {
   const status = (d?.requesterStatus ?? d?.userStatus ?? d?.status ?? '')
     .toString()
     .toUpperCase()
@@ -403,11 +470,11 @@ function isDeactivatedFromDetail(d) {
 }
 
 // 익명 패턴(익명, 익명123, anonymous 3 ...)은 그대로 유지
-function looksAnonymousName(name, t) {
+function looksAnonymousName(name: string, t: TFunction) {
   const n = (name ?? '').toString().trim()
   if (!n) return false
   const anonKo = (t?.('common.anonymous') || '익명').toString()
-  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const reKoNumbered = /^익명\s*\d*$/i
   const reI18nNumbered = new RegExp(`^${esc(anonKo)}\\s*\\d*$`, 'i')
   const reEn = /^anonymous\s*\d*$/i
@@ -415,7 +482,7 @@ function looksAnonymousName(name, t) {
 }
 
 // 최종 표시 이름: 탈퇴자는 '탈퇴된 회원' 고정, 익명N은 그대로, 나머지는 마스킹
-function nameForDisplay(rawName, deactivated, t) {
+function nameForDisplay(rawName: string, deactivated: boolean, t: TFunction) {
   if (deactivated) return '탈퇴된 회원'
   const n = (rawName ?? '').toString().trim()
   if (!n) return t('common.anonymous') || '익명'
@@ -430,7 +497,7 @@ export default function WantedDetail() {
   const navigate = useNavigate()
   const { setUnsavedChanges, stopWriting } = useWriting()
 
-  const [data, setData] = useState(null)
+  const [data, setData] = useState<WantedDetailData | null>(null)
   const [mine, setMine] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -442,7 +509,7 @@ export default function WantedDetail() {
   const [showReportExitModal, setShowReportExitModal] = useState(false)
 
   // 사이드바 메뉴
-  const handleSidebarMenu = menu => {
+  const handleSidebarMenu = (menu: WantedDetailMenu) => {
     switch (menu) {
       case 'bookstore/add':
         void navigate('/bookstore/add')
@@ -556,7 +623,7 @@ export default function WantedDetail() {
       throw new Error(message)
     } catch (err) {
       setShowDeleteModal(false)
-      const msg = String(err?.message || '')
+      const msg = String((err as Error | undefined)?.message || '')
       if (msg.includes('권한') || msg.includes('403')) {
         alert('삭제 권한이 없습니다. 본인이 작성한 글만 삭제할 수 있습니다.')
       } else if (msg.includes('401')) {
@@ -595,7 +662,7 @@ export default function WantedDetail() {
     }
   }
 
-  const handleReportSubmit = async e => {
+  const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!reportReason) return
     if (reportReason === '기타' && !reportEtcText.trim()) return
@@ -791,7 +858,8 @@ export default function WantedDetail() {
 
               {/* 댓글 섹션 */}
               <div data-section="comments">
-                <WantedComments wantedId={id} />
+                {/* 라우트가 /wanted/:id라 id는 항상 있다 */}
+                <WantedComments wantedId={id!} />
               </div>
             </div>
 

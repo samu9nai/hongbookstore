@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import { LucidePlus, LucideSearch } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import SidebarMenu, { MainContent } from '@/shared/layout/SidebarMenu'
+import SidebarMenu, {
+  MainContent,
+  type SidebarMenuKey
+} from '@/shared/layout/SidebarMenu'
 import { useNavigate } from 'react-router-dom'
 import {
   Grid,
@@ -16,6 +19,28 @@ import {
   SearchButton,
   Loading
 } from '@/shared/ui'
+
+/** 구해요 글 목록 항목. 백엔드 WantedSummaryResponseDTO와 같다 */
+interface WantedSummary {
+  id: number
+  title: string | null
+  author: string | null
+  /** 서버는 HIGH|MEDIUM|LOW를 보낸다. 상|중|하는 예전 데이터다 */
+  condition: string | null
+  price: number
+  /** 전공|교양. 예전 데이터는 '전공 > 학과' 형식이다 */
+  category: string | null
+  department: string | null
+  hasToxicContent: boolean
+}
+
+/** 목록 요청에 덮어쓸 필터. 비우면 화면의 현재 값을 쓴다 */
+interface WantedFilterOverrides {
+  keyword?: string
+  category?: string
+  department?: string
+  sort?: string
+}
 
 const WantedContainer = styled.div`
   width: 100%;
@@ -168,7 +193,7 @@ const DEPARTMENTS = [
 
 const Wanted = () => {
   const { t } = useTranslation()
-  const [wantedPosts, setWantedPosts] = useState([])
+  const [wantedPosts, setWantedPosts] = useState<WantedSummary[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -180,7 +205,7 @@ const Wanted = () => {
   const navigate = useNavigate()
 
   // 공통 페치 함수 (Page or Array 양쪽 모두 대응)
-  const fetchWanted = async (overrides = {}) => {
+  const fetchWanted = async (overrides: WantedFilterOverrides = {}) => {
     setLoading(true)
     try {
       const qs = new URLSearchParams()
@@ -211,7 +236,8 @@ const Wanted = () => {
 
       const payload = isJson ? await res.json() : null
 
-      let list = []
+      // 서버는 Spring Page를 보낸다. 나머지는 예전 코드가 대비하던 모양이다
+      let list: WantedSummary[] = []
       if (payload?.data?.content) list = payload.data.content
       else if (payload?.content) list = payload.content
       else if (Array.isArray(payload)) list = payload
@@ -231,12 +257,12 @@ const Wanted = () => {
   }, [])
 
   // 검색 제출 → 서버 쿼리(keyword, category/department/sort)
-  const handleSearch = async e => {
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     void fetchWanted({}) // state값 사용
   }
 
-  const handlePostClick = postId => {
+  const handlePostClick = (postId: number) => {
     if (!postId) return
     void navigate(`/wanted/${postId}`)
   }
@@ -245,7 +271,7 @@ const Wanted = () => {
     void navigate('/wanted/write')
   }
 
-  const handleSidebarMenu = menu => {
+  const handleSidebarMenu = (menu: SidebarMenuKey) => {
     switch (menu) {
       case 'bookstore/add':
         void navigate('/bookstore/add')
