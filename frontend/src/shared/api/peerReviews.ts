@@ -33,7 +33,8 @@ export interface PeerReviewSummary {
 
 export interface CreatePeerReviewInput {
   postId: number | string
-  ratingLabel: RatingLabel
+  /** 서버(RatingLabel.from)는 대소문자를 구분하지 않는다. 판매글 상세는 소문자를 보낸다 */
+  ratingLabel: RatingLabel | Lowercase<RatingLabel>
   ratingScore: number
   ratingKeywords?: string[]
   role: PeerReviewRole

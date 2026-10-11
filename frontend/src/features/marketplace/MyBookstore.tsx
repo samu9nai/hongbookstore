@@ -14,10 +14,51 @@ import {
 import SidebarMenu, { MainContent } from '@/shared/layout/SidebarMenu'
 import { useNavigate } from 'react-router-dom'
 import QRCode from 'react-qr-code'
-import axios from 'axios'
-import { getMyReceivedPeerReviews } from '@/shared/api/peerReviews'
+import axios, { type AxiosError } from 'axios'
+import {
+  getMyReceivedPeerReviews,
+  type PeerReview
+} from '@/shared/api/peerReviews'
 import { useTranslation } from 'react-i18next'
 import { Loading } from '@/shared/ui'
+import type { ApiResponse } from '@/shared/api/client'
+import type { SidebarMenuKey } from '@/shared/layout/SidebarMenu'
+import type { SaleStatus } from './types'
+
+/** 내 판매글. 백엔드 MyPostSummaryResponseDTO와 같다 */
+interface MyPost {
+  postId: number
+  bookTitle: string
+  price: number
+  status: SaleStatus
+  thumbnailUrl: string | null
+  /** LocalDateTime(오프셋 없는 ISO 문자열) */
+  createdAt: string
+}
+
+/** 찜한 판매글. 백엔드 MyLikedPostResponseDTO와 같다 */
+interface LikedPost {
+  postId: number
+  postTitle: string
+  price: number
+  status: SaleStatus
+  thumbnailUrl: string | null
+  sellerNickname: string
+  createdAt: string
+}
+
+/** 내 채팅방. 백엔드 ChatRoomResponse에서 구매자 후보를 만드는 데 쓰는 필드다 */
+interface MyChatRoom {
+  salePostId: number
+  buyerId: number
+  buyerNickname: string | null
+  buyerProfileImageUrl: string | null
+}
+
+type BuyerCandidate = Omit<MyChatRoom, 'salePostId'>
+
+/** 내 판매글 탭. 서버 상태와 이름이 다르다 */
+type MyPostTab = 'all' | 'selling' | 'reserved' | 'sold'
 
 const PageWrapper = styled.div`
   display: flex;
@@ -97,7 +138,7 @@ const TabList = styled.div`
   margin-bottom: 20px;
 `
 
-const Tab = styled.button`
+const Tab = styled.button<{ $active: boolean }>`
   padding: 12px 24px;
   background: none;
   border: none;
@@ -200,7 +241,7 @@ const BookPrice = styled.div`
   margin-bottom: 10px;
 `
 
-const BookStatus = styled.span`
+const BookStatus = styled.span<{ $status: SaleStatus }>`
   padding: 4px 12px;
   border-radius: 15px;
   font-size: 0.9rem;
@@ -293,7 +334,7 @@ const ReviewItem = styled.div`
   border: 1px solid #eee;
   border-radius: 8px;
 `
-const ReviewBadge = styled.span`
+const ReviewBadge = styled.span<{ $label: string }>`
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.85rem;
@@ -451,7 +492,7 @@ const CompactBookPrice = styled.div`
   color: #007bff;
 `
 
-const CompactBookStatus = styled.span`
+const CompactBookStatus = styled.span<{ $status: SaleStatus }>`
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 0.8rem;
@@ -671,22 +712,25 @@ const MyBookstore = () => {
   const { t } = useTranslation()
 
   // 백엔드 Enum을 프론트엔드 텍스트로 변환하는 헬퍼
-  const statusMap = {
+  const statusMap: Record<SaleStatus, string> = {
     FOR_SALE: t('myBookstore.forSale'),
     RESERVED: t('myBookstore.reserved'),
     SOLD_OUT: t('myBookstore.soldOut')
   }
-  const [activeTab, setActiveTab] = useState('all') // 기본 탭을 '전체'로
-  const [myPosts, setMyPosts] = useState([])
+  const [activeTab, setActiveTab] = useState<MyPostTab>('all') // 기본 탭을 '전체'로
+  const [myPosts, setMyPosts] = useState<MyPost[]>([])
 
   const [showAllMyBooks, setShowAllMyBooks] = useState(false)
-  const [wishlist, setWishlist] = useState([]) // 찜 목록 상태
+  const [wishlist, setWishlist] = useState<LikedPost[]>([]) // 찜 목록 상태
   const [loading, setLoading] = useState({ myPosts: true, wishlist: true })
-  const [error, setError] = useState({ myPosts: null, wishlist: null }) // 에러 상태 관리
+  const [error, setError] = useState<{
+    myPosts: string | null
+    wishlist: string | null
+  }>({ myPosts: null, wishlist: null }) // 에러 상태 관리
   const navigate = useNavigate()
 
   // 받은 거래 후기 상태 (페이지네이션 + 요약)
-  const [myReviews, setMyReviews] = useState([])
+  const [myReviews, setMyReviews] = useState<PeerReview[]>([])
   const [myReviewsTotal, setMyReviewsTotal] = useState(0)
   const [loadingReviews, setLoadingReviews] = useState(false)
   const [errorReviews, setErrorReviews] = useState('')
@@ -694,15 +738,15 @@ const MyBookstore = () => {
   const [reviewSize, setReviewSize] = useState(5)
   const [reviewTotalPages, setReviewTotalPages] = useState(0)
   const [reviewLast, setReviewLast] = useState(true)
-  const [overallAvg, setOverallAvg] = useState(null)
-  const [profileId, setProfileId] = useState(null)
+  const [overallAvg, setOverallAvg] = useState<number | null>(null)
+  const [profileId, setProfileId] = useState<number | null>(null)
 
   // 내 판매글 목록을 불러오는 API 호출 함수
   const fetchMyPosts = useCallback(async () => {
     setLoading(prev => ({ ...prev, myPosts: true }))
     setError(prev => ({ ...prev, myPosts: null })) // 에러 초기화
     try {
-      const response = await axios.get('/api/my/posts', {
+      const response = await axios.get<MyPost[]>('/api/my/posts', {
         headers: getAuthHeader()
       })
       setMyPosts(response.data)
@@ -719,7 +763,7 @@ const MyBookstore = () => {
     setLoading(prev => ({ ...prev, wishlist: true }))
     setError(prev => ({ ...prev, wishlist: null })) // 에러 초기화
     try {
-      const response = await axios.get('/api/my/likes', {
+      const response = await axios.get<LikedPost[]>('/api/my/likes', {
         headers: getAuthHeader()
       })
       setWishlist(response.data)
@@ -778,9 +822,12 @@ const MyBookstore = () => {
   // 내 프로필 ID → 전체 요약 불러오기
   const fetchProfileId = useCallback(async () => {
     try {
-      const response = await axios.get('/api/my/profile', {
-        headers: getAuthHeader()
-      })
+      const response = await axios.get<ApiResponse<{ id: number }>>(
+        '/api/my/profile',
+        {
+          headers: getAuthHeader()
+        }
+      )
       const uid = response?.data?.data?.id
       if (uid) setProfileId(uid)
     } catch {}
@@ -791,11 +838,14 @@ const MyBookstore = () => {
   }, [fetchProfileId])
 
   useEffect(() => {
-    const fetchSummary = async uid => {
+    const fetchSummary = async (uid: number) => {
       try {
-        const res = await axios.get(`/api/reviews/summary/users/${uid}`, {
-          headers: getAuthHeader()
-        })
+        const res = await axios.get<{ overallAverage: number | null }>(
+          `/api/reviews/summary/users/${uid}`,
+          {
+            headers: getAuthHeader()
+          }
+        )
         setOverallAvg(res.data?.overallAverage ?? null)
       } catch {
         setOverallAvg(null)
@@ -808,7 +858,7 @@ const MyBookstore = () => {
   const getFilteredBooks = () => {
     if (activeTab === 'all') return myPosts
     // 백엔드 status (FOR_SALE, RESERVED, SOLD_OUT)와 프론트엔드 탭(selling, reserved, sold)을 매핑
-    const statusMapping = {
+    const statusMapping: Record<Exclude<MyPostTab, 'all'>, SaleStatus> = {
       selling: 'FOR_SALE',
       reserved: 'RESERVED',
       sold: 'SOLD_OUT'
@@ -816,12 +866,12 @@ const MyBookstore = () => {
     return myPosts.filter(post => post.status === statusMapping[activeTab])
   }
 
-  const handleEditBook = postId => {
+  const handleEditBook = (postId: number) => {
     void navigate(`/postwrite/${postId}`)
   }
 
   // 게시글 삭제 핸들러
-  const handleDeleteBook = async postId => {
+  const handleDeleteBook = async (postId: number) => {
     if (window.confirm(t('myBookstore.deleteConfirm'))) {
       try {
         await axios.delete(`/api/posts/${postId}`, { headers: getAuthHeader() })
@@ -833,10 +883,10 @@ const MyBookstore = () => {
     }
   }
 
-  const handleViewBook = postId => navigate(`/posts/${postId}`)
+  const handleViewBook = (postId: number) => navigate(`/posts/${postId}`)
 
   // 찜 해제 핸들러
-  const handleRemoveFromWishlist = async postId => {
+  const handleRemoveFromWishlist = async (postId: number) => {
     if (window.confirm('찜을 해제하시겠습니까?')) {
       try {
         await axios.delete(`/api/posts/${postId}/like`, {
@@ -853,14 +903,17 @@ const MyBookstore = () => {
   const filteredBooks = getFilteredBooks()
 
   // --- 판매 상태 변경: 예약중/판매완료 ---
-  const [buyerModal, setBuyerModal] = useState({ open: false, postId: null })
-  const [buyerCandidates, setBuyerCandidates] = useState([])
-  const [selectedBuyerId, setSelectedBuyerId] = useState(null)
+  const [buyerModal, setBuyerModal] = useState<{
+    open: boolean
+    postId: number | null
+  }>({ open: false, postId: null })
+  const [buyerCandidates, setBuyerCandidates] = useState<BuyerCandidate[]>([])
+  const [selectedBuyerId, setSelectedBuyerId] = useState<number | null>(null)
   const [buyerLoading, setBuyerLoading] = useState(false)
   const [buyerError, setBuyerError] = useState('')
   const [confirmingBuyer, setConfirmingBuyer] = useState(false)
 
-  const handleStatusChange = async (postId, status) => {
+  const handleStatusChange = async (postId: number, status: SaleStatus) => {
     if (
       !window.confirm(
         t('myBookstore.statusChangeConfirm', {
@@ -880,7 +933,7 @@ const MyBookstore = () => {
       setBuyerError('')
       setBuyerLoading(true)
       try {
-        const res = await axios.get('/api/chat/rooms/me', {
+        const res = await axios.get<MyChatRoom[]>('/api/chat/rooms/me', {
           headers: getAuthHeader()
         })
         const rooms = Array.isArray(res.data) ? res.data : []
@@ -898,7 +951,7 @@ const MyBookstore = () => {
       } catch (e) {
         setBuyerCandidates([])
         setBuyerError(
-          e.response?.data?.message ||
+          (e as AxiosError<ApiResponse>).response?.data?.message ||
             '채팅방 정보를 불러오지 못했습니다. 구매자 ID를 직접 입력해 주세요.'
         )
       } finally {
@@ -916,7 +969,10 @@ const MyBookstore = () => {
       alert(t('myBookstore.statusChangeSuccess'))
       void fetchMyPosts()
     } catch (e) {
-      alert(e.response?.data?.message || t('myBookstore.statusChangeError'))
+      alert(
+        (e as AxiosError<ApiResponse>).response?.data?.message ||
+          t('myBookstore.statusChangeError')
+      )
     }
   }
 
@@ -943,13 +999,16 @@ const MyBookstore = () => {
       closeBuyerModal()
       void fetchMyPosts()
     } catch (e) {
-      alert(e.response?.data?.message || t('myBookstore.buyerConfirmError'))
+      alert(
+        (e as AxiosError<ApiResponse>).response?.data?.message ||
+          t('myBookstore.buyerConfirmError')
+      )
     } finally {
       setConfirmingBuyer(false)
     }
   }
 
-  const handleSidebarMenu = menu => {
+  const handleSidebarMenu = (menu: SidebarMenuKey) => {
     switch (menu) {
       case 'bookstore/add':
         void navigate('/bookstore/add')
@@ -1144,7 +1203,8 @@ const MyBookstore = () => {
                       ? t('myBookstore.noRegisteredBooks')
                       : t('myBookstore.noBooksInStatus', {
                           status:
-                            statusMap[activeTab] ||
+                            // 탭 이름으로 서버 상태 키를 찾아 늘 비어 있다(FE-25)
+                            (statusMap as Record<string, string>)[activeTab] ||
                             t('myBookstore.unknownStatus')
                         })}
                   </h3>

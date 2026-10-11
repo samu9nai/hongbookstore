@@ -13,10 +13,100 @@ import {
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
 import WarningModal from '@/shared/layout/WarningModal'
 import { useWriting } from '@/shared/contexts/WritingContext'
-import api from '@/shared/api/client'
+import api, { type ApiResponse } from '@/shared/api/client'
+import type { BookCondition } from './types'
+
+/** 책 상태 입력값. 화면은 상·중·하로 받고 보낼 때 BookCondition으로 바꾼다 */
+type KoreanCondition = '상' | '중' | '하'
+
+/**
+ * 작성 폼 입력값. 가격은 입력 상자 값이라 문자열이다.
+ * 카테고리는 수정 모드에서 불러온 값에 없어 비어 있을 수 있다(FE-27)
+ */
+interface PostWriteForm {
+  isbn: string
+  bookTitle: string
+  author: string
+  publisher: string
+  originalPrice: string
+  postTitle: string
+  postContent: string
+  price: string
+  writingCondition: string
+  tearCondition: string
+  waterCondition: string
+  negotiable: boolean
+  oncampusPlaceCode: string
+  offcampusStationCode: string
+  mainCategory?: string
+  subCategory?: string
+  detailCategory?: string
+}
+
+/** 첨부 이미지. 새로 고른 파일은 file이 있고, 이미 올린 이미지는 isUploaded다 */
+interface PostImage {
+  id: string
+  preview: string
+  file?: File
+  isUploaded?: boolean
+}
+
+/** 카테고리 트리 노드. 백엔드 CategoryResponseDTO와 같은 모양이다 */
+interface CategoryNode {
+  name: string
+  children: CategoryNode[]
+}
+
+/**
+ * 수정할 글. 백엔드 SalePostDetailResponseDTO에서 폼이 읽는 필드다.
+ * isbn은 백엔드가 보내지 않는다(FE-27)
+ */
+interface PostForEdit {
+  isbn?: string
+  bookTitle: string
+  author: string | null
+  publisher: string | null
+  originalPrice: number | null
+  postTitle: string
+  postContent: string | null
+  price: number
+  writingCondition: BookCondition
+  tearCondition: BookCondition
+  waterCondition: BookCondition
+  negotiable: boolean
+  oncampusPlaceCode: string | null
+  offcampusStationCode: string | null
+  postImageUrls: string[]
+}
+
+/** 책 검색 결과 항목. 백엔드 KakaoBookSearchResponseDTO.Document에서 읽는 필드다 */
+interface RawBook {
+  title?: string
+  authors?: string[]
+  author?: string
+  publisher?: string
+  isbn?: string
+  thumbnail?: string
+}
+
+/** 책 검색 응답. documents(카카오) 외에는 예전 코드가 대비하던 모양이다 */
+interface BookSearchResponse {
+  documents?: RawBook[]
+  items?: RawBook[]
+  results?: RawBook[]
+}
+
+type SearchBook = ReturnType<typeof normalizeBook>
+
+/** 모더레이션 차단 응답의 data. 백엔드 ModerationErrorDTO에서 읽는 필드다 */
+interface ModerationErrorData {
+  field?: string
+  predictionLevel?: string
+  malicious?: number
+}
 
 /* ----------------------- 스타일 ----------------------- */
 
@@ -166,7 +256,7 @@ const ToggleContainer = styled.div`
   margin-top: 0.5rem;
 `
 
-const ToggleOption = styled.label`
+const ToggleOption = styled.label<{ $checked: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -187,7 +277,7 @@ const ToggleOption = styled.label`
   }
 `
 
-const ToggleText = styled.span`
+const ToggleText = styled.span<{ $checked: boolean }>`
   font-size: 0.9rem;
   color: ${props => (props.$checked ? '#007bff' : '#666')};
   font-weight: ${props => (props.$checked ? '600' : 'normal')};
@@ -485,7 +575,7 @@ const InputTypeButtons = styled.div`
   margin-bottom: 1rem;
 `
 
-const InputTypeButton = styled.button`
+const InputTypeButton = styled.button<{ $active: boolean }>`
   padding: 0.75rem 1.5rem;
   border: 2px solid ${props => (props.$active ? '#007bff' : '#ddd')};
   background: ${props => (props.$active ? '#007bff' : 'white')};
@@ -790,7 +880,7 @@ const BookSearchButton = styled.button`
 /* ----------------------- 상수/도우미 ----------------------- */
 
 // 프론트엔드 상태값 -> 백엔드 Enum 값으로 변환
-const CONDITION_MAP = {
+const CONDITION_MAP: Record<string, BookCondition> = {
   상: 'HIGH',
   중: 'MEDIUM',
   하: 'LOW'
@@ -806,7 +896,7 @@ const PRICE_MIN = 0
 const PRICE_MAX = 1_000_000_000 // 판매가 한도
 const ORIGINAL_PRICE_MAX = 2_000_000_000 // 원가 한도
 
-const clampInt = (val, min, max) => {
+const clampInt = (val: string, min: number, max: number) => {
   if (val === '' || val === null || typeof val === 'undefined') return ''
   let n = Math.floor(Number(val))
   if (!Number.isFinite(n)) return ''
@@ -816,7 +906,7 @@ const clampInt = (val, min, max) => {
 }
 
 // 카테고리 데이터 (현재 미사용이나 유지)
-const CATEGORIES = {
+const CATEGORIES: Record<string, Record<string, string[]>> = {
   전공: {
     경영대학: ['경영학부'],
     공과대학: [
@@ -867,14 +957,14 @@ const CATEGORIES = {
   }
 }
 
-const mapServerTree = nodes =>
+const mapServerTree = (nodes: unknown): CategoryNode[] =>
   Array.isArray(nodes)
-    ? nodes.map(n => ({
+    ? nodes.map((n: { name: string; children?: unknown }) => ({
         name: n.name,
         children: mapServerTree(n.children || [])
       }))
     : []
-const buildTreeFromConst = () =>
+const buildTreeFromConst = (): CategoryNode[] =>
   Object.keys(CATEGORIES).map(main => ({
     name: main,
     children: Object.keys(CATEGORIES[main] || {}).map(sub => ({
@@ -887,7 +977,7 @@ const buildTreeFromConst = () =>
   }))
 
 // ✅ 교내 드롭다운: addEdge 데이터에서 중복 제거한 코드 목록
-const ONCAMPUS_CODES = [
+const ONCAMPUS_CODES: string[] = [
   'A',
   'B',
   'C',
@@ -917,7 +1007,7 @@ const ONCAMPUS_CODES = [
 ]
 
 // ✅ 교외 드롭다운: 노선 → 역
-const SUBWAY_MAP = {
+const SUBWAY_MAP: Record<string, string[]> = {
   '1호선': [
     '소요산',
     '동두천',
@@ -1458,13 +1548,15 @@ const SUBWAY_MAP = {
 }
 
 // 인증 토큰을 가져오는 헬퍼 함수
-const getAuthHeader = () => {
+const getAuthHeader = (): Record<string, string> => {
   const token = localStorage.getItem('accessToken')
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 // 카카오/다음 책 검색 응답을 내부 표준 구조로 정규화
-const toBookArray = data => {
+const toBookArray = (
+  data: BookSearchResponse | null | undefined
+): RawBook[] => {
   if (!data) return []
   if (Array.isArray(data.documents)) return data.documents
   if (Array.isArray(data.items)) return data.items
@@ -1474,7 +1566,7 @@ const toBookArray = data => {
 }
 
 // 공백 구분된 ISBN에서 우선순위 선택
-const pickIsbn = raw => {
+const pickIsbn = (raw: string | undefined) => {
   const tokens = String(raw || '')
     .split(/\s+/)
     .map(t => t.trim())
@@ -1486,7 +1578,7 @@ const pickIsbn = raw => {
 }
 
 // 문서 → 화면/상태에서 쓰는 표준 속성으로 매핑
-const normalizeBook = doc => ({
+const normalizeBook = (doc: RawBook) => ({
   title: doc?.title ?? '',
   author: Array.isArray(doc?.authors)
     ? doc.authors.filter(Boolean).join(', ')
@@ -1506,7 +1598,7 @@ const PostWrite = () => {
   const { startWriting, stopWriting, setUnsavedChanges } = useWriting()
 
   // 모든 필드 명시적으로 정의
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PostWriteForm>({
     // Book 정보
     isbn: '',
     bookTitle: '',
@@ -1532,30 +1624,33 @@ const PostWrite = () => {
     detailCategory: ''
   })
 
-  const [images, setImages] = useState([]) // 다중 이미지 파일 관리
-  const [errors, setErrors] = useState({})
+  const [images, setImages] = useState<PostImage[]>([]) // 다중 이미지 파일 관리
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
-  const [inputType, setInputType] = useState('search') // 'search' or 'custom'
+  const [inputType, setInputType] = useState<'search' | 'custom'>('search')
   const [unknownOriginalPrice, setUnknownOriginalPrice] = useState(false) // custom 모드에서 정가 없음/모름
   const [showBookSearch, setShowBookSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState([])
+  const [searchResults, setSearchResults] = useState<SearchBook[]>([])
   const [searchLoading, setSearchLoading] = useState(false) // 검색 로딩 상태
 
   const [showWarningModal, setShowWarningModal] = useState(false)
-  const [pendingNavigation, setPendingNavigation] = useState(null)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+    null
+  )
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
 
   // ✅ 교외 2단 드롭다운 상태
   const [offcampusLine, setOffcampusLine] = useState('')
   // 카테고리 트리: 서버 우선, 실패 시 상수 폴백
-  const [catTree, setCatTree] = useState([])
+  const [catTree, setCatTree] = useState<CategoryNode[]>([])
   useEffect(() => {
     void (async () => {
       try {
-        const res = await api.get('/categories')
+        // 서버는 배열을 보낸다. { data }는 예전 코드가 대비하던 모양이다
+        const res = await api.get<{ data?: unknown }>('/categories')
         const arr = Array.isArray(res)
           ? res
           : Array.isArray(res?.data)
@@ -1569,7 +1664,7 @@ const PostWrite = () => {
     })()
   }, [])
 
-  const imageInputRef = useRef(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   // 최신 변경 상태/함수 접근을 위한 ref (이벤트 리스너 안정화)
   const hasUnsavedChangesRef = useRef(false)
@@ -1577,7 +1672,7 @@ const PostWrite = () => {
     hasUnsavedChangesRef.current = hasUnsavedChanges
   }, [hasUnsavedChanges])
 
-  const clearErrors = useCallback(fieldName => {
+  const clearErrors = useCallback((fieldName: string) => {
     setErrors(prev => {
       if (prev[fieldName]) {
         const rest = { ...prev }
@@ -1597,7 +1692,8 @@ const PostWrite = () => {
       if (!savedDraft) return
 
       const draftData = JSON.parse(savedDraft)
-      const draftAge = new Date() - new Date(draftData.timestamp)
+      const draftAge =
+        new Date().getTime() - new Date(draftData.timestamp).getTime()
       const expiryTime = DRAFT_EXPIRY_HOURS * 60 * 60 * 1000
 
       if (draftAge < expiryTime) {
@@ -1688,14 +1784,14 @@ const PostWrite = () => {
 
   // 브라우저 이벤트 처리
   useEffect(() => {
-    const handleBeforeUnload = e => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChangesRef.current) {
         e.preventDefault()
         e.returnValue = ''
       }
     }
 
-    const handlePopState = e => {
+    const handlePopState = (e: PopStateEvent) => {
       if (hasUnsavedChanges) {
         e.preventDefault()
         setPendingNavigation('/marketplace')
@@ -1727,7 +1823,7 @@ const PostWrite = () => {
     const fetchPostForEdit = async () => {
       setLoading(true)
       try {
-        const response = await axios.get(`/api/posts/${id}`, {
+        const response = await axios.get<PostForEdit>(`/api/posts/${id}`, {
           headers: getAuthHeader()
         })
         const postData = response.data
@@ -1796,7 +1892,11 @@ const PostWrite = () => {
   // 할인율 계산
   const calculateDiscountRate = useCallback(() => {
     const WEIGHTS = { writing: 0.15, tear: 0.35, water: 0.5 }
-    const DISCOUNT_RATES = { 상: 0.15, 중: 0.35, 하: 0.55 }
+    const DISCOUNT_RATES: Record<string, number> = {
+      상: 0.15,
+      중: 0.35,
+      하: 0.55
+    }
     const BASE_DISCOUNT = 0.1
 
     let totalDiscount = 0
@@ -1824,8 +1924,13 @@ const PostWrite = () => {
 
   // 입력 핸들러
   const handleInputChange = useCallback(
-    e => {
-      const { name, value, type, checked } = e.target
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
+    ) => {
+      // select·textarea에는 checked가 없지만 type이 checkbox가 아니면 읽지 않는다
+      const { name, value, type, checked } = e.target as HTMLInputElement
       setFormData(prev => ({
         ...prev,
         [name]: type === 'checkbox' ? checked : value
@@ -1837,7 +1942,7 @@ const PostWrite = () => {
 
   // 원가 변경 핸들러
   const handleOriginalPriceChange = useCallback(
-    e => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       const { value } = e.target
       const clamped = clampInt(value, PRICE_MIN, ORIGINAL_PRICE_MAX)
       setFormData(prev => ({ ...prev, originalPrice: clamped }))
@@ -1847,7 +1952,7 @@ const PostWrite = () => {
   )
 
   const handlePriceChange = useCallback(
-    e => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       const { value } = e.target
       const clamped = clampInt(value, PRICE_MIN, PRICE_MAX)
       setFormData(prev => ({ ...prev, price: clamped }))
@@ -1858,8 +1963,8 @@ const PostWrite = () => {
 
   // 이미지 업로드
   const handleImageUpload = useCallback(
-    e => {
-      const files = Array.from(e.target.files)
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files!)
       if (images.length + files.length > MAX_IMAGES) {
         alert(`이미지는 최대 ${MAX_IMAGES}개까지 업로드할 수 있어! 📸`)
         return
@@ -1889,7 +1994,7 @@ const PostWrite = () => {
     [images.length]
   )
 
-  const handleRemoveImage = useCallback(imageId => {
+  const handleRemoveImage = useCallback((imageId: string) => {
     setImages(prev => {
       const imageToRemove = prev.find(img => img.id === imageId)
       if (imageToRemove && imageToRemove.preview && !imageToRemove.isUploaded) {
@@ -1908,10 +2013,13 @@ const PostWrite = () => {
 
     setSearchLoading(true)
     try {
-      const response = await axios.get('/api/search/books', {
-        params: { query: searchQuery.trim() },
-        headers: getAuthHeader()
-      })
+      const response = await axios.get<BookSearchResponse>(
+        '/api/search/books',
+        {
+          params: { query: searchQuery.trim() },
+          headers: getAuthHeader()
+        }
+      )
       const raw = response?.data
       const results = toBookArray(raw).map(normalizeBook)
       setSearchResults(results)
@@ -1926,7 +2034,7 @@ const PostWrite = () => {
     }
   }, [searchQuery, t])
 
-  const handleBookSelect = useCallback(book => {
+  const handleBookSelect = useCallback((book: SearchBook) => {
     setFormData(prev => ({
       ...prev,
       isbn: book.isbn || '',
@@ -1941,7 +2049,7 @@ const PostWrite = () => {
 
   // 검증
   const validateForm = useCallback(() => {
-    const newErrors = {}
+    const newErrors: Record<string, string> = {}
 
     if (inputType === 'search' && !formData.isbn.trim()) {
       newErrors.bookTitle = '책을 검색에서 선택해줘! (ISBN 필요) 📚'
@@ -2035,7 +2143,7 @@ const PostWrite = () => {
 
   // 제출
   const handleSubmit = useCallback(
-    async e => {
+    async (e: React.FormEvent) => {
       e.preventDefault()
       if (!validateForm()) {
         alert('입력 정보를 다시 확인해줘! 🔍')
@@ -2063,7 +2171,7 @@ const PostWrite = () => {
           // 새로 추가된 이미지가 있으면 별도 업로드 엔드포인트 호출
           const newImageFiles = images
             .filter(img => img.file && !img.isUploaded)
-            .map(img => img.file)
+            .map(img => img.file!)
           if (newImageFiles.length > 0) {
             const fd = new FormData()
             newImageFiles.forEach(f => fd.append('images', f))
@@ -2154,12 +2262,14 @@ const PostWrite = () => {
           void navigate('/marketplace')
         }
       } catch (error) {
-        const serverData = error.response?.data
+        const serverData = (
+          error as AxiosError<ApiResponse<ModerationErrorData | null>>
+        ).response?.data
         const serverMessage = serverData?.message
 
         // 모더레이션 차단: 필드 에러로 표시
         if (
-          error.response?.status === 400 &&
+          (error as AxiosError).response?.status === 400 &&
           serverData?.success === false &&
           serverData?.data?.field
         ) {
@@ -2168,22 +2278,22 @@ const PostWrite = () => {
             ? ` (${d.predictionLevel}${typeof d.malicious === 'number' ? `, ${Math.round(d.malicious * 100)}%` : ''})`
             : ''
           const msg = (serverMessage || '부적절한 표현이 감지되었습니다.') + lvl
-          setErrors(prev => ({ ...prev, [d.field]: msg }))
+          setErrors(prev => ({ ...prev, [d.field!]: msg }))
           // 해당 필드 포커스
-          const el = document.querySelector(`[name="${d.field}"]`)
+          const el = document.querySelector<HTMLElement>(`[name="${d.field}"]`)
           if (el && typeof el.focus === 'function') el.focus()
           return
         }
 
-        if (error.response?.status === 401) {
+        if ((error as AxiosError).response?.status === 401) {
           alert(serverMessage || '로그인이 필요해! 다시 로그인해줘 🔐')
           void navigate('/login')
-        } else if (error.response?.status === 403) {
+        } else if ((error as AxiosError).response?.status === 403) {
           alert(serverMessage || t('noPermission'))
-        } else if (error.response?.status === 400) {
+        } else if ((error as AxiosError).response?.status === 400) {
           // 용량 초과, 잘못된 포맷 등 서버 메시지를 우선 표시
           alert(serverMessage || '입력 정보에 문제가 있어! 다시 확인해줘 📝')
-        } else if (error.response?.status === 415) {
+        } else if ((error as AxiosError).response?.status === 415) {
           alert(
             serverMessage ||
               '업로드 형식이 올바르지 않아! multipart/form-data로 다시 시도해줘 📎'
@@ -2210,7 +2320,7 @@ const PostWrite = () => {
 
   // 안전한 네비게이션
   const safeNavigate = useCallback(
-    path => {
+    (path: string) => {
       if (hasUnsavedChanges) {
         setPendingNavigation(path)
         setShowWarningModal(true)
@@ -2249,7 +2359,7 @@ const PostWrite = () => {
   }, [handleSaveDraft, navigate, pendingNavigation])
 
   const handleCancel = useCallback(
-    e => {
+    (e?: React.MouseEvent) => {
       if (e) {
         e.preventDefault()
         e.stopPropagation()
@@ -2455,7 +2565,7 @@ const PostWrite = () => {
                     const mainNode = (catTree || []).find(m => m.name === main)
                     const firstSub = mainNode?.children?.[0]?.name || ''
                     const firstDetail = firstSub
-                      ? mainNode.children.find(s => s.name === firstSub)
+                      ? mainNode!.children.find(s => s.name === firstSub)
                           ?.children?.[0]?.name || ''
                       : ''
                     setFormData(prev => ({
@@ -2663,7 +2773,7 @@ const PostWrite = () => {
                   <input
                     type="radio"
                     name="negotiable"
-                    value={true}
+                    value="true"
                     checked={formData.negotiable === true}
                     onChange={() =>
                       setFormData(prev => ({ ...prev, negotiable: true }))
@@ -2677,7 +2787,7 @@ const PostWrite = () => {
                   <input
                     type="radio"
                     name="negotiable"
-                    value={false}
+                    value="false"
                     checked={formData.negotiable === false}
                     onChange={() =>
                       setFormData(prev => ({ ...prev, negotiable: false }))

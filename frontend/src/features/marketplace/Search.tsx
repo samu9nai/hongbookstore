@@ -12,6 +12,24 @@ import {
   MetaLabel,
   MetaValue
 } from '@/shared/ui'
+import type { SaleStatus, SalePostSummary, SpringPage } from './types'
+
+/** 검색 조건. sort는 Spring의 '필드,방향' 형식이다 */
+interface SearchQuery {
+  query: string
+  sort: string
+  page: number
+}
+
+/**
+ * 페이지 정보. 응답을 받은 뒤에는 currentPage를 쓰지만 초깃값은 number를 둔다(FE-24)
+ */
+interface SearchPageInfo {
+  totalElements: number
+  totalPages: number
+  currentPage: number
+  number?: number
+}
 
 const SearchContainer = styled.div`
   max-width: 1600px;
@@ -167,7 +185,7 @@ const BookPrice = styled.div`
   margin-bottom: 10px;
 `
 
-const BookStatus = styled.span`
+const BookStatus = styled.span<{ $status: SaleStatus }>`
   padding: 4px 12px;
   border-radius: 15px;
   font-size: 0.9rem;
@@ -200,7 +218,7 @@ const PaginationContainer = styled.div`
   margin-top: 3rem;
   gap: 0.5rem;
 `
-const PageButton = styled.button`
+const PageButton = styled.button<{ $active?: boolean }>`
   padding: 0.5rem 1rem;
   border: 1px solid #ddd;
   background: ${props => (props.$active ? '#007bff' : 'white')};
@@ -215,7 +233,7 @@ const PageButton = styled.button`
 `
 
 // 백엔드 Enum을 프론트엔드 텍스트로 변환하는 헬퍼
-const statusMap = {
+const statusMap: Record<SaleStatus, string> = {
   FOR_SALE: '판매중',
   RESERVED: '예약중',
   SOLD_OUT: '판매완료'
@@ -225,16 +243,16 @@ const Search = () => {
   const navigate = useNavigate()
 
   // API 데이터를 저장할 상태
-  const [posts, setPosts] = useState([])
-  const [pageInfo, setPageInfo] = useState({
+  const [posts, setPosts] = useState<SalePostSummary[]>([])
+  const [pageInfo, setPageInfo] = useState<SearchPageInfo>({
     totalElements: 0,
     totalPages: 1,
     number: 0
-  }) // 페이지네이션 정보
+  } as SearchPageInfo) // 페이지네이션 정보
   const [loading, setLoading] = useState(false)
 
   // 검색 및 필터 조건을 하나의 상태 객체로 관리
-  const [searchParams, setSearchParams] = useState({
+  const [searchParams, setSearchParams] = useState<SearchQuery>({
     query: '',
     sort: 'createdAt,desc',
     page: 0
@@ -242,17 +260,27 @@ const Search = () => {
   const [searchInput, setSearchInput] = useState('') // 사용자가 입력하는 검색어
 
   // API 호출 로직
-  const fetchPosts = useCallback(async params => {
+  const fetchPosts = useCallback(async (params: SearchQuery) => {
     setLoading(true)
     try {
-      const activeParams = {
+      const activeParams: {
+        page: number
+        size: number
+        sort: string
+        query?: string
+      } = {
         page: params.page,
         size: 20,
         sort: params.sort
       }
       if (params.query) activeParams.query = params.query
 
-      const response = await axios.get('/api/posts', { params: activeParams })
+      const response = await axios.get<SpringPage<SalePostSummary>>(
+        '/api/posts',
+        {
+          params: activeParams
+        }
+      )
       setPosts(response.data.content)
       setPageInfo({
         totalPages: response.data.totalPages,
@@ -271,22 +299,22 @@ const Search = () => {
     void fetchPosts(searchParams)
   }, [fetchPosts, searchParams])
 
-  const handleSearch = e => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setSearchParams(prev => ({ ...prev, query: searchInput, page: 0 }))
   }
 
-  const handleSortChange = e => {
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSearchParams(prev => ({ ...prev, sort: e.target.value, page: 0 }))
   }
 
-  const handlePageChange = newPage => {
+  const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && newPage < pageInfo.totalPages) {
       setSearchParams(prev => ({ ...prev, page: newPage }))
     }
   }
 
-  const handleBookClick = postId => {
+  const handleBookClick = (postId: number) => {
     void navigate(`/posts/${postId}`)
   }
 
@@ -294,7 +322,7 @@ const Search = () => {
   const renderPaginationButtons = () => {
     if (!pageInfo || pageInfo.totalPages <= 1) return null
 
-    const buttons = []
+    const buttons: React.ReactElement[] = []
     const startPage = Math.floor(pageInfo.currentPage / 5) * 5
     const endPage = Math.min(startPage + 5, pageInfo.totalPages)
 

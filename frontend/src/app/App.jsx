@@ -12,19 +12,19 @@ import Hero from '@/features/home/Hero'
 import Footer from '@/shared/layout/Footer'
 import { Loading } from '@/shared/ui'
 
-import Marketplace from '@/features/marketplace/Marketplace.jsx'
+import Marketplace from '@/features/marketplace/Marketplace'
 import MyPage from '@/features/account/MyPage'
 import Login from '@/features/auth/Login'
-import Search from '@/features/marketplace/Search.jsx'
+import Search from '@/features/marketplace/Search'
 
 import Wanted from '@/features/wanted/Wanted'
 import WantedWrite from '@/features/wanted/WantedWrite'
 import WantedDetail from '@/features/wanted/WantedDetail'
 
-import MyBookstore from '@/features/marketplace/MyBookstore.jsx'
+import MyBookstore from '@/features/marketplace/MyBookstore'
 
-import PostWrite from '@/features/marketplace/PostWrite.jsx'
-import PostDetail from '@/features/marketplace/PostDetail.jsx'
+import PostWrite from '@/features/marketplace/PostWrite'
+import PostDetail from '@/features/marketplace/PostDetail'
 
 import ChatList from '@/features/chat/ChatList.jsx'
 import ChatRoomWrapper from '@/features/chat/ChatRoomWrapper.jsx'

@@ -20,7 +20,97 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AuthCtx } from '@/shared/contexts/AuthContext'
 import { createPeerReview } from '@/shared/api/peerReviews'
-import axios from 'axios'
+import axios, { type AxiosError, type AxiosRequestConfig } from 'axios'
+import type { ApiResponse } from '@/shared/api/client'
+import type { BookCondition, SaleStatus } from './types'
+
+/** 기존 코드가 거래 장소를 찾던 필드. 백엔드는 oncampusPlaceCode·offcampusStationCode만 보낸다 */
+interface TradeLocationSource {
+  oncampusPlaceCode?: string | null
+  oncampusPlace?: string
+  onCampusPlaceCode?: string
+  onCampus?: { placeCode?: string }
+  oncampus?: { placeCode?: string }
+  offcampusStationCode?: string | null
+  offcampusStation?: string
+  offCampusStationCode?: string
+  offCampus?: { stationCode?: string }
+  offcampus?: { stationCode?: string }
+}
+
+/** 판매자 표시에 쓰는 필드. sellerId·sellerNickname 외에는 백엔드가 보내지 않는다 */
+interface SellerSource {
+  sellerId?: number | null
+  sellerNickname?: string | null
+  sellerUsername?: string
+  sellerName?: string
+  sellerDeactivated?: boolean
+}
+
+/**
+ * 판매글 상세. 백엔드 SalePostDetailResponseDTO와 같다.
+ * 선택 속성은 백엔드가 보내지 않지만 기존 코드가 대비하는 필드다
+ */
+interface SalePostDetail extends TradeLocationSource, SellerSource {
+  postId: number
+  postTitle: string
+  postContent: string | null
+  price: number
+  status: SaleStatus
+  /** LocalDateTime(오프셋 없는 ISO 문자열) */
+  createdAt: string
+  writingCondition: BookCondition
+  tearCondition: BookCondition
+  waterCondition: BookCondition
+  negotiable: boolean
+  views: number
+  contentToxic: boolean
+  contentToxicLevel: string | null
+  contentToxicMalicious: number | null
+  contentToxicClean: number | null
+  contentToxicReason: string | null
+  mainCategory: string | null
+  subCategory: string | null
+  detailCategory: string | null
+  /** "전공 > 공과대학 > 컴퓨터공학과" */
+  categoryPath: string
+  bookId: number
+  bookTitle: string
+  author: string | null
+  publisher: string | null
+  originalPrice: number | null
+  sellerProfileImageUrl: string | null
+  postImageUrls: string[]
+  sellerNickname: string
+  id?: number
+  userId?: number
+  discountRate?: number
+  sellerLocation?: string
+  sellerRating?: number
+  sellerSalesCount?: number
+}
+
+/** 판매자의 다른 판매글 응답 항목. 기존 코드가 여러 응답 모양에 대비하므로 넓게 둔다 */
+interface RawOtherBook {
+  id?: number
+  postId?: number
+  salePostId?: number
+  bookTitle?: string
+  title?: string
+  postTitle?: string
+  author?: string
+  bookAuthor?: string
+  price?: number
+  originalPrice?: number
+  book?: { originalPrice?: number }
+  postImageUrls?: string[]
+  imageUrls?: string[]
+  images?: string[]
+  thumbnailUrl?: string | null
+  discountRate?: number
+}
+
+type OtherBook = ReturnType<typeof normalizePostSummary>
 
 const DetailContainer = styled.div`
   max-width: 1200px;
@@ -102,7 +192,7 @@ const ThumbnailGrid = styled.div`
   margin: 0 auto;
 `
 
-const Thumbnail = styled.div`
+const Thumbnail = styled.div<{ $active: boolean }>`
   aspect-ratio: 1;
   border-radius: 8px;
   cursor: pointer;
@@ -195,7 +285,7 @@ const OverallConditionTitle = styled.h3`
   margin-bottom: 0.5rem;
 `
 
-const OverallConditionBadge = styled.div`
+const OverallConditionBadge = styled.div<{ $bgColor: string; $color: string }>`
   background: ${props => props.$bgColor};
   border-radius: 8px;
   padding: 0.5rem 1rem;
@@ -242,7 +332,7 @@ const ConditionLabel = styled.div`
   margin-bottom: 0.5rem;
 `
 
-const ConditionValue = styled.div`
+const ConditionValue = styled.div<{ $condition: BookCondition }>`
   font-size: 1.1rem;
   font-weight: 600;
   color: ${props => {
@@ -368,7 +458,7 @@ const Stars = styled.div`
   gap: 0.1rem;
 `
 
-const Star = styled(LucideStar)`
+const Star = styled(LucideStar)<{ filled: boolean }>`
   color: ${props => (props.filled ? '#ffc107' : '#e0e0e0')};
   fill: currentColor;
   font-size: 0.9rem;
@@ -526,7 +616,7 @@ const CallButton = styled(ActionButton)`
   }
 `
 
-const LikeButton = styled.button`
+const LikeButton = styled.button<{ $liked: boolean }>`
   background: rgba(255, 255, 255, 0.9);
   border: 2px solid #ddd;
   border-radius: 50%;
@@ -658,7 +748,7 @@ const OtherBookPrice = styled.div`
   margin-bottom: 0.5rem;
 `
 
-const OtherBookCondition = styled.div`
+const OtherBookCondition = styled.div<{ $bgColor: string; $color: string }>`
   background: ${props => props.$bgColor};
   color: ${props => props.$color};
   padding: 0.2rem 0.5rem;
@@ -669,17 +759,21 @@ const OtherBookCondition = styled.div`
 `
 
 // 인증 토큰을 가져오는 헬퍼 함수
-const getAuthHeader = () => {
+const getAuthHeader = (): Record<string, string> => {
   const token = localStorage.getItem('accessToken')
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 // ✅ 역 이름으로 호선을 찾아주는 헬퍼 (중복 시 최초 매칭 반환)
-const SUBWAY_MAP = {/* ...생략: 네가 쓰던 맵 그대로... */}
+const SUBWAY_MAP: Record<string, string[]> = {
+  /* ...생략: 네가 쓰던 맵 그대로... */
+}
 
-const ONCAMPUS_PLACE_LABELS = {/* ...생략: 네가 쓰던 라벨 그대로... */}
+const ONCAMPUS_PLACE_LABELS: Record<string, string> = {
+  /* ...생략: 네가 쓰던 라벨 그대로... */
+}
 
-const getLineByStation = stationName => {
+const getLineByStation = (stationName: string) => {
   if (!stationName) return null
   for (const [line, stations] of Object.entries(SUBWAY_MAP)) {
     if (stations.includes(stationName)) return line
@@ -688,7 +782,7 @@ const getLineByStation = stationName => {
 }
 
 // ✅ 위치 필드 추출 유틸
-const deriveTradeLocations = (p = {}) => {
+const deriveTradeLocations = (p: TradeLocationSource = {}) => {
   const onRaw =
     p.oncampusPlaceCode ??
     p.oncampusPlace ??
@@ -713,7 +807,7 @@ const deriveTradeLocations = (p = {}) => {
 }
 
 // ✅ 응답 정규화(서버 DTO가 달라도 카드 렌더링 가능하게)
-const normalizePostSummary = raw => {
+const normalizePostSummary = (raw: RawOtherBook) => {
   const id = raw?.id ?? raw?.postId ?? raw?.salePostId
   const title = raw?.bookTitle ?? raw?.title ?? raw?.postTitle ?? ''
   const author = raw?.author ?? raw?.bookAuthor ?? ''
@@ -741,18 +835,19 @@ const normalizePostSummary = raw => {
 }
 
 // ✅ 탈퇴 판매자 판별 & 표시명/클릭 가능 여부
-const isSellerDeactivated = p =>
+const isSellerDeactivated = (p: SellerSource | null) =>
   Boolean(p?.sellerDeactivated) ||
   String(p?.sellerNickname ?? '').startsWith('탈퇴회원#') ||
   (p?.sellerId == null &&
     String(p?.sellerUsername ?? '').startsWith('탈퇴회원#'))
 
-const getDisplaySellerName = p =>
+const getDisplaySellerName = (p: SellerSource) =>
   isSellerDeactivated(p)
     ? '탈퇴한 회원'
     : p?.sellerNickname || p?.sellerUsername || p?.sellerName || '익명 사용자'
 
-const isSellerClickable = p => !isSellerDeactivated(p) && !!p?.sellerId
+const isSellerClickable = (p: SellerSource) =>
+  !isSellerDeactivated(p) && !!p?.sellerId
 
 const PostDetail = () => {
   const navigate = useNavigate()
@@ -760,13 +855,13 @@ const PostDetail = () => {
   const { user } = useContext(AuthCtx)
   const { t } = useTranslation()
 
-  const getStatusMap = () => ({
+  const getStatusMap = (): Record<SaleStatus, string> => ({
     FOR_SALE: t('postDetail.statusLabels.forSale'),
     RESERVED: t('postDetail.statusLabels.reserved'),
     SOLD_OUT: t('postDetail.statusLabels.soldOut')
   })
 
-  const getBookCondition = discountRate => {
+  const getBookCondition = (discountRate: number) => {
     // 할인율이 낮을수록 상태가 좋음: ≤30 상, ≤50 중, 그 외 하
     if (discountRate <= 30)
       return {
@@ -787,25 +882,25 @@ const PostDetail = () => {
     }
   }
 
-  const conditionMap = {
+  const conditionMap: Record<BookCondition, string> = {
     HIGH: t('postDetail.bookCondition.excellent'),
     MEDIUM: t('postDetail.bookCondition.good'),
     LOW: t('postDetail.bookCondition.fair')
   }
 
   // --- 상태 관리 ---
-  const [post, setPost] = useState(null)
+  const [post, setPost] = useState<SalePostDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<unknown>(null)
   const [liked, setLiked] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [reviewOpen, setReviewOpen] = useState(false)
-  const [reviewStar, setReviewStar] = useState(null)
+  const [reviewStar, setReviewStar] = useState<number | null>(null)
   const [reviewKeywords, setReviewKeywords] = useState('')
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
 
   const [showOtherBooks, setShowOtherBooks] = useState(false)
-  const [sellerOtherBooks, setSellerOtherBooks] = useState([])
+  const [sellerOtherBooks, setSellerOtherBooks] = useState<OtherBook[]>([])
   const [loadingOtherBooks, setLoadingOtherBooks] = useState(false)
 
   const [showReportModal, setShowReportModal] = useState(false)
@@ -817,7 +912,7 @@ const PostDetail = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await axios.get(`/api/posts/${id}`, {
+      const response = await axios.get<SalePostDetail>(`/api/posts/${id}`, {
         headers: getAuthHeader()
       })
       setPost(response.data)
@@ -832,20 +927,24 @@ const PostDetail = () => {
   const fetchMyLikes = useCallback(async () => {
     if (!localStorage.getItem('accessToken')) return
     try {
-      const response = await axios.get('/api/my/likes', {
-        headers: getAuthHeader()
-      })
+      const response = await axios.get<{ postId?: number; id?: number }[]>(
+        '/api/my/likes',
+        {
+          headers: getAuthHeader()
+        }
+      )
       const likedIds = new Set(response.data.map(p => p.postId ?? p.id))
-      setLiked(likedIds.has(parseInt(id)))
+      // 라우트가 /posts/:id라 id는 항상 있다
+      setLiked(likedIds.has(parseInt(id!)))
     } catch {}
   }, [id])
 
   // ✅ 판매자 다른 책 불러오기 (엔드포인트 다양성 대응 + 필드 정규화)
   const fetchSellerOtherBooks = useCallback(
-    async sellerId => {
+    async (sellerId: number) => {
       if (!sellerId) return
       setLoadingOtherBooks(true)
-      const tryFetch = async (url, cfg) => {
+      const tryFetch = async (url: string, cfg?: AxiosRequestConfig) => {
         try {
           const res = await axios.get(url, cfg)
           return res.data
@@ -863,7 +962,9 @@ const PostDetail = () => {
         (await tryFetch(`/api/posts`, { params: { sellerId } }))
 
       try {
-        const list = Array.isArray(data) ? data : data?.content || [] // Page일 수도 있음
+        const list: RawOtherBook[] = Array.isArray(data)
+          ? data
+          : data?.content || [] // Page일 수도 있음
         const normalized = list
           .map(normalizePostSummary)
           .filter(b => (b.id ?? 0) !== Number(id))
@@ -922,7 +1023,7 @@ const PostDetail = () => {
       return
     }
     try {
-      const response = await axios.post(
+      const response = await axios.post<{ id: number }>(
         `/api/chat/rooms?salePostId=${salePostId}&buyerId=${buyerId}`,
         {},
         { headers: getAuthHeader() }
@@ -931,7 +1032,7 @@ const PostDetail = () => {
       void navigate(`/chat/${chatRoom.id}`)
     } catch (err) {
       const errorMessage =
-        err.response?.data?.message ||
+        (err as AxiosError<ApiResponse>).response?.data?.message ||
         '채팅방을 열 수 없습니다. 잠시 후 다시 시도해주세요.'
       alert(errorMessage)
     }
@@ -947,8 +1048,8 @@ const PostDetail = () => {
 
   // ✅ 라우팅 경로 수정: 상세 페이지로 이동
   const handleOtherBookClick = useCallback(
-    bookId => {
-      if (bookId !== parseInt(id)) {
+    (bookId: OtherBook['id']) => {
+      if (bookId !== parseInt(id!)) {
         void navigate(`/posts/${bookId}`, { replace: true })
         setShowOtherBooks(false)
       }
@@ -987,7 +1088,8 @@ const PostDetail = () => {
     try {
       setReviewSubmitting(true)
       await createPeerReview({
-        postId: post.id ?? post.postId ?? Number(id),
+        // 후기 모달은 판매 완료된 글을 불러온 뒤에만 열린다
+        postId: post!.id ?? post!.postId ?? Number(id),
         ratingLabel,
         ratingScore,
         ratingKeywords: kw,
@@ -996,7 +1098,10 @@ const PostDetail = () => {
       alert('후기가 저장되었습니다.')
       setReviewOpen(false)
     } catch (e) {
-      alert(e.response?.data?.message || t('postDetail.review.saveError'))
+      alert(
+        (e as AxiosError<ApiResponse>).response?.data?.message ||
+          t('postDetail.review.saveError')
+      )
     } finally {
       setReviewSubmitting(false)
     }
@@ -1004,9 +1109,10 @@ const PostDetail = () => {
 
   const discountRate = useMemo(() => {
     if (!post) return 0
-    return post.originalPrice > 0
+    // originalPrice가 null이면 비교가 거짓이라 0이 된다
+    return post.originalPrice! > 0
       ? Math.round(
-          ((post.originalPrice - post.price) / post.originalPrice) * 100
+          ((post.originalPrice! - post.price) / post.originalPrice!) * 100
         )
       : 0
   }, [post])
@@ -1072,7 +1178,7 @@ const PostDetail = () => {
     } catch {}
   }
 
-  const onReportSubmit = async e => {
+  const onReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     // 필수값 검증
     const OTHER_LABEL = t('postDetail.reportModal.options.other')
@@ -1397,7 +1503,7 @@ const PostDetail = () => {
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            filled={i < Math.floor(post.sellerRating)}
+                            filled={i < Math.floor(post.sellerRating!)}
                           />
                         ))}
                       </Stars>
@@ -1505,11 +1611,11 @@ const PostDetail = () => {
                       onClick={() => handleOtherBookClick(book.id)}
                       style={{
                         borderColor:
-                          book.id === parseInt(id) ? '#007bff' : '#e0e0e0',
+                          book.id === parseInt(id!) ? '#007bff' : '#e0e0e0',
                         backgroundColor:
-                          book.id === parseInt(id) ? '#f8f9fa' : 'white'
+                          book.id === parseInt(id!) ? '#f8f9fa' : 'white'
                       }}>
-                      {book.id === parseInt(id) && (
+                      {book.id === parseInt(id!) && (
                         <div
                           style={{
                             position: 'absolute',
