@@ -3,7 +3,7 @@
 이 문서를 읽으면 홍책방의 구성 요소와 주요 요청 흐름을 파악하고, 고칠 코드의 위치를 빠르게 찾을 수 있다.
 각 흐름 끝의 "알려진 결함"은 [backlog.md](backlog.md)의 항목 ID다.
 
-기준 커밋: `9752da9` (2026-10-03). 이미지 저장소와 프론트엔드 절은 `8cc047b`(2026-10-22) 기준으로 고쳤다. 코드가 바뀌면 이 문서도 함께 고친다.
+기준 커밋: `6cb28fb` (2026-10-22). 코드가 바뀌면 이 문서도 함께 고친다.
 
 ## 구성 요소
 
@@ -16,7 +16,7 @@ Spring Boot 백엔드 (Cloud Run, 최대 인스턴스 1개)
   ├─ MySQL       : 업무 데이터 (JPA)
   ├─ Redis       : 로그아웃한 access 토큰 블랙리스트
   ├─ 이미지 저장소 : local(./uploads). GCS 모드는 지웠다(D-R)
-  ├─ toxic-filter : 유해 표현 판정 (별도 저장소, Flask + KcBERT)
+  ├─ toxic-filter : 유해 표현 판정 (별도 저장소, Flask + KcBERT. 개편해서 들여올 예정, D-V)
   └─ 외부 API     : Kakao 책 검색, Naver 장소·길찾기, 기상청(KMA), Gmail SMTP
 ```
 
@@ -59,31 +59,6 @@ Spring Boot 백엔드 (Cloud Run, 최대 인스턴스 1개)
 - 인증 상태는 `shared/contexts/AuthContext.tsx`가 관리한다. 토큰은 `localStorage`의 `accessToken`, `refreshToken`에 있다.
 - 다국어 문구는 `app/locales/{ko,en,ja,zh}/translation.json`에 있다.
 - 스타일은 styled-components를 쓴다.
-
-#54 이전 경로는 아래처럼 바뀌었다. 백로그의 위치 열에 남은 옛 경로는 이 표로 찾는다.
-
-| 옛 경로 | 새 경로 |
-|---|---|
-| `App.jsx`, `main.jsx`, `i18n.js`, `locales/`, `styles/GlobalStyles`, `components/RequireAuth` | `app/` |
-| `components/ui` | `shared/ui` (`FloatingChatBot`만 `features/chatbot`) |
-| `components/{Header,Footer,SidebarMenu,WarningModal}` | `shared/layout` |
-| `contexts/{AuthContext,WritingContext}` | `shared/contexts` |
-| `contexts/LocationContext` | `features/map` |
-| `lib/api` | `shared/api/client` |
-| `api/{auth,notifications,peerReviews}` | `shared/api` |
-| `api/users` | `features/account/api` |
-| `api/{chat,reservations}` | `features/chat/api` |
-| `utils/` | `shared/lib` |
-| `components/Hero` | `features/home` |
-| `components/{NaverMap,PlaceDetailModal,UserCategory,PlaceTypeFilter}` | `features/map` |
-| `components/Comments/WantedComments` | `features/wanted` |
-| `components/ChatBotModal` | `features/chatbot` |
-| `pages/{Login,Register,VerificationConfirmPage}` | `features/auth` |
-| `pages/{MyPage,UserProfile,AccountDeactivate}` | `features/account` |
-| `pages/{Marketplace,PostDetail,PostWrite,Search,MyBookstore}` | `features/marketplace` |
-| `pages/{Wanted,WantedDetail,WantedWrite}` | `features/wanted` |
-| `pages/Chat` | `features/chat` |
-| `pages/Map` | `features/map` |
 
 ## 주요 흐름
 

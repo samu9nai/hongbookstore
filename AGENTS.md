@@ -33,6 +33,7 @@
 | `.github/workflows-disabled/` | 비활성 배포 workflow |
 
 유해 표현 검사 API는 별도 저장소 [HongikBookStore/toxic-filter](https://github.com/HongikBookStore/toxic-filter)에 있다.
+이 서비스는 그대로 옮기지 않고 개편해서 이 저장소의 `toxic-filter/`로 들여온다(D-V, MOD-06).
 
 ## 검증 명령
 
@@ -101,7 +102,8 @@ Issue, 브랜치, 커밋, PR, 병합 규칙의 정본은 [CONTRIBUTING.md](CONTR
 - **백로그를 갱신한다.** 작업을 시작하면 `docs/backlog.md`의 상태를 `진행`으로 바꾸고 Issue 번호를 적는다. 끝나면 PR 번호를 적는다.
   새 결함을 찾으면 근거와 함께 항목을 추가한다.
 - **리뷰는 문서로 남긴다.** 다른 에이전트의 분석이나 PR을 검토한 결과는
-  `docs/reviews/YYYY-MM-DD-<에이전트>-<주제>.md`에 쓴다. 리뷰 문서에는 아래 내용을 적는다.
+  `docs/reviews/YYYY-MM-DD-<에이전트>-<주제>.md`에 쓰고, [docs/reviews/README.md](docs/reviews/README.md) 목차에 한 줄을 더한다.
+  리뷰 문서에는 아래 내용을 적는다.
   - 대상(PR 번호 또는 문서)과 기준 커밋
   - 항목별 판정: 동의 / 부분 동의 / 반박
   - 근거 수준: **실행 확인**(명령·테스트로 확인) / **소스 확인**(코드에서 확인) / **위험 추론**(코드에서 도출, 미재현)
