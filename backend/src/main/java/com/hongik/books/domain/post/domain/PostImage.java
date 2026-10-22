@@ -24,7 +24,7 @@ public class PostImage {
     private SalePost salePost; // 이 이미지가 속한 판매 게시글
 
     @Column(nullable = false, length = 2048)
-    private String imageUrl; // GCP에 저장된 이미지 URL
+    private String imageUrl; // 이미지 저장소의 이미지 URL
 
     @Builder
     public PostImage(SalePost salePost, String imageUrl) {

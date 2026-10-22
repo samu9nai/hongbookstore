@@ -37,11 +37,12 @@
 | SEC-07 | P1 | 대기 | access·refresh 토큰의 형식이 같아 refresh 토큰으로 일반 API를 호출할 수 있다. 재발급 API가 없다 | `auth/jwt/JwtTokenProvider.java:48` | C-7, H-02 |
 | SEC-08 | P1 | 대기 | 소셜 계정을 이메일만으로 합친다. provider·providerId를 저장하지 않고, Kakao의 이메일 인증 여부를 확인하지 않는다 | `security/oauth/CustomOAuth2UserService.java:66` | C-9 |
 | SEC-09 | P1 | 대기 | CORS가 `https://*.vercel.app`을 credentials와 함께 허용한다. `ALLOWED_ORIGINS` 설정은 읽기만 하고 쓰지 않는다 | `config/SecurityConfig.java:43`, `:144` | C-8 |
-| SEC-10 | P1 | 대기 | 업로드 파일의 확장자와 Content-Type을 클라이언트 값 그대로 저장한다 | `common/util/GcpStorageUtil.java:45`, `common/util/LocalStorageUtil.java:38` | C-10 |
+| SEC-10 | P1 | 대기 | 업로드 파일의 확장자와 Content-Type을 클라이언트 값 그대로 저장한다 | `common/util/LocalStorageUtil.java:38` (GCS 구현은 #71에서 지웠다) | C-10 |
 | SEC-11 | P2 | 대기 | 외부 지도 API 프록시(`/api/naver/**`, `/api/directions/**`)를 로그인 없이 호출할 수 있어 API 쿼터를 소모시킬 수 있다 | `config/SecurityConfig.java` | C-11 |
 | SEC-12 | P2 | 대기 | 기본 프로필이 `dev`이고, dev 프로필은 actuator 엔드포인트를 모두 노출한다 | `src/main/resources/application.yml:5`, `:252` | C |
 | SEC-13 | P1 | 완료 (#25) | 프론트 직접 의존성의 공개 취약점(GHSA) 49건. next-auth(3건)·http-proxy-middleware(2건)는 패키지를 지워서(#23), vite 7.3.5(5건)·axios 1.20.0(35건)·postcss 8.5.23(4건)은 Renovate 보안 PR(#22, #21, #19)로 고쳤다. Dependency Dashboard의 OSV 조회 결과 0건이다 | `frontend/package.json`, `pnpm-lock.yaml` | Renovate OSV 조회(#15) |
 | SEC-14 | P1 | 완료 (#27) | 전이 의존성의 공개 취약점 26건(high 15, moderate 8, low 3). Renovate OSV는 직접 의존성만 조회해서 잡지 못한다. 기록한 25건에 styled-components 경유 source-map-js 1.2.1(1건)이 더해졌다. lockfile만 고쳐서 semver 범위 안에서 모두 해소했다: react-router 7.18.4(12건), styled-components 6.5.3으로 postcss 8.4.49 의존 제거(postcss 4건, nanoid 3건, source-map-js 1건), vite 7.3.6·esbuild 0.28.2(1건), rollup 4.64.0(1건), @babel/core 7.29.7(1건), browserslist 4.29.3(2건), baseline-browser-mapping 2.11.27(1건). `pnpm audit` 결과 0건이다 | `pnpm-lock.yaml` | `pnpm audit` (#24) |
+| SEC-15 | P1 | 대기 | 백엔드 런타임 의존성의 공개 취약점. 의존성 수는 Gradle이 `runtimeClasspath`에서 고른 아티팩트의 고유 모듈(BOM 제외) 기준이고, 측정 스크립트는 [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md#로컬-자동-검사)에 있다. 이 모듈 좌표 전체를 OSV querybatch로 조회했다. 2026-10-22 Spring Boot 3.5.10 기준으로 모듈 218개 가운데 32개 패키지에서 고유 권고 115건(critical 11, high 42, moderate 53, low 9)이 나온다. Tomcat·Netty·Jackson·Spring Framework·Spring Security·Spring Data에 몰려 있다. Spring Framework 6.2의 critical 일부는 OSS 7.0.9에서만 고쳐져 Boot 4.x 전환(OPS-08)이 필요하다. GCS 의존성을 지운 뒤(OPS-10) 다시 측정했다: 모듈 129개, 취약 패키지 30개, 고유 권고 113건(critical 11, high 42, moderate 51, low 9). opentelemetry-api·commons-lang3의 moderate 2건만 사라졌다. 임시 사본에서 Boot 3.5.16으로 올리면 모듈 129개 가운데 취약 패키지 11개, 고유 권고 32건(critical 7, high 10, moderate 15)이 남는다. 남는 critical은 Tomcat 10.1.55(3건, 10.1.58에서 수정), Netty 4.1.135(1건, 4.1.137에서 수정), Spring Framework 6.2.19(3건, 7.0.9에서만 수정)다 | `backend/build.gradle.kts` | OSV querybatch (#71) |
 
 ## 거래 정합성 (TXN)
 
@@ -106,6 +107,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | BE-01 | P1 | 대기 | 닉네임 컬럼은 25자인데 가입 로직은 최대 50자로 만든다. 이메일 앞부분이 25자를 넘으면 가입이 실패한다 | `domain/user/domain/User.java:20`, `security/oauth/CustomOAuth2UserService.java:109` | C |
 | BE-02 | P3 | 대기 | README는 JWT 비밀값을 base64라고 설명하지만 코드는 문자열의 UTF-8 바이트를 그대로 쓴다 | `auth/jwt/JwtTokenProvider.java:34`, `README.md` | C |
 | BE-03 | P1 | 대기 | 백엔드 테스트가 `contextLoads` 1개뿐이다. OPS-04에서 분리했다 | `backend/src/test` | C, H-07 |
+| BE-04 | P3 | 대기 | 삭제한 로컬 이미지 URL을 다시 조회하면 404 대신 500을 반환한다. 포괄 예외 처리기가 `NoResourceFoundException`을 서버 오류로 바꾼다. PR #72의 기준 `11c8b6e`와 head `413fdee`에서 같은 MockMvc 검사로 재현했으며 이번 PR의 회귀는 아니다 | `common/exception/GlobalExceptionHandler.java:115` | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
 | OPS-01 | P2 | 대기 | 스키마 마이그레이션 도구가 없다 | `src/main/resources/application.yml` | C, H-06 |
 | OPS-02 | P2 | 대기 | DB 트랜잭션 안에서 외부 저장소에 업로드하고, 커밋 전에 알림을 보낸다 | `domain/post/service/SalePostService.java:41`, `:332`, `domain/chat/service/ChatReservationService.java` | H-06 |
 | OPS-03 | P2 | 대기 | STOMP simple broker와 SSE emitter가 프로세스 메모리에 있어 인스턴스 1개에서만 동작한다. 이 전제를 문서와 설정에 명시해야 한다 | `config/WebSocketConfig.java`, `domain/notification/sse/EmitterRepository.java` | H-06 |
@@ -115,9 +117,11 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | OPS-07 | P3 | 대기 | 코드 위생: `DepartmentNormalizer` 중복, `weather/utill` 오타, `catch (Exception …)` 44곳, 작업 지시용 주석 | 여러 곳 | C |
 | OPS-08 | P2 | 대기 | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다 | `backend/build.gradle.kts` | |
 | OPS-09 | P2 | 완료 (#51) | Husky의 `core.hooksPath=.husky/_`가 `.git/hooks/pre-push`의 Git LFS 업로드 훅을 대신하지만 `.husky/pre-push`가 없다. 새 LFS 이미지 7개를 포함한 push가 GH008로 거절됐다. `git lfs push origin feature/#48-brand-icons`로 이미지를 올린 뒤 재시도해 해결했다. `.husky/pre-push`에서 `git lfs pre-push`를 실행한다 | `.husky/`, `.gitattributes` | #48, PR #49 (실행 확인) |
+| OPS-10 | P2 | 완료 (#72) | 이미지 저장소의 `gcp` 모드가 `spring-cloud-gcp` 관련 모듈 89개를 런타임에 끌어온다(SEC-15의 집계 기준). 로컬에서만 실행하는 이 프로젝트(D-06)는 `local` 모드만 쓴다. `gcp` 모드와 의존성을 지운다(D-R) | `backend/build.gradle.kts`, `common/util/GcpStorageUtil.java`, `config/GcpStorageConfig.java`, `application.yml` | OSV querybatch (#71) |
 
 ## 문서 (DOC)
 
 | ID | 우선 | 상태 | 문제 | 위치 | 출처 |
 |---|---|---|---|---|---|
 | DOC-01 | P3 | 대기 | 영역별 개발 컨벤션 문서가 없다. NA-WA의 프론트엔드·백엔드 컨벤션은 Vue·MyBatis 기준이라 React·Spring Data JPA에 맞게 다시 써야 한다. TS 전환을 시작할 때 실제 코드를 보고 쓴다 | `frontend/docs/`, `backend/docs/` | #11 |
+| DOC-02 | P3 | 완료 (#72) | PR #72는 런타임 의존성을 212→120개, 제거 92개로 기록했지만 Gradle이 선택한 실제 아티팩트의 고유 모듈은 218→129개, 제거 89개다. 트리 텍스트의 좌표 문자열 집계로 PR 수치를 재현하면 직접 모듈 10개가 빠지고 BOM이 포함된다. 집계 기준과 문서 수치를 정정하고 OSV 조회 대상도 선택된 전체 좌표인지 확인해야 한다. 원본 OSV 입력이 없어 취약점 수 오류까지 확정하지는 않았다. 작성자가 같은 기준으로 다시 세어 모듈 218→129개(제거 89개, 추가 0개)를 재현했다. 옛 집계는 `group:artifact -> version` 형식의 줄을 놓쳐 OSV 조회에서도 `spring-boot-devtools`·`spring-boot-starter-actuator`·`spring-boot-starter-mail`이 빠졌다. 다시 조회한 결과로 SEC-15·OPS-10·D-R을 고쳤다 | `docs/backlog.md:45,119`, `docs/decisions.md:34` (PR #72 head `413fdee`) | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
