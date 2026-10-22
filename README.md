@@ -18,7 +18,7 @@
 
 ### Tech Stacks
 > Frontend: <br/>
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=JavaScript&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
@@ -59,12 +59,12 @@ HongBookStore는 **홍익대학교 학생 전용 중고 교재 거래 및 정보
 - 운영 기능: 신고(Admin), 알림 스트림, Actuator 헬스체크
 
 ### 시스템 구성
-- Frontend: React 19 + Vite, React Router, React Query, styled-components
+- Frontend: React 19 + Vite, TypeScript, React Router, styled-components
 - Backend: Spring Boot 3.5 (Java 21), Spring Security, WebSocket(STOMP), JPA, WebFlux(WebClient)
 - Data: MySQL, Redis
 - Storage: 로컬 파일 시스템(`./uploads`)
 - Monitoring: Spring Boot Actuator
-- Deployment: Docker, GCP Cloud Run, Vercel
+- Deployment: Docker, GCP Cloud Run, Vercel (원본 프로젝트의 운영 구성이다. 이 저장소는 로컬에서만 실행한다)
 
 ### 프로젝트 구조
 ```

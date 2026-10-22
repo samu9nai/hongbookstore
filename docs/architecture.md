@@ -3,7 +3,7 @@
 이 문서를 읽으면 홍책방의 구성 요소와 주요 요청 흐름을 파악하고, 고칠 코드의 위치를 빠르게 찾을 수 있다.
 각 흐름 끝의 "알려진 결함"은 [backlog.md](backlog.md)의 항목 ID다.
 
-기준 커밋: `9752da9` (2026-10-03). 코드가 바뀌면 이 문서도 함께 고친다.
+기준 커밋: `9752da9` (2026-10-03). 이미지 저장소와 프론트엔드 절은 `8cc047b`(2026-10-22) 기준으로 고쳤다. 코드가 바뀌면 이 문서도 함께 고친다.
 
 ## 구성 요소
 
@@ -46,7 +46,7 @@ Spring Boot 백엔드 (Cloud Run, 최대 인스턴스 1개)
 
 | 층 | 내용 |
 |---|---|
-| `app/` | 진입점(`main.jsx`), 라우팅(`App.jsx`), 전역 스타일, `RequireAuth`, i18n 설정과 `locales/` |
+| `app/` | 진입점(`main.tsx`), 라우팅(`App.tsx`), 전역 스타일, `RequireAuth`, i18n 설정과 `locales/` |
 | `features/<기능>/` | 기능별 화면과 그 기능만 쓰는 컴포넌트·컨텍스트. API 모듈은 `api/`에 둔다 |
 | `shared/` | 둘 이상의 기능이 쓰는 코드. `ui`(공통 UI), `layout`(Header·Footer·SidebarMenu·WarningModal), `contexts`(인증·작성 중 상태), `api`(axios 인스턴스 `client.ts`와 공통 API), `lib`(유틸) |
 
@@ -125,6 +125,8 @@ Spring Boot 백엔드 (Cloud Run, 최대 인스턴스 1개)
 알려진 결함: SEC-03, OPS-03.
 
 ## 배포
+
+원본 프로젝트의 운영 구성이다. 이 저장소는 실제 서비스를 다시 운영하지 않고 로컬에서만 실행한다(D-06).
 
 - 백엔드: `backend/Dockerfile`로 이미지를 만들어 Cloud Run에 배포한다. 설정은 `deploy/cloudrun/`에 있다. 요청 제한 시간 60초, 최대 인스턴스 1개.
 - 프론트: Vercel. `vercel.json`이 `/api/*`를 Cloud Run 주소로 rewrite한다. `api/[...path].js` 서버리스 프록시도 함께 있다.

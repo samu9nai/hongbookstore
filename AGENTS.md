@@ -38,16 +38,16 @@
 
 코드를 바꾸면 해당 영역의 명령을 실행한 뒤에 완료를 보고한다.
 
-| 영역 | 명령 | 현재 기준선 (2026-10-03) |
+| 영역 | 명령 | 현재 기준선 (2026-10-22) |
 |---|---|---|
 | 백엔드 컴파일·테스트 | `cd backend && ./gradlew test` | 통과. 테스트는 `contextLoads` 1개뿐이다 |
 | 프론트 설치 | `pnpm install` (저장소 루트) | Node 26.12.1(`.node-version`), pnpm 12.8.1(`packageManager`). Node 26에는 corepack이 없어 `npm install -g corepack`으로 따로 설치한다 |
-| 프론트 빌드 | `pnpm build` | 통과. 메인 JS 청크 약 1,056 kB |
+| 프론트 빌드 | `pnpm build` | 통과. 메인 JS 청크 약 1,038 kB |
 | 프론트 타입 검사 | `pnpm type-check` | 통과. TypeScript 7이 `src`의 `.ts`·`.tsx`를 `strict`로 검사한다. `allowJs`는 끈다(#68). 앱이 읽는 환경 변수와 전역 값의 타입은 `src/env.d.ts`에 있다 |
 | 프론트 린트 | `pnpm lint` | **오류 2개, 경고 0개** (oxlint type-aware). 남은 2개는 Vercel 함수 `frontend/api/*.js`에 있다. 바꾼 파일의 오류·경고는 0건으로 만든다(D-L) |
 | 프론트 서식 | `pnpm format:check` | 통과 (Prettier) |
 | 프론트 단위 테스트 | `pnpm test:unit --run` | 통과. Vitest 테스트 7개. DOM이 필요한 테스트는 파일 첫 줄에 `// @vitest-environment jsdom`을 적는다 |
-| 프론트 e2e | `pnpm test:e2e` | 통과. 백엔드 없는 홈 화면 스모크 1개(Chromium). 처음 한 번 `pnpm --filter @hongbookstore/frontend exec playwright install chromium`이 필요하다 |
+| 프론트 e2e | `pnpm test:e2e` | 통과. 백엔드 없는 홈 화면과 로그인 화면 스모크 2개(Chromium). 처음 한 번 `pnpm --filter @hongbookstore/frontend exec playwright install chromium`이 필요하다 |
 
 - 커밋하면 pre-commit 훅이 스테이징한 프론트 파일에 oxlint `--fix`와 Prettier를 실행한다. 오류가 남으면 커밋을 막는다.
 - push하면 pre-push 훅이 `git lfs pre-push`를 실행한다. Husky가 `core.hooksPath`를 바꿔서 `.git/hooks`의 LFS 훅은 실행되지 않는다.
