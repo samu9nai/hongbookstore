@@ -139,7 +139,7 @@ VITE_NAVER_MAP_CLIENT_SECRET=
 1. `cd backend`
 2. `./gradlew bootRun`
 
-**Frontend** (Node 24.21.0, pnpm 12.8.1. `corepack enable pnpm` 후 저장소 루트에서 실행)
+**Frontend** (Node 26.12.1, pnpm 12.8.1. Node 25부터 corepack이 빠졌으므로 `npm install -g corepack`과 `corepack enable pnpm`을 먼저 실행한 뒤 저장소 루트에서 실행)
 1. `pnpm install`
 2. `pnpm dev`
 

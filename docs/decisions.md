@@ -20,7 +20,7 @@
 | D-E | 2026-10-03 | `main`에 직접 push하지 않고 브랜치와 PR로 합친다. 한 PR은 한 에이전트가 쓰고 다른 에이전트가 검토한다. 병합은 사용자가 한다 | 에이전트의 작업을 독립된 시각으로 검토받기 위해서다 |
 | D-06 | 2026-10-03 | 이 프로젝트의 목표는 포트폴리오용 정리다. 실제 서비스 재운영은 하지 않는다 | 사용자가 정했다. 배포 인프라보다 로컬 재현성·문서·CI를 우선한다 |
 | D-F | 2026-10-03 | 저장소를 `backend/`(Spring Boot), `frontend/`(React), `toxic-filter/`(유해 표현 검사 서비스) 레이아웃으로 바꾼다. toxic-filter는 별도 저장소에서 이 저장소로 옮긴다 | `server/`는 toxic-filter도 서버라서 뜻이 겹친다. `client/`는 `ToxicFilterClient`·OAuth2 client와 이름이 겹친다. NA-WA와 같은 구조라 도구 설정을 옮기기 쉽다 |
-| D-G | 2026-10-03 | 프론트엔드 패키지 매니저는 pnpm 12.8.1, Node는 24.21.0 LTS로 정한다. 의존성 업데이트는 Dependabot 대신 Renovate가 맡는다 | NA-WA와 도구를 맞춘다. Dependabot은 pnpm v10까지만 지원한다. Mend Renovate Community Cloud는 개인 저장소에서 무료다 |
+| D-G | 2026-10-03 | 프론트엔드 패키지 매니저는 pnpm 12.8.1, Node는 24.21.0 LTS로 정한다. 의존성 업데이트는 Dependabot 대신 Renovate가 맡는다. Node 버전 부분은 대체됨: D-S | NA-WA와 도구를 맞춘다. Dependabot은 pnpm v10까지만 지원한다. Mend Renovate Community Cloud는 개인 저장소에서 무료다 |
 | D-H | 2026-10-03 | 프론트엔드 린트·타입 검사는 oxlint 1.86 + oxlint-tsgolint 7.0.2003 + TypeScript 7.0.2, 서식은 Prettier 3.9로 정한다. Vite+는 지금 도입하지 않고 FE-08에서 다시 검토한다 | typescript-eslint 8.71은 TypeScript 6.1 미만만 지원한다. tsgolint는 TS 7 위에서 동작하고 type-aware 린트가 stable이다. Vite+ 1.0은 2026-09-28에 나왔고, 포매터로 1.0 전인 oxfmt를 쓴다 |
 | D-I | 2026-10-03 | PR은 `Create a merge commit`으로만 병합한다. 저장소 설정으로 squash·rebase merge를 막지는 않는다 | PR 안에서 목적별로 나눈 커밋(파일 이동, 일괄 서식)을 남기고, `.git-blame-ignore-revs`의 커밋 해시를 유지한다. 쌓은 PR을 차례로 병합할 수 있다. NA-WA는 squash merge를 쓰지만 이 저장소는 다르게 정했다 |
 | D-J | 2026-10-03 | 작업은 Issue로 시작한다. `docs/backlog.md`는 결함 목록으로 유지하고, 진행 중인 항목에 Issue 번호를 적는다 | 사람은 GitHub Issue로, 에이전트는 저장소 안의 백로그로 같은 작업을 추적한다 |
@@ -32,6 +32,7 @@
 | D-P | 2026-10-09 | 프론트엔드 `src`를 `app`·`features`·`shared` 세 층으로 옮긴다. 기능은 `home`·`auth`·`account`·`marketplace`·`wanted`·`chat`·`map`·`chatbot` 8개다. 의존 방향은 `app → features → shared`이고 기능끼리는 import하지 않는다. 같은 층 안은 상대 경로, 층을 넘으면 `@/` 별칭을 쓴다. 이 구조 변경을 FE-11 4단계보다 먼저 하고, 4단계는 기능 폴더 단위 PR로 나눈다 | 화면 하나를 고칠 때 `pages`·`components`·`api`·`contexts`를 오가지 않게 한다. 파일을 한 번만 옮기고, TS 전환 PR을 나누는 기준을 기능 폴더로 맞춘다. 이동 커밋은 pre-commit 린트 때문에 import 경로 수정을 함께 담는다(#54) |
 | D-Q | 2026-10-11 | `docs/`(백로그·결정·리뷰 문서)를 공개 저장소에 계속 올린다. 로컬 전용으로 옮기지 않는다 | 사용자가 보안을 이유로 로컬 관리를 검토한 뒤 현행 유지를 골랐다. 문서에서 비밀값·접속정보를 찾지 못했다. 소스가 공개라 결함 위치는 코드로도 찾을 수 있고, 이미 올린 문서는 커밋 이력에 남는다. 에이전트 협업 규칙(D-C)과 포트폴리오 목표(D-06)가 이 문서를 전제로 한다 |
 | D-R | 2026-10-22 | 이미지 저장소의 `gcp` 모드(GCP Cloud Storage)와 `spring-cloud-gcp` 의존성을 지운다. 이미지는 `local` 저장소(`./uploads`)에만 둔다. Cloud Run 배포 스크립트의 정리는 따로 정한다 | 이 프로젝트는 과거 코드의 결함을 리팩터링으로 고치는 포트폴리오이고, 로컬에서만 실행한다(D-06). 2026-10-22 측정에서 백엔드 런타임 모듈 218개 가운데 89개가 GCS 모드에만 쓰였다(집계 기준은 SEC-15). 쓰지 않는 기능의 의존성이 취약점 점검 범위만 넓힌다(SEC-15, OPS-10, #71) |
+| D-S | 2026-10-22 | Node를 26.12.1로 올린다. 26.x가 2026-10-28에 Active LTS가 되면 그 라인의 패치를 따라간다. D-G의 Node 버전을 대체한다 | Node.js 2026-10-21 보안 릴리스의 CVE 10건 가운데 8건이 24.21.0에 해당한다. 24.x는 2026-10-20에 Maintenance 단계로 넘어갔다. 사용자가 24.22.1 대신 다음 LTS 라인인 26을 골랐다. Node 25부터 corepack이 빠져 pnpm은 `npm install -g corepack`으로 설치한 corepack이나 CI의 `pnpm/action-setup`으로 준비한다(SEC-16, #73) |
 
 ## 확인이 필요한 제안
 
