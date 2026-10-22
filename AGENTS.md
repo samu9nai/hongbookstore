@@ -22,7 +22,7 @@
 
 | 경로 | 내용 |
 |---|---|
-| `backend/src/main/java/com/hongik/books` | Spring Boot 백엔드 (Java 21, Boot 3.5) |
+| `backend/src/main/java/com/hongik/books` | Spring Boot 백엔드 (Java 21, Boot 4.1) |
 | `backend/src/main/resources/application.yml` | 백엔드 설정. 비밀값은 `backend/.env`(커밋 금지)에서 읽는다 |
 | `backend/src/test` | 백엔드 테스트. `test` 프로필은 H2를 쓴다 |
 | `frontend` | React 19 + Vite 8 프론트엔드. `src`는 `app`·`features`·`shared` 세 층이다(D-P, [docs/architecture.md](docs/architecture.md)). 앱 소스는 TypeScript다(FE-11) |
@@ -40,7 +40,7 @@
 
 | 영역 | 명령 | 현재 기준선 (2026-10-22) |
 |---|---|---|
-| 백엔드 컴파일·테스트 | `cd backend && ./gradlew test` | 통과. 테스트는 `contextLoads` 1개뿐이다 |
+| 백엔드 컴파일·테스트 | `cd backend && ./gradlew test` | 통과. 테스트 7개: `contextLoads` 1개와 API 응답 회귀 테스트 `ApiContractTest` 6개. 테스트는 Redis 블랙리스트 조회를 목으로 대신한다 |
 | 프론트 설치 | `pnpm install` (저장소 루트) | Node 26.12.1(`.node-version`), pnpm 12.8.1(`packageManager`). Node 26에는 corepack이 없어 `npm install -g corepack`으로 따로 설치한다 |
 | 프론트 빌드 | `pnpm build` | 통과. 메인 JS 청크 약 1,038 kB |
 | 프론트 타입 검사 | `pnpm type-check` | 통과. TypeScript 7이 `src`의 `.ts`·`.tsx`를 `strict`로 검사한다. `allowJs`는 끈다(#68). 앱이 읽는 환경 변수와 전역 값의 타입은 `src/env.d.ts`에 있다 |
