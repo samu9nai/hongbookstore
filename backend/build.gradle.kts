@@ -19,6 +19,12 @@ configurations {
     }
 }
 
+// Boot 4.1.1이 관리하는 버전에 공개 취약점이 있어 패치 버전만 올린다(SEC-15).
+// 다음 Boot 패치가 같은 버전 이상을 관리하면 이 줄을 지운다.
+extra["tomcat.version"] = "11.0.27"
+extra["jackson-bom.version"] = "3.1.8"
+extra["jackson-2-bom.version"] = "2.21.8"
+
 repositories {
     mavenCentral()
 }
