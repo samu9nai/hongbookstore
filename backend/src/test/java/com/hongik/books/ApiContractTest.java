@@ -19,8 +19,8 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.oneOf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -108,13 +108,14 @@ class ApiContractTest {
                 .andExpect(content().string(containsString("\"data\":null")));
     }
 
-    // 실제 Tomcat은 3.5.10과 4.1.1 모두 절대 주소(http://localhost:<port>/login)를 보낸다.
-    // MockMvc는 3.5.10에서 절대 주소, 4.1.1에서 상대 주소를 돌려주므로 경로만 비교한다.
+    // Spring Security 7은 로그인 리다이렉트에 상대 주소를 쓰도록 기본값을 바꿨다(favorRelativeUris).
+    // 실제 Tomcat은 이를 절대 주소(http://localhost:<port>/login)로 바꿔 보내서 3.5.10과 4.1.1이 같다.
+    // MockMvc에는 이 변환이 없으므로 두 표기만 정확히 허용한다(BE-05).
     @Test
     void 토큰_없이_인증_API를_부르면_로그인_화면으로_보낸다() throws Exception {
         mvc.perform(get("/api/my/profile"))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location", endsWith("/login")));
+                .andExpect(header().string("Location", oneOf("/login", "http://localhost/login")));
     }
 
     @Test
