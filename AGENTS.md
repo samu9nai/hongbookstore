@@ -41,7 +41,7 @@
 | 영역 | 명령 | 현재 기준선 (2026-10-03) |
 |---|---|---|
 | 백엔드 컴파일·테스트 | `cd backend && ./gradlew test` | 통과. 테스트는 `contextLoads` 1개뿐이다 |
-| 프론트 설치 | `pnpm install` (저장소 루트) | Node 24.21.0(`.node-version`), pnpm 12.8.1(`packageManager`, corepack) |
+| 프론트 설치 | `pnpm install` (저장소 루트) | Node 26.12.1(`.node-version`), pnpm 12.8.1(`packageManager`). Node 26에는 corepack이 없어 `npm install -g corepack`으로 따로 설치한다 |
 | 프론트 빌드 | `pnpm build` | 통과. 메인 JS 청크 약 1,056 kB |
 | 프론트 타입 검사 | `pnpm type-check` | 통과. TypeScript 7이 `src`의 `.ts`·`.tsx`를 `strict`로 검사한다. `allowJs`는 끈다(#68). 앱이 읽는 환경 변수와 전역 값의 타입은 `src/env.d.ts`에 있다 |
 | 프론트 린트 | `pnpm lint` | **오류 2개, 경고 0개** (oxlint type-aware). 남은 2개는 Vercel 함수 `frontend/api/*.js`에 있다. 바꾼 파일의 오류·경고는 0건으로 만든다(D-L) |

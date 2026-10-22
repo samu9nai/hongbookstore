@@ -105,7 +105,7 @@ PR 제목은 Issue와 같은 `[Type] 한글 설명` 형식으로 쓴다. 본문�
 
 ### Frontend
 
-저장소 루트에서 실행한다. Node 24.21.0(`.node-version`)과 pnpm 12.8.1(`corepack enable pnpm`)이 필요하다.
+저장소 루트에서 실행한다. Node 26.12.1(`.node-version`)과 pnpm 12.8.1이 필요하다. Node 25부터 corepack이 Node에 들어 있지 않다. `npm install -g corepack`으로 설치한 뒤 `corepack enable pnpm`을 실행한다.
 
 ```shell
 pnpm install
