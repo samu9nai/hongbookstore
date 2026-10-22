@@ -19,7 +19,7 @@
 
 ## 다음 작업 순서 (제안)
 
-1. **FE-04 + OPS-04**: 미사용 의존성을 지우고 최소 CI(`./gradlew test`, `pnpm build`)를 만든다.
+1. **OPS-08 + SEC-15**: Spring Boot 4.1로 옮긴다. 먼저 3.5.10에서 API 응답 모양을 고정하는 회귀 테스트를 쓴다(BE-03).
 2. **SEC-01, SEC-02, SEC-04의 REST 부분**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
 3. **SEC-04의 STOMP 부분, SEC-03, SEC-05, SEC-09**: 실시간 채널 인증과 남은 인증 경로를 막는다.
 4. **SEC-06, SEC-07**: 토큰 구조를 다시 설계한다. D-03 결정이 필요하다.
@@ -116,7 +116,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | OPS-05 | P2 | 대기 | WebClient 하나를 위해 webflux 전체를 쓴다. macOS 전용 netty 의존성이 운영 빌드에 들어간다. `RestTemplate`에 제한 시간이 없다 | `build.gradle`, `config/RestTemplateConfig.java` | C |
 | OPS-06 | P3 | 대기 | Vercel `rewrite`와 서버리스 프록시가 함께 있고, 프록시가 보내는 `x-edge-key`를 백엔드가 검증하지 않는다. Cloud Run 주소가 하드코딩돼 있다 | `src/main/frontend/vercel.json`, `src/main/frontend/api/[...path].js`, `application.yml:201` | C |
 | OPS-07 | P3 | 대기 | 코드 위생: `DepartmentNormalizer` 중복, `weather/utill` 오타, `catch (Exception …)` 44곳, 작업 지시용 주석 | 여러 곳 | C |
-| OPS-08 | P2 | 대기 | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다 | `backend/build.gradle.kts` | |
+| OPS-08 | P2 | 대기 | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다. 3.5 라인의 마지막 OSS 릴리스는 3.5.16(2026-06-25)이고, SEC-15의 Spring Framework critical 3건은 7.x에서만 고쳐진다. 2026-10-22 사용자가 3.5.16 패치를 건너뛰고 4.1로 바로 옮기기로 정했다 | `backend/build.gradle.kts` | |
 | OPS-09 | P2 | 완료 (#51) | Husky의 `core.hooksPath=.husky/_`가 `.git/hooks/pre-push`의 Git LFS 업로드 훅을 대신하지만 `.husky/pre-push`가 없다. 새 LFS 이미지 7개를 포함한 push가 GH008로 거절됐다. `git lfs push origin feature/#48-brand-icons`로 이미지를 올린 뒤 재시도해 해결했다. `.husky/pre-push`에서 `git lfs pre-push`를 실행한다 | `.husky/`, `.gitattributes` | #48, PR #49 (실행 확인) |
 | OPS-10 | P2 | 완료 (#72) | 이미지 저장소의 `gcp` 모드가 `spring-cloud-gcp` 관련 모듈 89개를 런타임에 끌어온다(SEC-15의 집계 기준). 로컬에서만 실행하는 이 프로젝트(D-06)는 `local` 모드만 쓴다. `gcp` 모드와 의존성을 지운다(D-R) | `backend/build.gradle.kts`, `common/util/GcpStorageUtil.java`, `config/GcpStorageConfig.java`, `application.yml` | OSV querybatch (#71) |
 
