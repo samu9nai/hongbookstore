@@ -98,7 +98,7 @@ MOD-03 ~ MOD-05는 지금 [toxic-filter](https://github.com/HongikBookStore/toxi
   - `shared/api/auth.ts`의 `deleteAccount`, `features/chat/api/chat.ts`의 `getOrCreateChatRoom` 외 함수 4개 (#44)
   - `shared/ui`의 `Button`·`Input`, `Form`·`CommonCard`·`Layout`의 export 대부분 (#46)
   - `features/map/PlaceTypeFilter.tsx` (#52)
-- export 구조: `shared/ui/index.ts`는 `Card`를 `Card.tsx`에서 내보내므로 `CommonCard`의 `Card`·`CardHeader`는 index로 가져올 수 없다. `Search`·`Wanted`는 index의 `Card`와 `CommonCard`의 `CardTitle`을 함께 쓴다 (#46)
+- export 구조: `shared/ui/index.ts`는 `Card.tsx`의 `Card`를 이름을 붙여 내보내므로, `export *`로 다시 내보내는 `CommonCard`의 같은 이름 `Card`는 가려져 index로 가져올 수 없다. `CardHeader` 등 나머지 `CommonCard` export는 index로 가져올 수 있다. `Search`·`Wanted`는 index의 `Card`와 `CommonCard`의 `CardTitle`을 함께 쓴다 (#46)
 - 컴포넌트가 읽지 않는 props: `features/map/Navermap.tsx`의 `userLocation`·`routePath`·`showMyLocation`, `features/chatbot/ChatBotContent.tsx`의 `onClose` (#52)
 - 여는 코드가 없는 UI: `features/account/MyPage.tsx`의 사진 메뉴(`showPhotoMenu`)와 편집 취소 모달(`showEditCancelConfirm`) (#60)
 - 늘 같은 분기로 가는 코드
