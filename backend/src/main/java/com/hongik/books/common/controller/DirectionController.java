@@ -59,7 +59,7 @@ public class DirectionController {
             @RequestParam String goal,
             @RequestParam(required = false, defaultValue = "traoptimal") String option
     ) {
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(NAVER_DRIVING_V15)
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(NAVER_DRIVING_V15)
                 .queryParam("start", start)
                 .queryParam("goal", goal)
                 .queryParam("option", option);

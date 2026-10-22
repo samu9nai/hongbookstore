@@ -31,7 +31,7 @@ public class KmaClient {
     public JsonNode getVilageFcstPOP(int nx, int ny, LocalDate baseDate, String baseTime) {
         String baseDateStr = baseDate.format(DATE);
         String url = UriComponentsBuilder
-                .fromHttpUrl(baseUrl + pathVilage)
+                .fromUriString(baseUrl + pathVilage)
                 .queryParam("authKey", authKey)
                 .queryParam("dataType", "JSON")
                 .queryParam("base_date", baseDateStr)
@@ -58,7 +58,7 @@ public class KmaClient {
     /** 중기예보 URL(전문) – 텍스트 표 그대로 */
     public String getMidLandTable(String tmFc) {
         String url = UriComponentsBuilder
-                .fromHttpUrl(baseUrl + pathMidlandUrl)
+                .fromUriString(baseUrl + pathMidlandUrl)
                 .queryParam("authKey", authKey)
                 .queryParam("tmFc", tmFc)  // yyyyMMddHHmm (06:00/18:00)
                 .toUriString();
