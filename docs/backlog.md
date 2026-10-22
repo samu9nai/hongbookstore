@@ -107,6 +107,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | BE-01 | P1 | 대기 | 닉네임 컬럼은 25자인데 가입 로직은 최대 50자로 만든다. 이메일 앞부분이 25자를 넘으면 가입이 실패한다 | `domain/user/domain/User.java:20`, `security/oauth/CustomOAuth2UserService.java:109` | C |
 | BE-02 | P3 | 대기 | README는 JWT 비밀값을 base64라고 설명하지만 코드는 문자열의 UTF-8 바이트를 그대로 쓴다 | `auth/jwt/JwtTokenProvider.java:34`, `README.md` | C |
 | BE-03 | P1 | 대기 | 백엔드 테스트가 `contextLoads` 1개뿐이다. OPS-04에서 분리했다 | `backend/src/test` | C, H-07 |
+| BE-04 | P3 | 대기 | 삭제한 로컬 이미지 URL을 다시 조회하면 404 대신 500을 반환한다. 포괄 예외 처리기가 `NoResourceFoundException`을 서버 오류로 바꾼다. PR #72의 기준 `11c8b6e`와 head `413fdee`에서 같은 MockMvc 검사로 재현했으며 이번 PR의 회귀는 아니다 | `common/exception/GlobalExceptionHandler.java:115` | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
 | OPS-01 | P2 | 대기 | 스키마 마이그레이션 도구가 없다 | `src/main/resources/application.yml` | C, H-06 |
 | OPS-02 | P2 | 대기 | DB 트랜잭션 안에서 외부 저장소에 업로드하고, 커밋 전에 알림을 보낸다 | `domain/post/service/SalePostService.java:41`, `:332`, `domain/chat/service/ChatReservationService.java` | H-06 |
 | OPS-03 | P2 | 대기 | STOMP simple broker와 SSE emitter가 프로세스 메모리에 있어 인스턴스 1개에서만 동작한다. 이 전제를 문서와 설정에 명시해야 한다 | `config/WebSocketConfig.java`, `domain/notification/sse/EmitterRepository.java` | H-06 |
@@ -123,3 +124,4 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | ID | 우선 | 상태 | 문제 | 위치 | 출처 |
 |---|---|---|---|---|---|
 | DOC-01 | P3 | 대기 | 영역별 개발 컨벤션 문서가 없다. NA-WA의 프론트엔드·백엔드 컨벤션은 Vue·MyBatis 기준이라 React·Spring Data JPA에 맞게 다시 써야 한다. TS 전환을 시작할 때 실제 코드를 보고 쓴다 | `frontend/docs/`, `backend/docs/` | #11 |
+| DOC-02 | P3 | 대기 (#71, PR #72 리뷰) | PR #72는 런타임 의존성을 212→120개, 제거 92개로 기록했지만 Gradle이 선택한 실제 아티팩트의 고유 모듈은 218→129개, 제거 89개다. 트리 텍스트의 좌표 문자열 집계로 PR 수치를 재현하면 직접 모듈 10개가 빠지고 BOM이 포함된다. 집계 기준과 문서 수치를 정정하고 OSV 조회 대상도 선택된 전체 좌표인지 확인해야 한다. 원본 OSV 입력이 없어 취약점 수 오류까지 확정하지는 않았다 | `docs/backlog.md:45,119`, `docs/decisions.md:34` (PR #72 head `413fdee`) | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
