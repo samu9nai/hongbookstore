@@ -19,10 +19,10 @@
 | D-D | 2026-10-03 | 기존 React/Vite + Spring Boot 스택을 유지하고 단계적으로 고친다. 전면 재작성·프레임워크 교체를 하지 않는다 | Claude·Codex 분석 모두 결함의 원인을 빠진 검사와 갈라진 계약으로 보았고, 프레임워크의 한계는 찾지 못했다 |
 | D-E | 2026-10-03 | `main`에 직접 push하지 않고 브랜치와 PR로 합친다. 한 PR은 한 에이전트가 쓰고 다른 에이전트가 검토한다. 병합은 사용자가 한다 | 에이전트의 작업을 독립된 시각으로 검토받기 위해서다 |
 | D-06 | 2026-10-03 | 이 프로젝트의 목표는 포트폴리오용 정리다. 실제 서비스 재운영은 하지 않는다 | 사용자가 정했다. 배포 인프라보다 로컬 재현성·문서·CI를 우선한다 |
-| D-F | 2026-10-03 | 저장소를 `backend/`(Spring Boot), `frontend/`(React), `toxic-filter/`(유해 표현 검사 서비스) 레이아웃으로 바꾼다. toxic-filter는 별도 저장소에서 이 저장소로 옮긴다 | `server/`는 toxic-filter도 서버라서 뜻이 겹친다. `client/`는 `ToxicFilterClient`·OAuth2 client와 이름이 겹친다. NA-WA와 같은 구조라 도구 설정을 옮기기 쉽다 |
+| D-F | 2026-10-03 | 저장소를 `backend/`(Spring Boot), `frontend/`(React), `toxic-filter/`(유해 표현 검사 서비스) 레이아웃으로 바꾼다. toxic-filter는 별도 저장소에서 이 저장소로 옮긴다 | `server/`는 toxic-filter도 서버라서 뜻이 겹친다. `client/`는 `ToxicFilterClient`·OAuth2 client와 이름이 겹친다. NA-WA와 같은 구조라 도구 설정을 옮기기 쉽다. toxic-filter 부분은 D-V로 구체화했다 |
 | D-G | 2026-10-03 | 프론트엔드 패키지 매니저는 pnpm 12.8.1, Node는 24.21.0 LTS로 정한다. 의존성 업데이트는 Dependabot 대신 Renovate가 맡는다. Node 버전 부분은 대체됨: D-S | NA-WA와 도구를 맞춘다. Dependabot은 pnpm v10까지만 지원한다. Mend Renovate Community Cloud는 개인 저장소에서 무료다 |
 | D-H | 2026-10-03 | 프론트엔드 린트·타입 검사는 oxlint 1.86 + oxlint-tsgolint 7.0.2003 + TypeScript 7.0.2, 서식은 Prettier 3.9로 정한다. Vite+는 지금 도입하지 않고 FE-08에서 다시 검토한다 | typescript-eslint 8.71은 TypeScript 6.1 미만만 지원한다. tsgolint는 TS 7 위에서 동작하고 type-aware 린트가 stable이다. Vite+ 1.0은 2026-09-28에 나왔고, 포매터로 1.0 전인 oxfmt를 쓴다 |
-| D-I | 2026-10-03 | PR은 `Create a merge commit`으로만 병합한다. 저장소 설정으로 squash·rebase merge를 막지는 않는다 | PR 안에서 목적별로 나눈 커밋(파일 이동, 일괄 서식)을 남기고, `.git-blame-ignore-revs`의 커밋 해시를 유지한다. 쌓은 PR을 차례로 병합할 수 있다. NA-WA는 squash merge를 쓰지만 이 저장소는 다르게 정했다 대체됨: D-T |
+| D-I | 2026-10-03 | PR은 `Create a merge commit`으로만 병합한다. 저장소 설정으로 squash·rebase merge를 막지는 않는다 | PR 안에서 목적별로 나눈 커밋(파일 이동, 일괄 서식)을 남기고, `.git-blame-ignore-revs`의 커밋 해시를 유지한다. 쌓은 PR을 차례로 병합할 수 있다. NA-WA는 squash merge를 쓰지만 이 저장소는 다르게 정했다. 대체됨: D-T |
 | D-J | 2026-10-03 | 작업은 Issue로 시작한다. `docs/backlog.md`는 결함 목록으로 유지하고, 진행 중인 항목에 Issue 번호를 적는다 | 사람은 GitHub Issue로, 에이전트는 저장소 안의 백로그로 같은 작업을 추적한다 |
 | D-K | 2026-10-03 | 브랜치·커밋·PR 제목은 NA-WA 형식을 쓴다. 브랜치 `<type>/#<issue>-<desc>`, 커밋 `<type>(<scope>): <한글 요약> (#<issue>)`, PR 제목 `[Type] 한글 설명` | 두 포트폴리오 저장소의 규칙을 맞춘다. 이전 커밋은 다시 쓰지 않는다 |
 | D-L | 2026-10-08 | 프론트엔드 파일을 고치면 그 파일의 oxlint 오류·경고를 0건으로 만든다. `AGENTS.md`도 이 기준으로 적는다 | CONTRIBUTING.md·CI의 "바뀐 파일 린트"·pre-commit 훅이 이미 이 기준을 강제한다. `AGENTS.md`만 "늘리지 않는다"고 적혀 있어 에이전트가 헷갈렸다(#37) |
@@ -35,16 +35,12 @@
 | D-S | 2026-10-22 | Node를 26.12.1로 올린다. 26.x가 2026-10-28에 Active LTS가 되면 그 라인의 패치를 따라간다. D-G의 Node 버전을 대체한다 | Node.js 2026-10-21 보안 릴리스의 CVE 10건 가운데 8건이 24.21.0에 해당한다. 24.x는 2026-10-20에 Maintenance 단계로 넘어갔다. 사용자가 24.22.1 대신 다음 LTS 라인인 26을 골랐다. Node 25부터 corepack이 빠져 pnpm은 `npm install -g corepack`으로 설치한 corepack이나 CI의 `pnpm/action-setup`으로 준비한다(SEC-16, #73) |
 | D-T | 2026-10-22 | PR은 `Squash and merge`로 병합한다. `main`에는 PR 하나가 커밋 하나로 남고, 커밋 제목은 PR 제목(`[Type] 한글 설명 (#PR)`)이 된다. D-I를 대체한다. PR 안의 커밋은 리뷰하기 쉽게 계속 목적별로 나눈다. 일괄 서식 변경은 PR 하나로 따로 만들고 병합된 squash 커밋의 해시를 `.git-blame-ignore-revs`에 적는다. 다른 PR 위에 쌓은 PR은 아래 PR이 병합되면 `main` 위로 rebase한다 | 사용자가 #72·#74를 squash로 병합한 뒤 앞으로도 squash를 쓰기로 정했다. `main`의 이력이 PR 단위로 읽힌다. squash 커밋은 PR 브랜치의 커밋을 조상으로 갖지 않아서 쌓은 PR과 서식 커밋의 처리 방식을 함께 바꾼다(#75) |
 | D-U | 2026-10-22 | Spring Boot를 3.5.10에서 4.1로 올린다. 3.5.16 패치 단계는 건너뛴다. Boot 4.1이 관리하는 라이브러리에 공개 취약점이 남으면 같은 minor 안의 패치 버전으로만 덮어쓰고, 다음 Boot 패치가 따라잡으면 덮어쓰기를 지운다 | 3.5의 OSS 지원이 2026-06-30에 끝났다. 3.5.16과 Tomcat·Netty·Jackson 덮어쓰기로도 Spring Framework 6.2의 critical 3건이 남고, 이 3건은 7.x에서만 고쳐진다. 4.0은 OSS 지원이 2026-12-31에 끝난다. 사용자가 회귀 테스트가 적다는 위험을 알고 4.1 전환을 골랐다(OPS-08, SEC-15, #77) |
+| D-V | 2026-10-22 | toxic-filter는 기존 저장소 [HongikBookStore/toxic-filter](https://github.com/HongikBookStore/toxic-filter)를 그대로 옮기지 않는다. 이 리팩토링의 목적에 맞게 개편해서 이 저장소의 `toxic-filter/`로 들여온다. 기존 코드·모델을 일부 재사용할지 처음부터 새로 만들지는 개편 작업(MOD-06)에서 정한다. 들여오기 전까지는 기존 저장소의 서비스를 쓴다. D-F의 toxic-filter 부분을 구체화한다 | 사용자가 정했다. 이 프로젝트는 과거 코드의 결함을 리팩토링으로 고치는 포트폴리오다(D-06). 기존 서비스에는 MOD-03 ~ MOD-05의 결함(검사 누락, 응답 계약, 모델 아티팩트 없음)이 있다(#79) |
 
 ## 확인이 필요한 제안
 
-에이전트가 기본값으로 적용했지만 사용자의 확인을 받지 않은 항목이다.
-
-| 관련 | 제안 | 이유 |
-|---|---|---|
-| FE-11 (닫힘: FE-11 완료, #69) | 새로 만들거나 옮긴 `.ts`·`.tsx` 파일은 `strict` 모드로 검사한다. `allowJs`는 전환이 끝날 때까지 켜 두고 `checkJs`는 끈다 | 처음부터 엄격하게 시작하면 나중에 다시 고칠 일이 없다. JS 파일은 검사하지 않으므로 기존 파일에 영향이 없다 |
-| FE-11 (닫힘: FE-11 완료, #69) | 의존이 적은 모듈부터 옮긴다: `utils`·`lib`·`api` → `contexts`·`styles`·`components/ui` → 나머지 `components` → `pages`(영역별) → `App`·`main`·`i18n`. 마지막에 `allowJs`를 끈다 | 먼저 옮긴 모듈의 타입을 나중 모듈이 그대로 쓴다. 한 PR에는 한 단계만 담는다 |
-| FE-11 (닫힘: FE-11 완료, #69) | 파일을 옮길 때는 동작을 바꾸지 않는다. API 접근 방식 통일(FE-03) 같은 구조 변경은 따로 한다 | 타입 추가와 동작 변경을 섞으면 리뷰와 되돌리기가 어렵다 |
+에이전트가 기본값으로 적용했지만 사용자의 확인을 받지 않은 항목이다. 지금은 없다.
+FE-11의 제안 3건은 FE-11이 끝나(#69) 지웠다. 내용은 이 문서의 커밋 이력에 있다.
 
 ## 미결정
 
