@@ -37,11 +37,12 @@
 | SEC-07 | P1 | 대기 | access·refresh 토큰의 형식이 같아 refresh 토큰으로 일반 API를 호출할 수 있다. 재발급 API가 없다 | `auth/jwt/JwtTokenProvider.java:48` | C-7, H-02 |
 | SEC-08 | P1 | 대기 | 소셜 계정을 이메일만으로 합친다. provider·providerId를 저장하지 않고, Kakao의 이메일 인증 여부를 확인하지 않는다 | `security/oauth/CustomOAuth2UserService.java:66` | C-9 |
 | SEC-09 | P1 | 대기 | CORS가 `https://*.vercel.app`을 credentials와 함께 허용한다. `ALLOWED_ORIGINS` 설정은 읽기만 하고 쓰지 않는다 | `config/SecurityConfig.java:43`, `:144` | C-8 |
-| SEC-10 | P1 | 대기 | 업로드 파일의 확장자와 Content-Type을 클라이언트 값 그대로 저장한다 | `common/util/GcpStorageUtil.java:45`, `common/util/LocalStorageUtil.java:38` | C-10 |
+| SEC-10 | P1 | 대기 | 업로드 파일의 확장자와 Content-Type을 클라이언트 값 그대로 저장한다 | `common/util/LocalStorageUtil.java:38` (GCS 구현은 #71에서 지웠다) | C-10 |
 | SEC-11 | P2 | 대기 | 외부 지도 API 프록시(`/api/naver/**`, `/api/directions/**`)를 로그인 없이 호출할 수 있어 API 쿼터를 소모시킬 수 있다 | `config/SecurityConfig.java` | C-11 |
 | SEC-12 | P2 | 대기 | 기본 프로필이 `dev`이고, dev 프로필은 actuator 엔드포인트를 모두 노출한다 | `src/main/resources/application.yml:5`, `:252` | C |
 | SEC-13 | P1 | 완료 (#25) | 프론트 직접 의존성의 공개 취약점(GHSA) 49건. next-auth(3건)·http-proxy-middleware(2건)는 패키지를 지워서(#23), vite 7.3.5(5건)·axios 1.20.0(35건)·postcss 8.5.23(4건)은 Renovate 보안 PR(#22, #21, #19)로 고쳤다. Dependency Dashboard의 OSV 조회 결과 0건이다 | `frontend/package.json`, `pnpm-lock.yaml` | Renovate OSV 조회(#15) |
 | SEC-14 | P1 | 완료 (#27) | 전이 의존성의 공개 취약점 26건(high 15, moderate 8, low 3). Renovate OSV는 직접 의존성만 조회해서 잡지 못한다. 기록한 25건에 styled-components 경유 source-map-js 1.2.1(1건)이 더해졌다. lockfile만 고쳐서 semver 범위 안에서 모두 해소했다: react-router 7.18.4(12건), styled-components 6.5.3으로 postcss 8.4.49 의존 제거(postcss 4건, nanoid 3건, source-map-js 1건), vite 7.3.6·esbuild 0.28.2(1건), rollup 4.64.0(1건), @babel/core 7.29.7(1건), browserslist 4.29.3(2건), baseline-browser-mapping 2.11.27(1건). `pnpm audit` 결과 0건이다 | `pnpm-lock.yaml` | `pnpm audit` (#24) |
+| SEC-15 | P1 | 대기 | 백엔드 런타임 의존성의 공개 취약점. 2026-10-22 Spring Boot 3.5.10 기준으로 의존성 212개 가운데 29개 패키지에서 고유 권고 111건(critical 11, high 39, moderate 52, low 9)이 나온다. Tomcat·Netty·Jackson·Spring Framework·Spring Security·Spring Data에 몰려 있다. Spring Framework 6.2의 critical 일부는 OSS 7.0.9에서만 고쳐져 Boot 4.x 전환(OPS-08)이 필요하다. GCS 의존성 제거(OPS-10) 뒤에 다시 측정한다 | `backend/build.gradle.kts` | OSV querybatch (#71) |
 
 ## 거래 정합성 (TXN)
 
@@ -115,6 +116,7 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | OPS-07 | P3 | 대기 | 코드 위생: `DepartmentNormalizer` 중복, `weather/utill` 오타, `catch (Exception …)` 44곳, 작업 지시용 주석 | 여러 곳 | C |
 | OPS-08 | P2 | 대기 | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다 | `backend/build.gradle.kts` | |
 | OPS-09 | P2 | 완료 (#51) | Husky의 `core.hooksPath=.husky/_`가 `.git/hooks/pre-push`의 Git LFS 업로드 훅을 대신하지만 `.husky/pre-push`가 없다. 새 LFS 이미지 7개를 포함한 push가 GH008로 거절됐다. `git lfs push origin feature/#48-brand-icons`로 이미지를 올린 뒤 재시도해 해결했다. `.husky/pre-push`에서 `git lfs pre-push`를 실행한다 | `.husky/`, `.gitattributes` | #48, PR #49 (실행 확인) |
+| OPS-10 | P2 | 진행 (#71) | 이미지 저장소의 `gcp` 모드가 `spring-cloud-gcp` 라이브러리 92개를 런타임에 끌어온다. 로컬에서만 실행하는 이 프로젝트(D-06)는 `local` 모드만 쓴다. `gcp` 모드와 의존성을 지운다(D-R) | `backend/build.gradle.kts`, `common/util/GcpStorageUtil.java`, `config/GcpStorageConfig.java`, `application.yml` | OSV querybatch (#71) |
 
 ## 문서 (DOC)
 
