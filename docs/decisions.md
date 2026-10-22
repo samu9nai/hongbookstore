@@ -22,7 +22,7 @@
 | D-F | 2026-10-03 | 저장소를 `backend/`(Spring Boot), `frontend/`(React), `toxic-filter/`(유해 표현 검사 서비스) 레이아웃으로 바꾼다. toxic-filter는 별도 저장소에서 이 저장소로 옮긴다 | `server/`는 toxic-filter도 서버라서 뜻이 겹친다. `client/`는 `ToxicFilterClient`·OAuth2 client와 이름이 겹친다. NA-WA와 같은 구조라 도구 설정을 옮기기 쉽다 |
 | D-G | 2026-10-03 | 프론트엔드 패키지 매니저는 pnpm 12.8.1, Node는 24.21.0 LTS로 정한다. 의존성 업데이트는 Dependabot 대신 Renovate가 맡는다. Node 버전 부분은 대체됨: D-S | NA-WA와 도구를 맞춘다. Dependabot은 pnpm v10까지만 지원한다. Mend Renovate Community Cloud는 개인 저장소에서 무료다 |
 | D-H | 2026-10-03 | 프론트엔드 린트·타입 검사는 oxlint 1.86 + oxlint-tsgolint 7.0.2003 + TypeScript 7.0.2, 서식은 Prettier 3.9로 정한다. Vite+는 지금 도입하지 않고 FE-08에서 다시 검토한다 | typescript-eslint 8.71은 TypeScript 6.1 미만만 지원한다. tsgolint는 TS 7 위에서 동작하고 type-aware 린트가 stable이다. Vite+ 1.0은 2026-09-28에 나왔고, 포매터로 1.0 전인 oxfmt를 쓴다 |
-| D-I | 2026-10-03 | PR은 `Create a merge commit`으로만 병합한다. 저장소 설정으로 squash·rebase merge를 막지는 않는다 | PR 안에서 목적별로 나눈 커밋(파일 이동, 일괄 서식)을 남기고, `.git-blame-ignore-revs`의 커밋 해시를 유지한다. 쌓은 PR을 차례로 병합할 수 있다. NA-WA는 squash merge를 쓰지만 이 저장소는 다르게 정했다 |
+| D-I | 2026-10-03 | PR은 `Create a merge commit`으로만 병합한다. 저장소 설정으로 squash·rebase merge를 막지는 않는다 | PR 안에서 목적별로 나눈 커밋(파일 이동, 일괄 서식)을 남기고, `.git-blame-ignore-revs`의 커밋 해시를 유지한다. 쌓은 PR을 차례로 병합할 수 있다. NA-WA는 squash merge를 쓰지만 이 저장소는 다르게 정했다 대체됨: D-T |
 | D-J | 2026-10-03 | 작업은 Issue로 시작한다. `docs/backlog.md`는 결함 목록으로 유지하고, 진행 중인 항목에 Issue 번호를 적는다 | 사람은 GitHub Issue로, 에이전트는 저장소 안의 백로그로 같은 작업을 추적한다 |
 | D-K | 2026-10-03 | 브랜치·커밋·PR 제목은 NA-WA 형식을 쓴다. 브랜치 `<type>/#<issue>-<desc>`, 커밋 `<type>(<scope>): <한글 요약> (#<issue>)`, PR 제목 `[Type] 한글 설명` | 두 포트폴리오 저장소의 규칙을 맞춘다. 이전 커밋은 다시 쓰지 않는다 |
 | D-L | 2026-10-08 | 프론트엔드 파일을 고치면 그 파일의 oxlint 오류·경고를 0건으로 만든다. `AGENTS.md`도 이 기준으로 적는다 | CONTRIBUTING.md·CI의 "바뀐 파일 린트"·pre-commit 훅이 이미 이 기준을 강제한다. `AGENTS.md`만 "늘리지 않는다"고 적혀 있어 에이전트가 헷갈렸다(#37) |
@@ -33,6 +33,7 @@
 | D-Q | 2026-10-11 | `docs/`(백로그·결정·리뷰 문서)를 공개 저장소에 계속 올린다. 로컬 전용으로 옮기지 않는다 | 사용자가 보안을 이유로 로컬 관리를 검토한 뒤 현행 유지를 골랐다. 문서에서 비밀값·접속정보를 찾지 못했다. 소스가 공개라 결함 위치는 코드로도 찾을 수 있고, 이미 올린 문서는 커밋 이력에 남는다. 에이전트 협업 규칙(D-C)과 포트폴리오 목표(D-06)가 이 문서를 전제로 한다 |
 | D-R | 2026-10-22 | 이미지 저장소의 `gcp` 모드(GCP Cloud Storage)와 `spring-cloud-gcp` 의존성을 지운다. 이미지는 `local` 저장소(`./uploads`)에만 둔다. Cloud Run 배포 스크립트의 정리는 따로 정한다 | 이 프로젝트는 과거 코드의 결함을 리팩터링으로 고치는 포트폴리오이고, 로컬에서만 실행한다(D-06). 2026-10-22 측정에서 백엔드 런타임 모듈 218개 가운데 89개가 GCS 모드에만 쓰였다(집계 기준은 SEC-15). 쓰지 않는 기능의 의존성이 취약점 점검 범위만 넓힌다(SEC-15, OPS-10, #71) |
 | D-S | 2026-10-22 | Node를 26.12.1로 올린다. 26.x가 2026-10-28에 Active LTS가 되면 그 라인의 패치를 따라간다. D-G의 Node 버전을 대체한다 | Node.js 2026-10-21 보안 릴리스의 CVE 10건 가운데 8건이 24.21.0에 해당한다. 24.x는 2026-10-20에 Maintenance 단계로 넘어갔다. 사용자가 24.22.1 대신 다음 LTS 라인인 26을 골랐다. Node 25부터 corepack이 빠져 pnpm은 `npm install -g corepack`으로 설치한 corepack이나 CI의 `pnpm/action-setup`으로 준비한다(SEC-16, #73) |
+| D-T | 2026-10-22 | PR은 `Squash and merge`로 병합한다. `main`에는 PR 하나가 커밋 하나로 남고, 커밋 제목은 PR 제목(`[Type] 한글 설명 (#PR)`)이 된다. D-I를 대체한다. PR 안의 커밋은 리뷰하기 쉽게 계속 목적별로 나눈다. 일괄 서식 변경은 PR 하나로 따로 만들고 병합된 squash 커밋의 해시를 `.git-blame-ignore-revs`에 적는다. 다른 PR 위에 쌓은 PR은 아래 PR이 병합되면 `main` 위로 rebase한다 | 사용자가 #72·#74를 squash로 병합한 뒤 앞으로도 squash를 쓰기로 정했다. `main`의 이력이 PR 단위로 읽힌다. squash 커밋은 PR 브랜치의 커밋을 조상으로 갖지 않아서 쌓은 PR과 서식 커밋의 처리 방식을 함께 바꾼다(#75) |
 
 ## 확인이 필요한 제안
 

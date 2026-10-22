@@ -88,7 +88,8 @@ Issue, 브랜치, 커밋, PR, 병합 규칙의 정본은 [CONTRIBUTING.md](CONTR
 - `main`에 직접 push하지 않는다. 브랜치를 만들고 PR로 합친다. PR 병합은 사용자가 한다.
 - 브랜치 이름은 `<type>/#<issue-number>-<short-description>`, 커밋 첫 줄은
   `<type>(<scope>): <한글 요약> (#<issue-number>)` 형식이다(D-K).
-- 병합은 merge commit으로 한다(D-I). 그래서 PR 안의 커밋을 목적별로 나눠 둔다.
+- 병합은 squash merge로 한다(D-T). PR 안의 커밋은 리뷰하기 쉽게 목적별로 나눈다. 병합한 로컬 브랜치는
+  `git branch -d`가 거절하므로 `main`과 내용이 같은지 확인한 뒤 `git branch -D`로 지운다.
 - AI 에이전트가 작성한 커밋에는 `Co-Authored-By` 트레일러를, PR 본문에는 에이전트 서명 줄을 붙여도 된다.
   이 저장소에서만 허용하는 규칙이다.
 - PR 본문은 `.github/pull_request_template.md` 형식을 따른다.
