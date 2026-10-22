@@ -76,11 +76,6 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok")
     testAnnotationProcessor("org.projectlombok:lombok")
 
-    // GCP Cloud Storage
-    implementation(platform("com.google.cloud:spring-cloud-gcp-dependencies:7.4.3"))
-    implementation("com.google.cloud:spring-cloud-gcp-starter")
-    implementation("com.google.cloud:spring-cloud-gcp-starter-storage")
-
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
 }

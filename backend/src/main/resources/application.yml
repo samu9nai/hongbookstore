@@ -97,17 +97,6 @@ spring:
       hibernate:
         format_sql: true # SQL 로그를 예쁘게 포맷팅
 
-  ### GCP Cloud Platform ###
-  cloud:
-    gcp:
-      project-id: ${GCP_PROJECT_ID}  # .env 파일의 GCP_PROJECT_ID 값을 사용
-      storage:
-        enabled: ${GCP_STORAGE_ENABLED:false}
-        bucket-name: ${GCP_BUCKET_NAME} # .env 파일의 GCP_BUCKET_NAME 값을 사용
-      credentials:
-        # 운영(GCE/Cloud Run 등)에서는 ADC(Application Default Credentials)를 권장
-        # 비워두면 기본 자격증명을 사용하고, 필요 시 classpath: 또는 파일 경로로 지정
-        location: ${GCP_CREDENTIALS_LOCATION:}
   servlet:
     multipart:
       enabled: true
@@ -167,7 +156,7 @@ app:
     # 쉼표로 구분된 오리진 목록. 운영에서 Vercel/도메인으로 교체
     allowed-origins: ${ALLOWED_ORIGINS:https://hong-book-store.vercel.app,http://localhost:5173}
   storage:
-    # local | gcp
+    # local만 지원한다. 다른 값이면 ImageStorage 빈이 없어 시작에 실패한다
     mode: ${STORAGE_MODE:local}
     local:
       base-dir: ${LOCAL_STORAGE_BASE_DIR:./uploads}
@@ -222,13 +211,6 @@ spring:
   config:
     activate:
       on-profile: dev
-  cloud:
-    gcp:
-      project-id: ${GCP_PROJECT_ID}
-      storage:
-        bucket-name: ${GCP_BUCKET_NAME}
-      credentials:
-        location: ${GCP_CREDENTIALS_LOCATION:}
   jpa:
     hibernate:
       ddl-auto: update

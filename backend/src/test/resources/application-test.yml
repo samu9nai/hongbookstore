@@ -23,13 +23,6 @@ spring:
     port: 1025
     username: test@example.com
     password: test
-  cloud:
-    gcp:
-      project-id: test-project
-      storage:
-        bucket-name: test-bucket
-      credentials:
-        location:
   servlet:
     multipart:
       enabled: false

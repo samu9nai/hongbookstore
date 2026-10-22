@@ -15,7 +15,7 @@
 Spring Boot 백엔드 (Cloud Run, 최대 인스턴스 1개)
   ├─ MySQL       : 업무 데이터 (JPA)
   ├─ Redis       : 로그아웃한 access 토큰 블랙리스트
-  ├─ 이미지 저장소 : local(./uploads) 또는 GCP Cloud Storage (STORAGE_MODE)
+  ├─ 이미지 저장소 : local(./uploads). GCS 모드는 지웠다(D-R)
   ├─ toxic-filter : 유해 표현 판정 (별도 저장소, Flask + KcBERT)
   └─ 외부 API     : Kakao 책 검색, Naver 장소·길찾기, 기상청(KMA), Gmail SMTP
 ```

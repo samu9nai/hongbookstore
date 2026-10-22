@@ -65,11 +65,11 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         // 이메일로 사용자를 찾기
         User user = userRepository.findByEmail(userInfo.getEmail())
                 .map(entity -> {
-                    // 기존 유저: 닉네임은 유지, 프로필 이미지가 비어있다면 provider 이미지를 GCS로 업로드 후 세팅
+                    // 기존 유저: 닉네임은 유지, 프로필 이미지가 비어있다면 provider 이미지를 이미지 저장소에 업로드 후 세팅
                     if ((entity.getProfileImagePath() == null || entity.getProfileImagePath().isBlank())
                             && userInfo.getPicture() != null && !userInfo.getPicture().isBlank()) {
-                        String gcs = tryUploadProviderImage(userInfo.getPicture());
-                        if (gcs != null) entity.setProfileImagePath(gcs);
+                        String uploaded = tryUploadProviderImage(userInfo.getPicture());
+                        if (uploaded != null) entity.setProfileImagePath(uploaded);
                     }
                     // 이름/실명으로 닉네임을 덮어쓰지 않음
                     return entity;
@@ -89,11 +89,11 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String email = userInfo.getEmail();
         String baseName = deriveNicknameFromEmail(email);
         String uniqueName = ensureUniqueUsername(baseName);
-        String gcsImage = tryUploadProviderImage(userInfo.getPicture());
+        String profileImage = tryUploadProviderImage(userInfo.getPicture());
         return User.builder()
                 .username(uniqueName)
                 .email(userInfo.getEmail())
-                .profileImagePath(gcsImage)
+                .profileImagePath(profileImage)
                 .role(UserRole.USER) // 기본 역할
                 .studentVerified(false) // 재학생 인증은 아직 안 된 상태
                 .build();
@@ -137,7 +137,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         try {
             return imageStorage.uploadImageFromUrl(providerUrl, "profile-images");
         } catch (Exception e) {
-            log.warn("Failed to upload provider image to GCS: {}", e.getMessage());
+            log.warn("Failed to upload provider image: {}", e.getMessage());
             return null;
         }
     }

@@ -62,14 +62,14 @@ HongBookStore는 **홍익대학교 학생 전용 중고 교재 거래 및 정보
 - Frontend: React 19 + Vite, React Router, React Query, styled-components
 - Backend: Spring Boot 3.5 (Java 21), Spring Security, WebSocket(STOMP), JPA, WebFlux(WebClient)
 - Data: MySQL, Redis
-- Storage: GCP Cloud Storage
+- Storage: 로컬 파일 시스템(`./uploads`)
 - Monitoring: Spring Boot Actuator
 - Deployment: Docker, GCP Cloud Run, Vercel
 
 ### 프로젝트 구조
 ```
 backend/src/main/java/com/hongik/books   # Spring Boot 백엔드
-backend/src/main/resources              # application.yml, 템플릿, GCP 키(개발용)
+backend/src/main/resources              # application.yml, 템플릿
 backend/Dockerfile                      # 백엔드 컨테이너 빌드
 frontend                                # React + Vite 프론트엔드
 deploy                                  # 배포 스크립트/가이드 (Cloud Run, Vercel)
@@ -112,11 +112,6 @@ NAVER_SEARCH_SECRET=
 NAVER_ROUTE_ID=
 NAVER_ROUTE_SECRET=
 KMA_APIHUB_KEY=
-
-# GCP Storage
-GCP_PROJECT_ID=
-GCP_BUCKET_NAME=
-GCP_CREDENTIALS_LOCATION= # 필요 시 file:/path/to/key.json
 
 # CORS/Origin
 FRONTEND_BASE_URL=http://localhost:5173
