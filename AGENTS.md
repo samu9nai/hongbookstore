@@ -33,6 +33,7 @@
 | `.github/workflows-disabled/` | 비활성 배포 workflow |
 
 유해 표현 검사 API는 별도 저장소 [HongikBookStore/toxic-filter](https://github.com/HongikBookStore/toxic-filter)에 있다.
+이 서비스는 그대로 옮기지 않고 개편해서 이 저장소의 `toxic-filter/`로 들여온다(D-V, MOD-06).
 
 ## 검증 명령
 
