@@ -1,14 +1,13 @@
 package com.hongik.books.domain.notification.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hongik.books.domain.notification.dto.NotificationEvent;
 import com.hongik.books.domain.notification.sse.EmitterRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import tools.jackson.databind.json.JsonMapper;
 
-import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
@@ -26,14 +25,9 @@ public class NotificationService {
     private static final long DEFAULT_TIMEOUT = 30 * 60 * 1000L; // 30분
 
     private final EmitterRepository emitterRepository;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     private final Optional<UserRepository> userRepository;
-
-    @PostConstruct
-    void initMapper() {
-        try { objectMapper.findAndRegisterModules(); } catch (Exception ignore) {}
-    }
 
     public SseEmitter subscribe(Long userId) {
         SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
@@ -181,7 +175,7 @@ public class NotificationService {
         emitter.send(SseEmitter.event()
                 .id(event.getId())
                 .name("notification") // 🔔 이름있는 이벤트로 보냄
-                .data(objectMapper.writeValueAsString(event)));
+                .data(jsonMapper.writeValueAsString(event)));
     }
 
     // ====== 표시명 유틸 ======

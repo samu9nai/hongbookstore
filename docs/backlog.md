@@ -19,10 +19,9 @@
 
 ## 다음 작업 순서 (제안)
 
-1. **OPS-08 + SEC-15**: Spring Boot 4.1로 옮긴다. 먼저 3.5.10에서 API 응답 모양을 고정하는 회귀 테스트를 쓴다(BE-03).
-2. **SEC-01, SEC-02, SEC-04의 REST 부분**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
-3. **SEC-04의 STOMP 부분, SEC-03, SEC-05, SEC-09**: 실시간 채널 인증과 남은 인증 경로를 막는다.
-4. **SEC-06, SEC-07**: 토큰 구조를 다시 설계한다. D-03 결정이 필요하다.
+1. **SEC-01, SEC-02, SEC-04의 REST 부분**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
+2. **SEC-04의 STOMP 부분, SEC-03, SEC-05, SEC-09**: 실시간 채널 인증과 남은 인증 경로를 막는다.
+3. **SEC-06, SEC-07**: 토큰 구조를 다시 설계한다. D-03 결정이 필요하다.
 
 ## 보안 (SEC)
 
@@ -42,7 +41,7 @@
 | SEC-12 | P2 | 대기 | 기본 프로필이 `dev`이고, dev 프로필은 actuator 엔드포인트를 모두 노출한다 | `src/main/resources/application.yml:5`, `:252` | C |
 | SEC-13 | P1 | 완료 (#25) | 프론트 직접 의존성의 공개 취약점(GHSA) 49건. next-auth(3건)·http-proxy-middleware(2건)는 패키지를 지워서(#23), vite 7.3.5(5건)·axios 1.20.0(35건)·postcss 8.5.23(4건)은 Renovate 보안 PR(#22, #21, #19)로 고쳤다. Dependency Dashboard의 OSV 조회 결과 0건이다 | `frontend/package.json`, `pnpm-lock.yaml` | Renovate OSV 조회(#15) |
 | SEC-14 | P1 | 완료 (#27) | 전이 의존성의 공개 취약점 26건(high 15, moderate 8, low 3). Renovate OSV는 직접 의존성만 조회해서 잡지 못한다. 기록한 25건에 styled-components 경유 source-map-js 1.2.1(1건)이 더해졌다. lockfile만 고쳐서 semver 범위 안에서 모두 해소했다: react-router 7.18.4(12건), styled-components 6.5.3으로 postcss 8.4.49 의존 제거(postcss 4건, nanoid 3건, source-map-js 1건), vite 7.3.6·esbuild 0.28.2(1건), rollup 4.64.0(1건), @babel/core 7.29.7(1건), browserslist 4.29.3(2건), baseline-browser-mapping 2.11.27(1건). `pnpm audit` 결과 0건이다 | `pnpm-lock.yaml` | `pnpm audit` (#24) |
-| SEC-15 | P1 | 대기 | 백엔드 런타임 의존성의 공개 취약점. 의존성 수는 Gradle이 `runtimeClasspath`에서 고른 아티팩트의 고유 모듈(BOM 제외) 기준이고, 측정 스크립트는 [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md#로컬-자동-검사)에 있다. 이 모듈 좌표 전체를 OSV querybatch로 조회했다. 2026-10-22 Spring Boot 3.5.10 기준으로 모듈 218개 가운데 32개 패키지에서 고유 권고 115건(critical 11, high 42, moderate 53, low 9)이 나온다. Tomcat·Netty·Jackson·Spring Framework·Spring Security·Spring Data에 몰려 있다. Spring Framework 6.2의 critical 일부는 OSS 7.0.9에서만 고쳐져 Boot 4.x 전환(OPS-08)이 필요하다. GCS 의존성을 지운 뒤(OPS-10) 다시 측정했다: 모듈 129개, 취약 패키지 30개, 고유 권고 113건(critical 11, high 42, moderate 51, low 9). opentelemetry-api·commons-lang3의 moderate 2건만 사라졌다. 임시 사본에서 Boot 3.5.16으로 올리면 모듈 129개 가운데 취약 패키지 11개, 고유 권고 32건(critical 7, high 10, moderate 15)이 남는다. 남는 critical은 Tomcat 10.1.55(3건, 10.1.58에서 수정), Netty 4.1.135(1건, 4.1.137에서 수정), Spring Framework 6.2.19(3건, 7.0.9에서만 수정)다 | `backend/build.gradle.kts` | OSV querybatch (#71) |
+| SEC-15 | P1 | 완료 (#78) | 백엔드 런타임 의존성의 공개 취약점. 의존성 수는 Gradle이 `runtimeClasspath`에서 고른 아티팩트의 고유 모듈(BOM 제외) 기준이고, 측정 스크립트는 [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md#로컬-자동-검사)에 있다. 이 모듈 좌표 전체를 OSV querybatch로 조회했다. 2026-10-22 Spring Boot 3.5.10 기준으로 모듈 218개 가운데 32개 패키지에서 고유 권고 115건(critical 11, high 42, moderate 53, low 9)이 나온다. Tomcat·Netty·Jackson·Spring Framework·Spring Security·Spring Data에 몰려 있다. Spring Framework 6.2의 critical 일부는 OSS 7.0.9에서만 고쳐져 Boot 4.x 전환(OPS-08)이 필요하다. GCS 의존성을 지운 뒤(OPS-10) 다시 측정했다: 모듈 129개, 취약 패키지 30개, 고유 권고 113건(critical 11, high 42, moderate 51, low 9). opentelemetry-api·commons-lang3의 moderate 2건만 사라졌다. 임시 사본에서 Boot 3.5.16으로 올리면 모듈 129개 가운데 취약 패키지 11개, 고유 권고 32건(critical 7, high 10, moderate 15)이 남는다. 남는 critical은 Tomcat 10.1.55(3건, 10.1.58에서 수정), Netty 4.1.135(1건, 4.1.137에서 수정), Spring Framework 6.2.19(3건, 7.0.9에서만 수정)다. Boot 4.1.1로 올린 뒤(#77) 모듈 167개 가운데 취약 패키지 5개, 고유 권고 10건(critical 3, high 5, moderate 2)이 남았다. Tomcat 11.0.24와 Jackson 3.1.5·2.21.5다. 같은 minor 안의 패치(Tomcat 11.0.27, Jackson 3.1.8·2.21.8)로 덮어쓴 뒤 다시 조회한 결과 0건이다(D-U) | `backend/build.gradle.kts` | OSV querybatch (#71, #77) |
 | SEC-16 | P1 | 완료 (#74) | Node.js 런타임 24.21.0이 2026-10-21 보안 릴리스의 CVE 10건 가운데 8건(high 4, medium 3, low 1)에 해당한다. Brotli 디코더의 범위 밖 쓰기(CVE-2026-111497)와 TLS 인증서 호스트명 검사 우회 2건이 포함된다. 24.x 수정 버전은 24.22.1, 26.x는 26.12.1이다. 26.12.1로 올린다(D-S) | `.node-version`, `package.json` | nodejs.org 보안 릴리스 공지 (#73) |
 
 ## 거래 정합성 (TXN)
@@ -107,8 +106,9 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 |---|---|---|---|---|---|
 | BE-01 | P1 | 대기 | 닉네임 컬럼은 25자인데 가입 로직은 최대 50자로 만든다. 이메일 앞부분이 25자를 넘으면 가입이 실패한다 | `domain/user/domain/User.java:20`, `security/oauth/CustomOAuth2UserService.java:109` | C |
 | BE-02 | P3 | 대기 | README는 JWT 비밀값을 base64라고 설명하지만 코드는 문자열의 UTF-8 바이트를 그대로 쓴다 | `auth/jwt/JwtTokenProvider.java:34`, `README.md` | C |
-| BE-03 | P1 | 대기 | 백엔드 테스트가 `contextLoads` 1개뿐이다. OPS-04에서 분리했다 | `backend/src/test` | C, H-07 |
+| BE-03 | P1 | 대기 | 백엔드 테스트가 `contextLoads` 1개뿐이다. OPS-04에서 분리했다. #77에서 Boot 4.1 전환 전후를 비교하려고 API 응답 모양 회귀 테스트 6개(`ApiContractTest`)를 더했다. 서비스 로직·권한 검사 테스트는 여전히 없다 | `backend/src/test` | C, H-07 |
 | BE-04 | P3 | 대기 | 삭제한 로컬 이미지 URL을 다시 조회하면 404 대신 500을 반환한다. 포괄 예외 처리기가 `NoResourceFoundException`을 서버 오류로 바꾼다. PR #72의 기준 `11c8b6e`와 head `413fdee`에서 같은 MockMvc 검사로 재현했으며 이번 PR의 회귀는 아니다 | `common/exception/GlobalExceptionHandler.java:115` | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
+| BE-05 | P3 | 완료 (#78) | PR #78의 인증 거절 테스트가 `Location`을 `endsWith("/login")`으로 검사해 `/other/login`·다른 origin·query 끝의 `/login`도 통과한다. Hamcrest 3.0 matcher로 반례 4개를 확인했다. 실제 서버의 잘못된 리다이렉트를 재현한 것은 아니다. 절대·상대 URI를 요청 URI에 대해 해석한 뒤 목적지 전체를 비교한다. MockMvc가 돌려주는 두 표기 `/login`(Boot 4.1.1)과 `http://localhost/login`(Boot 3.5.10)만 정확히 허용하도록 고쳤다 | `backend/src/test/java/com/hongik/books/ApiContractTest.java:111-117` (`af85792`) | [PR #78 리뷰](reviews/2026-10-22-codex-pr78.md) (실행 확인), #77 |
 | OPS-01 | P2 | 대기 | 스키마 마이그레이션 도구가 없다 | `src/main/resources/application.yml` | C, H-06 |
 | OPS-02 | P2 | 대기 | DB 트랜잭션 안에서 외부 저장소에 업로드하고, 커밋 전에 알림을 보낸다 | `domain/post/service/SalePostService.java:41`, `:332`, `domain/chat/service/ChatReservationService.java` | H-06 |
 | OPS-03 | P2 | 대기 | STOMP simple broker와 SSE emitter가 프로세스 메모리에 있어 인스턴스 1개에서만 동작한다. 이 전제를 문서와 설정에 명시해야 한다 | `config/WebSocketConfig.java`, `domain/notification/sse/EmitterRepository.java` | H-06 |
@@ -116,9 +116,10 @@ MOD-03 ~ MOD-05는 [toxic-filter](https://github.com/HongikBookStore/toxic-filte
 | OPS-05 | P2 | 대기 | WebClient 하나를 위해 webflux 전체를 쓴다. macOS 전용 netty 의존성이 운영 빌드에 들어간다. `RestTemplate`에 제한 시간이 없다 | `build.gradle`, `config/RestTemplateConfig.java` | C |
 | OPS-06 | P3 | 대기 | Vercel `rewrite`와 서버리스 프록시가 함께 있고, 프록시가 보내는 `x-edge-key`를 백엔드가 검증하지 않는다. Cloud Run 주소가 하드코딩돼 있다 | `src/main/frontend/vercel.json`, `src/main/frontend/api/[...path].js`, `application.yml:201` | C |
 | OPS-07 | P3 | 대기 | 코드 위생: `DepartmentNormalizer` 중복, `weather/utill` 오타, `catch (Exception …)` 44곳, 작업 지시용 주석 | 여러 곳 | C |
-| OPS-08 | P2 | 대기 | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다. 3.5 라인의 마지막 OSS 릴리스는 3.5.16(2026-06-25)이고, SEC-15의 Spring Framework critical 3건은 7.x에서만 고쳐진다. 2026-10-22 사용자가 3.5.16 패치를 건너뛰고 4.1로 바로 옮기기로 정했다 | `backend/build.gradle.kts` | |
+| OPS-08 | P2 | 완료 (#78) | Spring Boot 3.5.x의 OSS 지원이 2026-06-30에 끝났다(api.spring.io 기준, 최신 패치 3.5.16). 현재 3.5.10이다. 4.x는 major 업그레이드라 기능 변경과 섞지 않는다. 3.5 라인의 마지막 OSS 릴리스는 3.5.16(2026-06-25)이고, SEC-15의 Spring Framework critical 3건은 7.x에서만 고쳐진다. 2026-10-22 사용자가 3.5.16 패치를 건너뛰고 4.1로 바로 옮기기로 정했다. 4.1.1로 올렸다(D-U, #77) | `backend/build.gradle.kts` | |
 | OPS-09 | P2 | 완료 (#51) | Husky의 `core.hooksPath=.husky/_`가 `.git/hooks/pre-push`의 Git LFS 업로드 훅을 대신하지만 `.husky/pre-push`가 없다. 새 LFS 이미지 7개를 포함한 push가 GH008로 거절됐다. `git lfs push origin feature/#48-brand-icons`로 이미지를 올린 뒤 재시도해 해결했다. `.husky/pre-push`에서 `git lfs pre-push`를 실행한다 | `.husky/`, `.gitattributes` | #48, PR #49 (실행 확인) |
 | OPS-10 | P2 | 완료 (#72) | 이미지 저장소의 `gcp` 모드가 `spring-cloud-gcp` 관련 모듈 89개를 런타임에 끌어온다(SEC-15의 집계 기준). 로컬에서만 실행하는 이 프로젝트(D-06)는 `local` 모드만 쓴다. `gcp` 모드와 의존성을 지운다(D-R) | `backend/build.gradle.kts`, `common/util/GcpStorageUtil.java`, `config/GcpStorageConfig.java`, `application.yml` | OSV querybatch (#71) |
+| OPS-11 | P3 | 대기 | Boot 4.1 전환(#77)에서 동작에 필요한 것만 고치고 남긴 정리 작업이다. ① Jackson 2 databind를 직접 쓰는 4개 파일(`WantedCommentService`·`KmaClient`·`PlaceService`는 `new ObjectMapper()`를 만들고, `WeatherService`는 `KmaClient`가 돌려준 Jackson 2 `JsonNode`를 읽는다)과 Boot 4가 쓰지 않는 Jackson 2 모듈 의존성(`jackson-module-parameter-names`, `jackson-datatype-jsr310`) ② `build.gradle.kts`의 Tomcat·Jackson 버전 덮어쓰기(D-U). Renovate가 `extra[...]` 값을 올리지 못할 수 있다 ③ 4.1에서 새로 생긴 deprecated 경고: `ValueOperations.set(K,V,long,TimeUnit)`, Hibernate `@Check` ④ 테스트 로그의 `Serializing PageImpl instances as-is is not supported` 경고. `Page`를 그대로 응답하는 API(`/api/wanted` 등)의 JSON 계약을 정해야 한다 | `backend/build.gradle.kts`, `auth/jwt/JwtTokenRedisRepository.java:22`, `domain/post/domain/SalePost.java:26`, `domain/wanted/controller/WantedController.java:19` | #77 (실행 확인) |
 
 ## 문서 (DOC)
 

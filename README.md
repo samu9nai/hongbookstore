@@ -60,7 +60,7 @@ HongBookStore는 **홍익대학교 학생 전용 중고 교재 거래 및 정보
 
 ### 시스템 구성
 - Frontend: React 19 + Vite, TypeScript, React Router, styled-components
-- Backend: Spring Boot 3.5 (Java 21), Spring Security, WebSocket(STOMP), JPA, WebFlux(WebClient)
+- Backend: Spring Boot 4.1 (Java 21), Spring Security, WebSocket(STOMP), JPA, WebFlux(WebClient)
 - Data: MySQL, Redis
 - Storage: 로컬 파일 시스템(`./uploads`)
 - Monitoring: Spring Boot Actuator
