@@ -1024,7 +1024,7 @@ const PostDetail = () => {
     }
     try {
       const response = await axios.post<{ id: number }>(
-        `/api/chat/rooms?salePostId=${salePostId}&buyerId=${buyerId}`,
+        `/api/chat/rooms?salePostId=${salePostId}`,
         {},
         { headers: getAuthHeader() }
       )
