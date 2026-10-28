@@ -1,11 +1,13 @@
 package com.hongik.books.domain.comment.controller;
 
+import com.hongik.books.auth.dto.LoginUserDTO;
 import com.hongik.books.common.dto.ApiResponse; // ⬅️ 네 패키지에 맞춤
 import com.hongik.books.domain.comment.dto.CommentCreateRequest;
 import com.hongik.books.domain.comment.dto.WantedCommentDto;
 import com.hongik.books.domain.comment.service.WantedCommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,11 +30,11 @@ public class WantedCommentController {
     @PostMapping("/{wantedId}/comments")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<WantedCommentDto> createRoot(
+            @AuthenticationPrincipal LoginUserDTO loginUser,
             @PathVariable Long wantedId,
             @RequestBody CommentCreateRequest req
     ) {
-        var user = commentService.getCurrentUserOrThrow();
-        var saved = commentService.addRoot(wantedId, req, user.id(), user.nickname());
+        var saved = commentService.addRoot(wantedId, req, loginUser.id());
         return new ApiResponse<>(true, "CREATED", saved);
     }
 
@@ -40,12 +42,12 @@ public class WantedCommentController {
     @PostMapping("/{wantedId}/comments/{parentId}/replies")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<WantedCommentDto> createReply(
+            @AuthenticationPrincipal LoginUserDTO loginUser,
             @PathVariable Long wantedId,
             @PathVariable Long parentId,
             @RequestBody CommentCreateRequest req
     ) {
-        var user = commentService.getCurrentUserOrThrow();
-        var saved = commentService.addReply(wantedId, parentId, req, user.id(), user.nickname());
+        var saved = commentService.addReply(wantedId, parentId, req, loginUser.id());
         return new ApiResponse<>(true, "CREATED", saved);
     }
 
@@ -53,10 +55,10 @@ public class WantedCommentController {
     @DeleteMapping("/{wantedId}/comments/{commentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(
+            @AuthenticationPrincipal LoginUserDTO loginUser,
             @PathVariable Long wantedId,
             @PathVariable Long commentId
     ) {
-        var user = commentService.getCurrentUserOrThrow();
-        commentService.delete(wantedId, commentId, user.id());
+        commentService.delete(wantedId, commentId, loginUser.id());
     }
 }
