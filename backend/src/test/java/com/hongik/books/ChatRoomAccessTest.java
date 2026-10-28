@@ -5,7 +5,6 @@ import com.hongik.books.auth.jwt.JwtTokenRedisRepository;
 import com.hongik.books.domain.book.domain.Book;
 import com.hongik.books.domain.book.repository.BookRepository;
 import com.hongik.books.domain.chat.domain.ChatRoom;
-import com.hongik.books.domain.chat.repository.ChatMessageRepository;
 import com.hongik.books.domain.chat.repository.ChatRoomRepository;
 import com.hongik.books.domain.post.domain.Condition;
 import com.hongik.books.domain.post.domain.SalePost;
@@ -13,7 +12,6 @@ import com.hongik.books.domain.post.repository.SalePostRepository;
 import com.hongik.books.domain.user.domain.User;
 import com.hongik.books.domain.user.domain.UserRole;
 import com.hongik.books.domain.user.repository.UserRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -33,9 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 채팅 REST API가 방 참가자만 방 정보와 메시지 이력을 보여 주고,
  * 채팅방의 구매자를 요청 값이 아니라 인증 주체로 정하는지 확인한다(SEC-04 REST 부분, #83).
+ * 다른 테스트 클래스가 같은 H2 DB에 남긴 행과 섞이지 않도록 테스트마다 롤백한다.
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@Transactional
 class ChatRoomAccessTest {
 
     @Autowired WebApplicationContext context;
@@ -43,7 +44,6 @@ class ChatRoomAccessTest {
     @Autowired BookRepository bookRepository;
     @Autowired SalePostRepository salePostRepository;
     @Autowired ChatRoomRepository chatRoomRepository;
-    @Autowired ChatMessageRepository chatMessageRepository;
     @Autowired JwtTokenProvider jwtTokenProvider;
 
     @MockitoBean JwtTokenRedisRepository jwtTokenRedisRepository;
@@ -58,7 +58,6 @@ class ChatRoomAccessTest {
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
-        cleanUp();
         seller = saveStudent("seller@example.com", "seller");
         buyer = saveStudent("buyer@example.com", "buyer");
         stranger = saveStudent("stranger@example.com", "stranger");
@@ -89,16 +88,6 @@ class ChatRoomAccessTest {
                 .userAId(seller.getId())
                 .userBId(buyer.getId())
                 .build());
-    }
-
-    // 다른 테스트 클래스가 같은 H2 DB에서 회원을 지우므로, 회원을 참조하는 행을 남기지 않는다.
-    @AfterEach
-    void cleanUp() {
-        chatMessageRepository.deleteAll();
-        chatRoomRepository.deleteAll();
-        salePostRepository.deleteAll();
-        bookRepository.deleteAll();
-        userRepository.deleteAll();
     }
 
     @Test
