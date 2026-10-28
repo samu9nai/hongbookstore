@@ -41,7 +41,7 @@
 
 | 영역 | 명령 | 현재 기준선 (2026-10-22) |
 |---|---|---|
-| 백엔드 컴파일·테스트 | `cd backend && ./gradlew test` | 통과. 테스트 7개: `contextLoads` 1개와 API 응답 회귀 테스트 `ApiContractTest` 6개. 테스트는 Redis 블랙리스트 조회를 목으로 대신한다 |
+| 백엔드 컴파일·테스트 | `cd backend && ./gradlew test` | 통과. 테스트 13개: `contextLoads` 1개, API 응답 회귀 테스트 `ApiContractTest` 6개, 구해요 소유자 검사 `WantedOwnershipTest` 6개. 테스트는 Redis 블랙리스트 조회를 목으로 대신한다 |
 | 프론트 설치 | `pnpm install` (저장소 루트) | Node 26.12.1(`.node-version`), pnpm 12.8.1(`packageManager`). Node 26에는 corepack이 없어 `npm install -g corepack`으로 따로 설치한다 |
 | 프론트 빌드 | `pnpm build` | 통과. 메인 JS 청크 약 1,038 kB |
 | 프론트 타입 검사 | `pnpm type-check` | 통과. TypeScript 7이 `src`의 `.ts`·`.tsx`를 `strict`로 검사한다. `allowJs`는 끈다(#68). 앱이 읽는 환경 변수와 전역 값의 타입은 `src/env.d.ts`에 있다 |
