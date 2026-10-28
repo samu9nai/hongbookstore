@@ -12,7 +12,6 @@ import com.hongik.books.moderation.ModerationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.hongik.books.domain.notification.service.NotificationService;
-import com.hongik.books.domain.user.repository.UserRepository;
 import com.hongik.books.domain.wanted.repository.WantedRepository;
 
 
@@ -32,7 +31,6 @@ public class WantedCommentService {
 
     private final WantedCommentRepository commentRepository;
     private final WantedRepository wantedRepository;
-    private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final com.hongik.books.moderation.toxic.ToxicFilterClient toxicFilterClient;
     private final ModerationService moderationService;
@@ -97,7 +95,6 @@ public class WantedCommentService {
         var modResult = moderationService.checkOrThrow(req.getContent(), mode, "content");
 
         String alias = computeAliasForUser(wantedId, userId);
-        String nickname = findUsername(userId);
 
         WantedComment toSave = WantedComment.builder()
                 .wantedId(wantedId)
@@ -106,7 +103,7 @@ public class WantedCommentService {
                 .deleted(false)
                 .content(req.getContent())
                 .userId(userId)
-                .nickname(nickname)
+                .nickname("익명")             // 실닉은 저장하지 않는다(#81)
                 .authorNickname(alias)
                 .build();
 
@@ -150,7 +147,6 @@ public class WantedCommentService {
         var modResult = moderationService.checkOrThrow(req.getContent(), mode, "content");
 
         String alias = computeAliasForUser(wantedId, userId);
-        String nickname = findUsername(userId);
 
         WantedComment toSave2 = WantedComment.builder()
                 .wantedId(wantedId)
@@ -159,7 +155,7 @@ public class WantedCommentService {
                 .deleted(false)
                 .content(req.getContent())
                 .userId(userId)
-                .nickname(nickname)
+                .nickname("익명")             // 실닉은 저장하지 않는다(#81)
                 .authorNickname(alias)
                 .build();
 
@@ -219,12 +215,6 @@ public class WantedCommentService {
     /* =========================
        유틸/보안 보조
        ========================= */
-
-    private String findUsername(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."))
-                .getUsername();
-    }
 
     /** 같은 글에서 해당 userId에게 부여될 익명 별칭(익명N) 계산 — 등장 순서 기준 */
     private String computeAliasForUser(Long wantedId, Long userId) {

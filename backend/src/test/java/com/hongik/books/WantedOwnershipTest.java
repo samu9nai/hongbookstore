@@ -138,7 +138,35 @@ class WantedOwnershipTest {
 
         WantedComment saved = commentRepository.findAll().getFirst();
         assertThat(saved.getUserId()).isEqualTo(other.getId());
-        assertThat(saved.getNickname()).isEqualTo("other");
+        assertThat(saved.getNickname()).isEqualTo("익명");
+    }
+
+    @Test
+    void 답글_작성자는_헤더가_아니라_로그인한_사용자다() throws Exception {
+        WantedComment parent = commentRepository.save(WantedComment.builder()
+                .wantedId(wanted.getId())
+                .depth(0)
+                .deleted(false)
+                .content("팔아요")
+                .userId(owner.getId())
+                .authorNickname("익명1")
+                .build());
+
+        mvc.perform(post("/api/wanted/" + wanted.getId() + "/comments/" + parent.getId() + "/replies")
+                        .header("Authorization", bearer(other))
+                        .header("X-USER-ID", owner.getId())
+                        .header("X-USER-NICKNAME", "owner")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"저도요\"}"))
+                .andExpect(status().isCreated());
+
+        assertThat(commentRepository.findAll())
+                .filteredOn(c -> parent.getId().equals(c.getParentId()))
+                .singleElement()
+                .satisfies(c -> {
+                    assertThat(c.getUserId()).isEqualTo(other.getId());
+                    assertThat(c.getNickname()).isEqualTo("익명");
+                });
     }
 
     @Test
