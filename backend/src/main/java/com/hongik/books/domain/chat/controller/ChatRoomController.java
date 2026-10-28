@@ -30,8 +30,9 @@ public class ChatRoomController {
 
     @PostMapping
     @Transactional // LAZY 연관(User/SalePost) 접근 중 세션 유지
-    public ChatRoomResponse createChatRoom(@RequestParam Long salePostId,
-                                           @RequestParam Long buyerId) {
+    public ChatRoomResponse createChatRoom(@AuthenticationPrincipal LoginUserDTO loginUser,
+                                           @RequestParam Long salePostId) {
+        Long buyerId = loginUser.id();
         SalePost salePost = salePostRepository.findById(salePostId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글"));
 
@@ -77,9 +78,13 @@ public class ChatRoomController {
 
     @GetMapping("/{roomId}")
     @Transactional(readOnly = true) // LAZY 연관 접근 중 세션 유지
-    public ChatRoomResponse getRoom(@PathVariable Long roomId) {
+    public ChatRoomResponse getRoom(@AuthenticationPrincipal LoginUserDTO loginUser,
+                                    @PathVariable Long roomId) {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방"));
+        if (!chatRoom.isParticipant(loginUser.id())) {
+            throw new SecurityException("채팅방 참가자만 볼 수 있습니다.");
+        }
 
         return ChatRoomResponse.builder()
                 .id(chatRoom.getId())
