@@ -20,7 +20,7 @@
 
 ## 다음 작업 순서 (제안)
 
-1. **SEC-01, SEC-02, SEC-04의 REST 부분**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
+1. **SEC-01, SEC-02**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
 2. **SEC-04의 STOMP 부분, SEC-03, SEC-05, SEC-09**: 실시간 채널 인증과 남은 인증 경로를 막는다.
 3. **SEC-06, SEC-07**: 토큰 구조를 다시 설계한다. D-03 결정이 필요하다.
 
@@ -31,7 +31,7 @@
 | SEC-01 | P0 | 대기 | 로그인한 사용자는 누구나 다른 회원을 수정·삭제할 수 있다. 조회는 다른 회원의 email·univEmail을 돌려준다 | `domain/user/controller/UserController.java:34`, `:47`, `:74` | C-1 |
 | SEC-02 | P0 | 대기 | 구해요 글과 댓글이 요청 헤더 `X-User-Id`로 작성자를 정한다. 헤더를 바꾸면 다른 사람의 글·댓글을 수정·삭제할 수 있다. `LoginUserDTO`가 record라 리플렉션 `getId()`가 실패해서 항상 헤더 값을 쓴다 | `domain/wanted/controller/WantedController.java:40`, `domain/comment/service/WantedCommentService.java:268` | C-2 |
 | SEC-03 | P0 | 대기 | SSE 구독이 JWT 서명을 검증하지 않고 페이로드만 디코딩한다. 위조 토큰으로 다른 사람의 채팅 알림을 받을 수 있다 | `domain/notification/controller/NotificationController.java:34` | C-3 |
-| SEC-04 | P0 | 진행(#83, REST 부분) | STOMP 연결에 인증이 없고, SEND·SUBSCRIBE에 방 참가자 검사가 없다. 발신자 ID를 요청 값에서 읽는다. REST 메시지 이력·방 조회도 참가자를 검사하지 않고, 방 생성은 `buyerId`를 요청 값으로 받는다 | `config/WebSocketConfig.java:14`, `domain/chat/controller/ChatMessageController.java:44`, `:84`, `domain/chat/controller/ChatRoomController.java:34` | C-4, H-01 |
+| SEC-04 | P0 | 대기 | STOMP 연결에 인증이 없고, SEND·SUBSCRIBE에 방 참가자 검사가 없다. 발신자 ID를 요청 값에서 읽는다. REST 부분(메시지 이력·방 조회의 참가자 검사, 방 생성의 `buyerId`)은 #84에서 고쳤다 | `config/WebSocketConfig.java:14`, `domain/chat/controller/ChatMessageController.java:92` | C-4, H-01, #84 |
 | SEC-05 | P1 | 대기 | OAuth 인가 요청 쿠키를 Java 역직렬화한다 | `security/oauth/util/CookieUtils.java:52` | C-5 |
 | SEC-06 | P1 | 대기 | 로그인 성공 시 access·refresh 토큰을 URL 쿼리로 전달하고 프론트가 localStorage에 저장한다 | `security/oauth/handler/OAuth2LoginSuccessHandler.java:52` | C-6, H-02 |
 | SEC-07 | P1 | 대기 | access·refresh 토큰의 형식이 같아 refresh 토큰으로 일반 API를 호출할 수 있다. 재발급 API가 없다 | `auth/jwt/JwtTokenProvider.java:48` | C-7, H-02 |
