@@ -20,7 +20,7 @@
 
 ## 다음 작업 순서 (제안)
 
-1. **SEC-01, SEC-04의 REST 부분**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
+1. **SEC-01**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
 2. **SEC-04의 STOMP 부분, SEC-03, SEC-05, SEC-09**: 실시간 채널 인증과 남은 인증 경로를 막는다.
 3. **SEC-06, SEC-07**: 토큰 구조를 다시 설계한다. D-03 결정이 필요하다.
 
@@ -116,11 +116,9 @@ MOD-03 ~ MOD-05는 지금 [toxic-filter](https://github.com/HongikBookStore/toxi
 |---|---|---|---|---|---|
 | BE-01 | P1 | 대기 | 닉네임 컬럼은 25자인데 가입 로직은 최대 50자로 만든다. 이메일 앞부분이 25자를 넘으면 가입이 실패한다 | `domain/user/domain/User.java:20`, `security/oauth/CustomOAuth2UserService.java:109` | C |
 | BE-02 | P3 | 대기 | README는 JWT 비밀값을 base64라고 설명하지만 코드는 문자열의 UTF-8 바이트를 그대로 쓴다 | `auth/jwt/JwtTokenProvider.java:34`, `README.md` | C |
-| BE-03 | P1 | 대기 | 백엔드 테스트는 `contextLoads`, API 응답 모양 회귀 테스트 6개(`ApiContractTest`, #78), 채팅 REST 참가자 검사 5개(`ChatRoomAccessTest`, #84)다. 다른 서비스 로직과 권한 경로의 테스트는 부족하다. #78 리뷰가 제안한 보완: 응답 `Content-Type` 검사, 실제 알림 SSE 페이로드 검사 | `backend/src/test` | C, H-07, [PR #78 리뷰](reviews/2026-10-22-codex-pr78.md), [PR #84 리뷰](reviews/2026-10-29-codex-pr84.md) |
+| BE-03 | P1 | 대기 | 백엔드 테스트는 `contextLoads`, API 응답 모양 회귀 테스트 6개(`ApiContractTest`, #78), 구해요 글·댓글 소유자 검사 7개(`WantedOwnershipTest`, #82), 채팅 REST 참가자 검사 5개(`ChatRoomAccessTest`, #84)다. 서비스 로직 테스트와 다른 도메인의 권한 검사 테스트는 부족하다. #78 리뷰가 제안한 보완: 응답 `Content-Type` 검사, 실제 알림 SSE 페이로드 검사 | `backend/src/test` | C, H-07, [PR #78 리뷰](reviews/2026-10-22-codex-pr78.md), [PR #84 리뷰](reviews/2026-10-29-codex-pr84.md) |
 | BE-04 | P3 | 대기 | 삭제한 로컬 이미지 URL을 다시 조회하면 404 대신 500을 반환한다. 포괄 예외 처리기가 `NoResourceFoundException`을 서버 오류로 바꾼다. PR #72의 기준 `11c8b6e`와 head `413fdee`에서 같은 MockMvc 검사로 재현했으며 #72의 회귀는 아니다 | `common/exception/GlobalExceptionHandler.java:115` | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
 | BE-06 | P3 | 대기 | 예약 API가 권한 검사 실패를 403이 아니라 400으로 돌려준다. 참가자 검사(`ensureParticipant`)와 역할 검사(구매자만 요청, 판매자만 수락)가 `IllegalArgumentException`을 일으키고, `GlobalExceptionHandler`가 이를 400으로 바꾼다. 클라이언트가 권한 거절과 잘못된 입력을 구분할 수 없다. `SecurityException`으로 바꾸면 응답 문구가 "권한이 없습니다." 하나로 바뀌므로, 화면이 서버 문구를 그대로 보여 주는지 함께 확인해야 한다 | `domain/chat/service/ChatReservationService.java:52`, `:92`, `:183`, `common/exception/GlobalExceptionHandler.java:50` | #83 (소스 확인) |
-| BE-03 | P1 | 대기 | 백엔드 테스트가 `contextLoads`, API 응답 모양 회귀 테스트 6개(`ApiContractTest`, #78), 구해요 글·댓글 소유자 검사 테스트 7개(`WantedOwnershipTest`, #82)뿐이다. 서비스 로직 테스트와 다른 도메인의 권한 검사 테스트가 없다. #78 리뷰가 제안한 보완: 응답 `Content-Type` 검사, 실제 알림 SSE 페이로드 검사 | `backend/src/test` | C, H-07, [PR #78 리뷰](reviews/2026-10-22-codex-pr78.md) |
-| BE-04 | P3 | 대기 | 삭제한 로컬 이미지 URL을 다시 조회하면 404 대신 500을 반환한다. 포괄 예외 처리기가 `NoResourceFoundException`을 서버 오류로 바꾼다. PR #72의 기준 `11c8b6e`와 head `413fdee`에서 같은 MockMvc 검사로 재현했으며 #72의 회귀는 아니다 | `common/exception/GlobalExceptionHandler.java:115` | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
 | BE-07 | P3 | 대기 | 구해요 답글 작성이 부모 댓글이 같은 글에 속하는지, 글이 있는지 확인하지 않는다. 원댓글 작성도 글이 있는지 확인하지 않는다 | `domain/comment/service/WantedCommentService.java:93`, `:145` | [PR #82 리뷰](reviews/2026-10-29-claude-pr82.md) (소스 확인) |
 | BE-08 | P3 | 대기 | 쓰지 않는 코드와 낡은 주석. `WantedCommentService`의 `parseJwt()`·`JwtPayload`는 서명 검증 없이 JWT 페이로드를 디코딩한다(보안 불변식 3). 호출하는 곳은 없다. 같은 클래스의 `toxicFilterClient` 필드도 쓰지 않는다. CORS 설정 주석이 이제 쓰지 않는 `X-USER-ID` 헤더를 언급한다 | `domain/comment/service/WantedCommentService.java:35`, `:236`, `config/SecurityConfig.java:149` | [PR #82 리뷰](reviews/2026-10-29-claude-pr82.md) (소스 확인) |
 | BE-09 | P3 | 대기 | 구해요 글에 처음 댓글을 다는 사용자는 작성 응답의 `authorNickname`이 "익명"인데, 목록에서는 같은 댓글이 "익명2"처럼 번호를 받는다. 별칭을 저장하기 전에 계산해서 새 작성자의 번호를 찾지 못한다 | `domain/comment/service/WantedCommentService.java:220` | [PR #82 리뷰](reviews/2026-10-29-claude-pr82.md) (실행 확인) |
