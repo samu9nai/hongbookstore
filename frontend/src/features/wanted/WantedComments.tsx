@@ -225,13 +225,10 @@ function publicInit(): RequestInit {
 function authInit(bodyObj?: { content: string }) {
   const tokenRaw = localStorage.getItem('accessToken') || ''
   const token = normalizeBearer(tokenRaw)
-  const uidRaw = localStorage.getItem('userId') || ''
-  const uid = /^\d+$/.test(uidRaw) ? uidRaw : ''
 
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(uid ? { 'X-USER-ID': uid } : {}), // 대문자, ASCII만
     ...xsrfHeader()
   }
 

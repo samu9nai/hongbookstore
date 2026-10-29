@@ -868,7 +868,6 @@ export default function WantedWrite() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': String(userId),
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify(payload)
