@@ -20,7 +20,7 @@
 
 ## 다음 작업 순서 (제안)
 
-1. **SEC-01, SEC-02, SEC-04의 REST 부분**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
+1. **SEC-01, SEC-04의 REST 부분**: 인증 주체를 `LoginUserDTO` 하나로 통일하고, 다른 사용자 ID로 요청하면 403이 나는 테스트를 쓴다.
 2. **SEC-04의 STOMP 부분, SEC-03, SEC-05, SEC-09**: 실시간 채널 인증과 남은 인증 경로를 막는다.
 3. **SEC-06, SEC-07**: 토큰 구조를 다시 설계한다. D-03 결정이 필요하다.
 
@@ -29,7 +29,6 @@
 | ID | 우선 | 상태 | 문제 | 위치 | 출처 |
 |---|---|---|---|---|---|
 | SEC-01 | P0 | 대기 | 로그인한 사용자는 누구나 다른 회원을 수정·삭제할 수 있다. 조회는 다른 회원의 email·univEmail을 돌려준다 | `domain/user/controller/UserController.java:34`, `:47`, `:74` | C-1 |
-| SEC-02 | P0 | 대기 | 구해요 글과 댓글이 요청 헤더 `X-User-Id`로 작성자를 정한다. 헤더를 바꾸면 다른 사람의 글·댓글을 수정·삭제할 수 있다. `LoginUserDTO`가 record라 리플렉션 `getId()`가 실패해서 항상 헤더 값을 쓴다 | `domain/wanted/controller/WantedController.java:40`, `domain/comment/service/WantedCommentService.java:268` | C-2 |
 | SEC-03 | P0 | 대기 | SSE 구독이 JWT 서명을 검증하지 않고 페이로드만 디코딩한다. 위조 토큰으로 다른 사람의 채팅 알림을 받을 수 있다 | `domain/notification/controller/NotificationController.java:34` | C-3 |
 | SEC-04 | P0 | 대기 | STOMP 연결에 인증이 없고, SEND·SUBSCRIBE에 방 참가자 검사가 없다. 발신자 ID를 요청 값에서 읽는다. REST 메시지 이력·방 조회도 참가자를 검사하지 않고, 방 생성은 `buyerId`를 요청 값으로 받는다 | `config/WebSocketConfig.java:14`, `domain/chat/controller/ChatMessageController.java:44`, `:84`, `domain/chat/controller/ChatRoomController.java:34` | C-4, H-01 |
 | SEC-05 | P1 | 대기 | OAuth 인가 요청 쿠키를 Java 역직렬화한다 | `security/oauth/util/CookieUtils.java:52` | C-5 |
@@ -40,6 +39,8 @@
 | SEC-10 | P1 | 대기 | 업로드 파일의 확장자와 Content-Type을 클라이언트 값 그대로 저장한다. GCS 구현은 #72에서 지웠다 | `common/util/LocalStorageUtil.java:38` | C-10 |
 | SEC-11 | P2 | 대기 | 외부 지도 API 프록시(`/api/naver/**`, `/api/directions/**`)를 로그인 없이 호출할 수 있어 API 쿼터를 소모시킬 수 있다 | `config/SecurityConfig.java` | C-11 |
 | SEC-12 | P2 | 대기 | 기본 프로필이 `dev`이고, dev 프로필은 actuator 엔드포인트를 모두 노출한다 | `backend/src/main/resources/application.yml:5`, `:234` | C |
+| SEC-17 | P2 | 대기 | 구해요 댓글 응답이 작성자 `userId`를 그대로 내보낸다. 댓글 목록은 로그인 없이 조회할 수 있어 "익명N"을 사용자 ID와 연결할 수 있다. 프론트가 본인 댓글 판정에 `userId`를 쓰므로 응답 계약(예: 본인 여부 필드)과 함께 정해야 한다 | `domain/comment/service/WantedCommentService.java:73`, `domain/comment/dto/WantedCommentDto.java:36`, `frontend/src/features/wanted/WantedComments.tsx:285` | [PR #82 리뷰](reviews/2026-10-29-claude-pr82.md) (실행 확인) |
+| SEC-18 | P3 | 대기 | `PUT /api/wanted/**`만 역할 규칙이 없어 `anyRequest().authenticated()`가 적용된다. `POST`·`DELETE`와 달리 학생 인증을 하지 않은 `USER` 역할도 통과한다. 서비스가 소유자 검사를 하므로 남의 글은 고칠 수 없다 | `config/SecurityConfig.java:108`, `:117` | [PR #82 리뷰](reviews/2026-10-29-claude-pr82.md) (소스 확인) |
 
 ## 거래 정합성 (TXN)
 
@@ -115,8 +116,11 @@ MOD-03 ~ MOD-05는 지금 [toxic-filter](https://github.com/HongikBookStore/toxi
 |---|---|---|---|---|---|
 | BE-01 | P1 | 대기 | 닉네임 컬럼은 25자인데 가입 로직은 최대 50자로 만든다. 이메일 앞부분이 25자를 넘으면 가입이 실패한다 | `domain/user/domain/User.java:20`, `security/oauth/CustomOAuth2UserService.java:109` | C |
 | BE-02 | P3 | 대기 | README는 JWT 비밀값을 base64라고 설명하지만 코드는 문자열의 UTF-8 바이트를 그대로 쓴다 | `auth/jwt/JwtTokenProvider.java:34`, `README.md` | C |
-| BE-03 | P1 | 대기 | 백엔드 테스트가 `contextLoads`와 API 응답 모양 회귀 테스트 6개(`ApiContractTest`, #78)뿐이다. 서비스 로직·권한 검사 테스트가 없다. #78 리뷰가 제안한 보완: 응답 `Content-Type` 검사, 실제 알림 SSE 페이로드 검사 | `backend/src/test` | C, H-07, [PR #78 리뷰](reviews/2026-10-22-codex-pr78.md) |
+| BE-03 | P1 | 대기 | 백엔드 테스트가 `contextLoads`, API 응답 모양 회귀 테스트 6개(`ApiContractTest`, #78), 구해요 글·댓글 소유자 검사 테스트 7개(`WantedOwnershipTest`, #82)뿐이다. 서비스 로직 테스트와 다른 도메인의 권한 검사 테스트가 없다. #78 리뷰가 제안한 보완: 응답 `Content-Type` 검사, 실제 알림 SSE 페이로드 검사 | `backend/src/test` | C, H-07, [PR #78 리뷰](reviews/2026-10-22-codex-pr78.md) |
 | BE-04 | P3 | 대기 | 삭제한 로컬 이미지 URL을 다시 조회하면 404 대신 500을 반환한다. 포괄 예외 처리기가 `NoResourceFoundException`을 서버 오류로 바꾼다. PR #72의 기준 `11c8b6e`와 head `413fdee`에서 같은 MockMvc 검사로 재현했으며 #72의 회귀는 아니다 | `common/exception/GlobalExceptionHandler.java:115` | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
+| BE-07 | P3 | 대기 | 구해요 답글 작성이 부모 댓글이 같은 글에 속하는지, 글이 있는지 확인하지 않는다. 원댓글 작성도 글이 있는지 확인하지 않는다 | `domain/comment/service/WantedCommentService.java:93`, `:145` | [PR #82 리뷰](reviews/2026-10-29-claude-pr82.md) (소스 확인) |
+| BE-08 | P3 | 대기 | 쓰지 않는 코드와 낡은 주석. `WantedCommentService`의 `parseJwt()`·`JwtPayload`는 서명 검증 없이 JWT 페이로드를 디코딩한다(보안 불변식 3). 호출하는 곳은 없다. 같은 클래스의 `toxicFilterClient` 필드도 쓰지 않는다. CORS 설정 주석이 이제 쓰지 않는 `X-USER-ID` 헤더를 언급한다 | `domain/comment/service/WantedCommentService.java:35`, `:236`, `config/SecurityConfig.java:149` | [PR #82 리뷰](reviews/2026-10-29-claude-pr82.md) (소스 확인) |
+| BE-09 | P3 | 대기 | 구해요 글에 처음 댓글을 다는 사용자는 작성 응답의 `authorNickname`이 "익명"인데, 목록에서는 같은 댓글이 "익명2"처럼 번호를 받는다. 별칭을 저장하기 전에 계산해서 새 작성자의 번호를 찾지 못한다 | `domain/comment/service/WantedCommentService.java:220` | [PR #82 리뷰](reviews/2026-10-29-claude-pr82.md) (실행 확인) |
 | OPS-01 | P2 | 대기 | 스키마 마이그레이션 도구가 없다 | `backend/src/main/resources/application.yml` | C, H-06 |
 | OPS-02 | P2 | 대기 | DB 트랜잭션 안에서 외부 저장소에 업로드하고, 커밋 전에 알림을 보낸다 | `domain/post/service/SalePostService.java:41`, `:332`, `domain/chat/service/ChatReservationService.java` | H-06 |
 | OPS-03 | P2 | 대기 | STOMP simple broker와 SSE emitter가 프로세스 메모리에 있어 인스턴스 1개에서만 동작한다. 이 전제를 문서와 설정에 명시해야 한다 | `config/WebSocketConfig.java`, `domain/notification/sse/EmitterRepository.java` | H-06 |
@@ -137,6 +141,7 @@ MOD-03 ~ MOD-05는 지금 [toxic-filter](https://github.com/HongikBookStore/toxi
 
 | ID | PR | 요약 | 근거 |
 |---|---|---|---|
+| SEC-02 | #82 | 구해요 글·댓글 API가 작성자를 요청 헤더 대신 `@AuthenticationPrincipal LoginUserDTO`로 정한다. 다른 사용자의 수정·삭제는 403이다 | C-2, `WantedOwnershipTest` (#81) |
 | SEC-13 | #25 | 프론트 직접 의존성의 공개 취약점 49건을 패키지 제거(#23)와 Renovate 보안 PR로 고쳤다 | Renovate OSV 조회(#15) |
 | SEC-14 | #27 | 전이 의존성의 공개 취약점 26건을 lockfile 갱신만으로 고쳤다. `pnpm audit` 0건 | `pnpm audit` (#24) |
 | SEC-15 | #78 | 백엔드 런타임 의존성의 공개 취약점. 집계 기준은 Gradle `runtimeClasspath`에서 고른 아티팩트의 고유 모듈(BOM 제외)이고, 측정 스크립트는 PR #72 리뷰에 있다. Boot 3.5.10의 모듈 129개, 고유 권고 113건(critical 11)이 Boot 4.1.1과 같은 minor 패치 덮어쓰기 뒤 0건이 됐다(D-R, D-U) | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md#로컬-자동-검사), OSV querybatch (#71, #77) |

@@ -1,11 +1,13 @@
 package com.hongik.books.domain.wanted.controller;
 
+import com.hongik.books.auth.dto.LoginUserDTO;
 import com.hongik.books.domain.wanted.dto.*;
 import com.hongik.books.domain.wanted.service.WantedService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import jakarta.validation.Valid;
 import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -34,23 +36,23 @@ public class WantedController {
         return wantedService.getDetail(id);
     }
 
-    /** 생성 (예시는 임시로 헤더에서 userId 수신) */
+    /** 생성 */
     @PostMapping
     public ResponseEntity<Long> create(
-            @RequestHeader("X-User-Id") Long userId,  // 프로젝트 인증 방식에 맞게 교체 가능
+            @AuthenticationPrincipal LoginUserDTO loginUser,
             @RequestBody @Valid WantedCreateRequestDTO dto
     ) {
-        Long id = wantedService.create(userId, dto);
+        Long id = wantedService.create(loginUser.id(), dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal LoginUserDTO loginUser,
             @PathVariable Long id,
             @RequestBody @Valid WantedUpdateRequestDTO dto
     ) {
-        wantedService.update(userId, id, dto);
+        wantedService.update(loginUser.id(), id, dto);
         return ResponseEntity.noContent().build();
     }
 
@@ -58,9 +60,9 @@ public class WantedController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal LoginUserDTO loginUser,
             @PathVariable Long id
     ) {
-        wantedService.delete(userId, id);
+        wantedService.delete(loginUser.id(), id);
     }
 }

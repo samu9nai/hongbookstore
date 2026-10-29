@@ -6,18 +6,11 @@ import com.hongik.books.domain.comment.domain.WantedComment;
 import com.hongik.books.domain.comment.dto.CommentCreateRequest;
 import com.hongik.books.domain.comment.dto.WantedCommentDto;
 import com.hongik.books.domain.comment.repository.WantedCommentRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import com.hongik.books.moderation.ModerationPolicyProperties;
 import com.hongik.books.moderation.ModerationService;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import com.hongik.books.domain.notification.service.NotificationService;
 import com.hongik.books.domain.wanted.repository.WantedRepository;
 
@@ -97,7 +90,7 @@ public class WantedCommentService {
        생성
        ========================= */
     @Transactional
-    public WantedCommentDto addRoot(Long wantedId, CommentCreateRequest req, Long userId, String nickname) {
+    public WantedCommentDto addRoot(Long wantedId, CommentCreateRequest req, Long userId) {
         var mode = moderationPolicy.getComment().getContent();
         var modResult = moderationService.checkOrThrow(req.getContent(), mode, "content");
 
@@ -110,7 +103,7 @@ public class WantedCommentService {
                 .deleted(false)
                 .content(req.getContent())
                 .userId(userId)
-                .nickname(nickname)
+                .nickname("익명")             // 실닉은 저장하지 않는다(#81)
                 .authorNickname(alias)
                 .build();
 
@@ -149,7 +142,7 @@ public class WantedCommentService {
     }
 
     @Transactional
-    public WantedCommentDto addReply(Long wantedId, Long parentId, CommentCreateRequest req, Long userId, String nickname) {
+    public WantedCommentDto addReply(Long wantedId, Long parentId, CommentCreateRequest req, Long userId) {
         var mode = moderationPolicy.getComment().getContent();
         var modResult = moderationService.checkOrThrow(req.getContent(), mode, "content");
 
@@ -162,7 +155,7 @@ public class WantedCommentService {
                 .deleted(false)
                 .content(req.getContent())
                 .userId(userId)
-                .nickname(nickname)
+                .nickname("익명")             // 실닉은 저장하지 않는다(#81)
                 .authorNickname(alias)
                 .build();
 
@@ -223,64 +216,6 @@ public class WantedCommentService {
        유틸/보안 보조
        ========================= */
 
-    public record CurrentUser(Long id, String nickname) {}
-
-    /** 컨트롤러에서 사용: 로그인 사용자 가져오기(없으면 예외) */
-    public CurrentUser getCurrentUserOrThrow() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            throw new SecurityException("로그인이 필요합니다.");
-        }
-        Object principal = auth.getPrincipal();
-
-        Long id = null;
-        String nick = null;
-
-        // 1) 커스텀 UserDetails
-        if (principal instanceof UserDetails ud) {
-            nick = safeFirstNonBlank(ud.getUsername(), null, null, null);
-        }
-
-        // 2) OAuth2User
-        if (principal instanceof OAuth2User oau) {
-            Map<String, Object> attrs = oau.getAttributes();
-            id = asLong(attrs.get("id"));
-            nick = resolveNicknameFromMap(attrs);
-        }
-
-        // 3) 커스텀 Principal (getId, getUserId 등 관용명 시도)
-        if (id == null) {
-            id = invokeLong(principal, "getId");
-            if (id == null) id = invokeLong(principal, "getUserId");
-            if (id == null) id = invokeLong(principal, "getMemberId");
-        }
-        if (nick == null || nick.isBlank()) {
-            nick = invokeString(principal, "getNickname");
-            if (nick == null || nick.isBlank()) nick = invokeString(principal, "getName");
-            if (nick == null || nick.isBlank()) nick = invokeString(principal, "getUsername");
-            if (nick == null || nick.isBlank()) nick = "익명";
-        }
-
-        // 4) 헤더 보조 (프론트가 X-USER-ID, X-USER-NICKNAME 보낼 때)
-        HttpServletRequest request = currentRequest();
-        if (request != null) {
-            if (id == null) {
-                String hId = request.getHeader("X-USER-ID");
-                if (hId != null && !hId.isBlank()) {
-                    try { id = Long.parseLong(hId.trim()); } catch (Exception ignored) {}
-                }
-            }
-            if (nick == null || nick.isBlank()) {
-                String hNick = request.getHeader("X-USER-NICKNAME");
-                nick = (hNick == null || hNick.isBlank()) ? "익명" : hNick;
-            }
-        }
-
-        if (id == null) throw new SecurityException("사용자 식별을 할 수 없습니다.");
-        if (nick == null || nick.isBlank()) nick = "익명";
-        return new CurrentUser(id, nick);
-    }
-
     /** 같은 글에서 해당 userId에게 부여될 익명 별칭(익명N) 계산 — 등장 순서 기준 */
     private String computeAliasForUser(Long wantedId, Long userId) {
         var comments = commentRepository.findByWantedIdOrderByCreatedAtAsc(wantedId); // ✅ 삭제 포함
@@ -295,56 +230,6 @@ public class WantedCommentService {
         }
         Integer order = orderMap.get(userId);
         return (order == null) ? "익명" : ("익명" + order);
-    }
-
-    private HttpServletRequest currentRequest() {
-        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        return attrs == null ? null : attrs.getRequest();
-    }
-
-    private Long invokeLong(Object target, String methodName) {
-        try {
-            var m = target.getClass().getMethod(methodName);
-            Object v = m.invoke(target);
-            return asLong(v);
-        } catch (Exception ignore) {
-            return null;
-        }
-    }
-
-    private String invokeString(Object target, String methodName) {
-        try {
-            var m = target.getClass().getMethod(methodName);
-            Object v = m.invoke(target);
-            return asString(v);
-        } catch (Exception ignore) {
-            return null;
-        }
-    }
-
-    private String safeFirstNonBlank(String a, String b, String c, String d) {
-        if (a != null && !a.isBlank()) return a;
-        if (b != null && !b.isBlank()) return b;
-        if (c != null && !c.isBlank()) return c;
-        if (d != null && !d.isBlank()) return d;
-        return null;
-    }
-
-    private String resolveNicknameFromMap(Map<String, Object> attrs) {
-        if (attrs == null) return null;
-        try {
-            String nickname = asString(attrs.get("nickname"));
-            String preferred_username = asString(attrs.get("preferred_username"));
-            String name = asString(attrs.get("name"));
-            String pu = asString(attrs.get("pu"));
-            if (nickname != null && !nickname.isBlank()) return nickname;
-            if (preferred_username != null && !preferred_username.isBlank()) return preferred_username;
-            if (name != null && !name.isBlank()) return name;
-            if (pu != null && !pu.isBlank()) return pu;
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     /** (선택) Authorization: Bearer <jwt> 를 파싱해야 할 때 사용할 수 있는 보조 */
@@ -374,15 +259,5 @@ public class WantedCommentService {
             try { return Long.parseLong(String.valueOf(v)); } catch (Exception e) { return null; }
         }
         private static String asStringStatic(Object v) { return v == null ? null : String.valueOf(v); }
-    }
-
-    private Long asLong(Object v) {
-        if (v == null) return null;
-        if (v instanceof Number n) return n.longValue();
-        try { return Long.parseLong(String.valueOf(v)); } catch (Exception e) { return null; }
-    }
-
-    private String asString(Object v) {
-        return v == null ? null : String.valueOf(v);
     }
 }

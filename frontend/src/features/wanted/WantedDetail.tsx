@@ -592,15 +592,6 @@ export default function WantedDetail() {
         ...getAuthHeader(),
         ...xsrfHeader()
       }
-      // 일부 백엔드가 X-User-Id를 요구할 수 있으므로 보조 헤더 추가
-      let userId = localStorage.getItem('userId')
-      if (!userId) {
-        try {
-          userId = JSON.parse(localStorage.getItem('user') || '{}')?.id
-        } catch {}
-      }
-      if (userId) headers['X-User-Id'] = String(userId)
-
       const res = await fetch(`/api/wanted/${id}`, {
         method: 'DELETE',
         headers,
