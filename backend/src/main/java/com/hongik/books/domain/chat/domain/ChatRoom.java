@@ -41,4 +41,8 @@ public class ChatRoom {
         this.createdAt = java.time.LocalDateTime.now().toString();
     }
 
+    /** 구매자 또는 판매자인지 확인한다. */
+    public boolean isParticipant(Long userId) {
+        return userId.equals(buyer.getId()) || userId.equals(seller.getId());
+    }
 }

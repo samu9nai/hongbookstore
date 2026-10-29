@@ -30,7 +30,7 @@
 |---|---|---|---|---|---|
 | SEC-01 | P0 | 대기 | 로그인한 사용자는 누구나 다른 회원을 수정·삭제할 수 있다. 조회는 다른 회원의 email·univEmail을 돌려준다 | `domain/user/controller/UserController.java:34`, `:47`, `:74` | C-1 |
 | SEC-03 | P0 | 대기 | SSE 구독이 JWT 서명을 검증하지 않고 페이로드만 디코딩한다. 위조 토큰으로 다른 사람의 채팅 알림을 받을 수 있다 | `domain/notification/controller/NotificationController.java:34` | C-3 |
-| SEC-04 | P0 | 대기 | STOMP 연결에 인증이 없고, SEND·SUBSCRIBE에 방 참가자 검사가 없다. 발신자 ID를 요청 값에서 읽는다. REST 메시지 이력·방 조회도 참가자를 검사하지 않고, 방 생성은 `buyerId`를 요청 값으로 받는다 | `config/WebSocketConfig.java:14`, `domain/chat/controller/ChatMessageController.java:44`, `:84`, `domain/chat/controller/ChatRoomController.java:34` | C-4, H-01 |
+| SEC-04 | P0 | 대기 | STOMP 연결에 인증이 없고, SEND·SUBSCRIBE에 방 참가자 검사가 없다. 발신자 ID를 요청 값에서 읽는다. REST 부분(메시지 이력·방 조회의 참가자 검사, 방 생성의 `buyerId`)은 #84에서 고쳤다 | `config/WebSocketConfig.java:14`, `domain/chat/controller/ChatMessageController.java:92` | C-4, H-01, #84 |
 | SEC-05 | P1 | 대기 | OAuth 인가 요청 쿠키를 Java 역직렬화한다 | `security/oauth/util/CookieUtils.java:52` | C-5 |
 | SEC-06 | P1 | 대기 | 로그인 성공 시 access·refresh 토큰을 URL 쿼리로 전달하고 프론트가 localStorage에 저장한다 | `security/oauth/handler/OAuth2LoginSuccessHandler.java:52` | C-6, H-02 |
 | SEC-07 | P1 | 대기 | access·refresh 토큰의 형식이 같아 refresh 토큰으로 일반 API를 호출할 수 있다. 재발급 API가 없다 | `auth/jwt/JwtTokenProvider.java:48` | C-7, H-02 |
@@ -116,6 +116,9 @@ MOD-03 ~ MOD-05는 지금 [toxic-filter](https://github.com/HongikBookStore/toxi
 |---|---|---|---|---|---|
 | BE-01 | P1 | 대기 | 닉네임 컬럼은 25자인데 가입 로직은 최대 50자로 만든다. 이메일 앞부분이 25자를 넘으면 가입이 실패한다 | `domain/user/domain/User.java:20`, `security/oauth/CustomOAuth2UserService.java:109` | C |
 | BE-02 | P3 | 대기 | README는 JWT 비밀값을 base64라고 설명하지만 코드는 문자열의 UTF-8 바이트를 그대로 쓴다 | `auth/jwt/JwtTokenProvider.java:34`, `README.md` | C |
+| BE-03 | P1 | 대기 | 백엔드 테스트는 `contextLoads`, API 응답 모양 회귀 테스트 6개(`ApiContractTest`, #78), 채팅 REST 참가자 검사 5개(`ChatRoomAccessTest`, #84)다. 다른 서비스 로직과 권한 경로의 테스트는 부족하다. #78 리뷰가 제안한 보완: 응답 `Content-Type` 검사, 실제 알림 SSE 페이로드 검사 | `backend/src/test` | C, H-07, [PR #78 리뷰](reviews/2026-10-22-codex-pr78.md), [PR #84 리뷰](reviews/2026-10-29-codex-pr84.md) |
+| BE-04 | P3 | 대기 | 삭제한 로컬 이미지 URL을 다시 조회하면 404 대신 500을 반환한다. 포괄 예외 처리기가 `NoResourceFoundException`을 서버 오류로 바꾼다. PR #72의 기준 `11c8b6e`와 head `413fdee`에서 같은 MockMvc 검사로 재현했으며 #72의 회귀는 아니다 | `common/exception/GlobalExceptionHandler.java:115` | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
+| BE-06 | P3 | 대기 | 예약 API가 권한 검사 실패를 403이 아니라 400으로 돌려준다. 참가자 검사(`ensureParticipant`)와 역할 검사(구매자만 요청, 판매자만 수락)가 `IllegalArgumentException`을 일으키고, `GlobalExceptionHandler`가 이를 400으로 바꾼다. 클라이언트가 권한 거절과 잘못된 입력을 구분할 수 없다. `SecurityException`으로 바꾸면 응답 문구가 "권한이 없습니다." 하나로 바뀌므로, 화면이 서버 문구를 그대로 보여 주는지 함께 확인해야 한다 | `domain/chat/service/ChatReservationService.java:52`, `:92`, `:183`, `common/exception/GlobalExceptionHandler.java:50` | #83 (소스 확인) |
 | BE-03 | P1 | 대기 | 백엔드 테스트가 `contextLoads`, API 응답 모양 회귀 테스트 6개(`ApiContractTest`, #78), 구해요 글·댓글 소유자 검사 테스트 7개(`WantedOwnershipTest`, #82)뿐이다. 서비스 로직 테스트와 다른 도메인의 권한 검사 테스트가 없다. #78 리뷰가 제안한 보완: 응답 `Content-Type` 검사, 실제 알림 SSE 페이로드 검사 | `backend/src/test` | C, H-07, [PR #78 리뷰](reviews/2026-10-22-codex-pr78.md) |
 | BE-04 | P3 | 대기 | 삭제한 로컬 이미지 URL을 다시 조회하면 404 대신 500을 반환한다. 포괄 예외 처리기가 `NoResourceFoundException`을 서버 오류로 바꾼다. PR #72의 기준 `11c8b6e`와 head `413fdee`에서 같은 MockMvc 검사로 재현했으며 #72의 회귀는 아니다 | `common/exception/GlobalExceptionHandler.java:115` | [PR #72 리뷰](reviews/2026-10-22-codex-pr72.md) (실행 확인) |
 | BE-07 | P3 | 대기 | 구해요 답글 작성이 부모 댓글이 같은 글에 속하는지, 글이 있는지 확인하지 않는다. 원댓글 작성도 글이 있는지 확인하지 않는다 | `domain/comment/service/WantedCommentService.java:93`, `:145` | [PR #82 리뷰](reviews/2026-10-29-claude-pr82.md) (소스 확인) |

@@ -1,5 +1,6 @@
 package com.hongik.books.domain.chat.controller;
 
+import com.hongik.books.auth.dto.LoginUserDTO;
 import com.hongik.books.domain.chat.domain.ChatMessage;
 import com.hongik.books.common.dto.ApiResponse;
 import com.hongik.books.common.dto.ModerationErrorDTO;
@@ -14,6 +15,7 @@ import com.hongik.books.moderation.ModerationPolicyProperties;
 import com.hongik.books.moderation.ModerationService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
@@ -42,7 +44,13 @@ public class ChatMessageController {
     @ResponseBody // Controller + ResponseBody로 REST 응답 지원
     @Transactional(readOnly = true) // ✅ 추가
     @GetMapping("/room/{roomId}/messages")
-    public List<ChatMessageResponse> getMessages(@PathVariable Long roomId) {
+    public List<ChatMessageResponse> getMessages(@AuthenticationPrincipal LoginUserDTO loginUser,
+                                                 @PathVariable Long roomId) {
+        var room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방"));
+        if (!room.isParticipant(loginUser.id())) {
+            throw new SecurityException("채팅방 참가자만 볼 수 있습니다.");
+        }
         List<ChatMessage> messages = chatMessageRepository.findAllByChatRoomIdOrderBySentAtAsc(roomId);
         return messages.stream().map(msg ->
                 ChatMessageResponse.builder()
